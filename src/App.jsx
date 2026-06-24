@@ -112,7 +112,17 @@ const DEFAULT_DB = {
   ],
 };
 
-async function loadData(){ try{ const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[mkWeek(1)]; }catch{ return [mkWeek(1)]; } }
+async function loadData(){
+  try{
+    const r=localStorage.getItem(STORAGE_KEY);
+    if(!r) return [mkWeek(1)];
+    const data=JSON.parse(r);
+    return data.map(week=>({
+      ...week,
+      days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{...day,showMorningDbModal:false,showDbModal:false}]))
+    }));
+  }catch{ return [mkWeek(1)]; }
+}
 async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} }
 async function loadDb(){ try{ const r=localStorage.getItem(DB_KEY); return r?JSON.parse(r):DEFAULT_DB; }catch{ return DEFAULT_DB; } }
 async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }catch{} }
@@ -569,7 +579,6 @@ function DatabaseTab({db,onChange}) {
   // drag state: {eid, fromSection, fromPartId}
   const [dragging,setDragging]     = useState(null);
   const [dragOver,setDragOver]     = useState(null); // {section, partId, idx}
-  const touchTimer = useCallback((fn,ms=400)=>{let t=setTimeout(fn,ms);return()=>clearTimeout(t);},[]);
 
   const toggle   = id => setExpanded(p=>({...p,[id]:!p[id]}));
   const toggleEx = id => setExExpanded(p=>({...p,[id]:!p[id]}));
