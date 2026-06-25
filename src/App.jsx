@@ -64,12 +64,15 @@ const MOBILITY_TEMPLATES = [
 ];
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = "training_v5";
-const DB_KEY = "training_db_v1";
+const STORAGE_KEY   = "training_v5";
+const DB_KEY        = "training_db_v1";
+const ROUTINES_KEY  = "training_routines_v1";
 
 const mkDay = () => ({
-  morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"", showMorningDbModal:false,
-  type:null, exercises:[], routineName:"", routineUrl:"", note:"", showDbModal:false,
+  morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"",
+  morningRoutineId:null, morningRoutineSync:false, showMorningDbModal:false, showMorningRoutineModal:false,
+  type:null, exercises:[], routineName:"", routineUrl:"",
+  routineId:null, routineSync:false, note:"", showDbModal:false, showRoutineModal:false,
 });
 const mkWeek = (n) => ({ weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])), ratings:{}, note:"", done:false });
 
@@ -111,13 +114,26 @@ async function loadData(){
     const data=JSON.parse(r);
     return data.map(week=>({
       ...week,
-      days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{...day,showMorningDbModal:false,showDbModal:false}]))
+      days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
+        ...day,
+        showMorningDbModal:false, showDbModal:false,
+        showMorningRoutineModal:false, showRoutineModal:false,
+        // migrate old "routine" type (URL-based) to "video"
+        morningType: day.morningType==="routine" ? "video" : (day.morningType||null),
+        type: day.type==="routine" ? "video" : (day.type||null),
+        morningRoutineId: day.morningRoutineId||null,
+        morningRoutineSync: day.morningRoutineSync||false,
+        routineId: day.routineId||null,
+        routineSync: day.routineSync||false,
+      }]))
     }));
   }catch{ return [mkWeek(1)]; }
 }
 async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} }
 async function loadDb(){ try{ const r=localStorage.getItem(DB_KEY); return r?JSON.parse(r):DEFAULT_DB; }catch{ return DEFAULT_DB; } }
 async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }catch{} }
+async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); return r?JSON.parse(r):[]; }catch{ return []; } }
+async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -135,7 +151,6 @@ const C = {
 const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
 const mono = "'SF Mono','Fira Mono',monospace";
 
-// shared input style
 const inp = (extra={}) => ({ fontFamily:font, fontSize:15, color:C.text, background:C.surfaceAlt, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 12px", outline:"none", width:"100%", boxSizing:"border-box", WebkitAppearance:"none", ...extra });
 
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
@@ -143,7 +158,6 @@ const Tag = ({color,bg,children}) => (
   <span style={{display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:500,background:bg,color,whiteSpace:"nowrap"}}>{children}</span>
 );
 
-// Pill button used in segmented controls
 const Seg = ({active,color,bg,onClick,children}) => (
   <button onClick={onClick} style={{
     flex:1, padding:"8px 4px", borderRadius:8, border:"none", fontFamily:font, fontWeight:500,
@@ -155,7 +169,6 @@ const Seg = ({active,color,bg,onClick,children}) => (
   }}>{children}</button>
 );
 
-// Primary action button
 const Btn = ({onClick,children,variant="primary",full=false,size="md"}) => {
   const pad = size==="sm"?"7px 12px":size==="lg"?"13px 20px":"10px 16px";
   const fs  = size==="sm"?12:size==="lg"?15:13;
@@ -192,17 +205,14 @@ function DbModal({db,onSelect,onClose,filterSection}) {
 
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
-      {/* Bottom sheet on mobile */}
       <div onClick={e=>e.stopPropagation()} style={{
         background:C.surface, width:"100%", maxWidth:560, maxHeight:"80vh",
         borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
         boxShadow:C.shadowLg, overflow:"hidden",
       }}>
-        {/* Handle */}
         <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
           <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
         </div>
-        {/* Header */}
         <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
             <span style={{fontSize:16,fontWeight:700,color:C.text}}>Kies oefening</span>
@@ -211,7 +221,6 @@ function DbModal({db,onSelect,onClose,filterSection}) {
           <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Zoeken…" autoFocus
             style={inp({fontSize:14,padding:"9px 12px"})} />
         </div>
-        {/* Body */}
         <div style={{overflowY:"auto",padding:"12px 16px",WebkitOverflowScrolling:"touch"}}>
           {results ? (
             results.length===0 ? (
@@ -259,6 +268,51 @@ function ExItem({ex,onSelect}) {
   );
 }
 
+// ─── ROUTINE PICKER MODAL ─────────────────────────────────────────────────────
+function RoutinePickerModal({routines,onSelect,onClose}) {
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.surface, width:"100%", maxWidth:560, maxHeight:"70vh",
+        borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
+        boxShadow:C.shadowLg, overflow:"hidden",
+      }}>
+        <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
+        </div>
+        <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:16,fontWeight:700,color:C.text}}>Kies routine</span>
+            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+        </div>
+        <div style={{overflowY:"auto",padding:"12px 16px",WebkitOverflowScrolling:"touch"}}>
+          {routines.length===0 ? (
+            <div style={{textAlign:"center",padding:"32px 0",color:C.textMuted,fontSize:14}}>
+              Nog geen routines aangemaakt.<br/>
+              <span style={{fontSize:12}}>Ga naar het Routines-tabblad om er een te maken.</span>
+            </div>
+          ) : routines.map(r=>(
+            <button key={r.id} onClick={()=>onSelect(r)} style={{
+              display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",
+              background:"none",border:`1px solid ${C.border}`,borderRadius:10,marginBottom:6,
+              cursor:"pointer",fontFamily:font,textAlign:"left",
+            }}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:600,color:C.text}}>{r.name||"Naamloze routine"}</div>
+                <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>{(r.exercises||[]).length} oefeningen</div>
+              </div>
+              <span style={{color:C.green,fontSize:13,fontWeight:500,flexShrink:0}}>Laden →</span>
+            </button>
+          ))}
+          <div style={{height:24}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── EXERCISE ROW ─────────────────────────────────────────────────────────────
 function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
   const [showSave,setShowSave] = useState(false);
@@ -274,7 +328,6 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
 
   return (
     <div style={{marginBottom:8}}>
-      {/* Main row */}
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <input value={ex.name} onChange={e=>onUpdate({...ex,name:e.target.value})}
           placeholder="Oefening" style={inp({flex:1,fontSize:14,padding:"9px 10px",minWidth:0})} />
@@ -291,7 +344,6 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
         )}
         <button onClick={onDelete} style={{width:36,height:36,borderRadius:8,flexShrink:0,background:"transparent",border:`1px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
-      {/* Save to db */}
       {showSave&&db&&(
         <div style={{marginTop:6,padding:"10px 12px",background:C.purpleLight,borderRadius:10,display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:12,fontWeight:600,color:C.purple}}>Opslaan in database</div>
@@ -325,10 +377,9 @@ function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,ge
 
   return (
     <div>
-      {/* Action buttons row */}
       <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-        <Btn onClick={onGenerate} variant="subtle" size="sm">✦ {genLabel}</Btn>
-        <Btn onClick={onOpenDbModal} variant="subtle" size="sm">⊕ Uit database</Btn>
+        {onGenerate&&<Btn onClick={onGenerate} variant="subtle" size="sm">✦ {genLabel}</Btn>}
+        {onOpenDbModal&&<Btn onClick={onOpenDbModal} variant="subtle" size="sm">⊕ Uit database</Btn>}
         <Btn onClick={addEx} variant={accentBg===C.amberLight?"amber":"purple"} size="sm">+ Nieuw</Btn>
       </div>
       {exercises.length===0?(
@@ -344,7 +395,7 @@ function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,ge
 }
 
 // ─── DAY CARD ─────────────────────────────────────────────────────────────────
-function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
+function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRoutine}) {
   const [open,setOpen] = useState(false);
   const skills = SKILL_WEEKS[Math.min(weekNum,8)];
   const skillKey = DAY_SKILL[dayKey];
@@ -352,8 +403,15 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
   const isRest = dayKey==="zo";
 
   const upd = (patch) => onChange({...day,...patch});
-  const updMEx = (exs) => upd({morningExercises:exs});
-  const updEx  = (exs) => upd({exercises:exs});
+
+  const updMEx = (exs) => {
+    if(day.morningRoutineSync && day.morningRoutineId) onUpdateRoutine(day.morningRoutineId, exs);
+    upd({morningExercises:exs});
+  };
+  const updEx = (exs) => {
+    if(day.routineSync && day.routineId) onUpdateRoutine(day.routineId, exs);
+    upd({exercises:exs});
+  };
 
   const genMobility = () => {
     const dbExs = db?(db.mobiliteit||[]).flatMap(p=>p.exercises.map(e=>({name:e.name,sets:""}))):[];
@@ -364,10 +422,42 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
     if(t.length) updEx(t.map(([n,s])=>({name:n,sets:s})));
   };
 
-  // Summary chips shown when collapsed
+  const loadRoutineIntoMorning = (routine) => {
+    upd({
+      morningRoutineId: routine.id,
+      morningExercises: [...(routine.exercises||[])],
+      morningRoutineSync: false,
+      showMorningRoutineModal: false,
+    });
+  };
+  const loadRoutineIntoEvening = (routine) => {
+    upd({
+      routineId: routine.id,
+      exercises: [...(routine.exercises||[])],
+      routineSync: false,
+      showRoutineModal: false,
+    });
+  };
+
+  const selectedMorningRoutine = (routines||[]).find(r=>r.id===day.morningRoutineId)||null;
+  const selectedEveningRoutine = (routines||[]).find(r=>r.id===day.routineId)||null;
+
+  // Collapsed header chips
   const hasMorning = day.morningType!=null;
   const hasEvening = day.type!=null;
   const hasNote    = day.note&&day.note.trim();
+
+  const morningChipLabel = day.morningType==="exercises"
+    ? `${day.morningExercises.length} oef.`
+    : day.morningType==="routine"
+    ? (selectedMorningRoutine?.name||"Routine")
+    : (day.morningRoutineName||"Video");
+
+  const eveningChipLabel = day.type==="gym"
+    ? `${day.exercises.length} oef.`
+    : day.type==="routine"
+    ? (selectedEveningRoutine?.name||"Routine")
+    : (day.routineName||"Video");
 
   const skillDot = skill?(
     <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:skill.color,marginRight:4}} />
@@ -375,13 +465,12 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
 
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
-      {/* ── Collapsed header — always visible, full tap target */}
+      {/* ── Collapsed header */}
       <button onClick={()=>setOpen(p=>!p)} style={{
         display:"flex",alignItems:"center",gap:12,padding:"13px 14px",
         width:"100%",background:"none",border:"none",cursor:"pointer",fontFamily:font,textAlign:"left",
         borderLeft:`3px solid ${skill?skill.color:C.border}`,
       }}>
-        {/* Day pill */}
         <div style={{width:40,height:40,borderRadius:10,background:skill?skill.color+"14":C.surfaceAlt,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:11,fontWeight:700,color:skill?skill.color:C.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>{DAY_SHORT[dayKey]}</span>
         </div>
@@ -390,8 +479,8 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
           <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,flexWrap:"wrap"}}>
             {skill&&<span style={{fontSize:12,color:skill.color,fontWeight:500}}>{skillDot}{skill.label}</span>}
             {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
-            {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4}}>☀️ {day.morningType==="routine"?(day.morningRoutineName||"Routine"):`${day.morningExercises.length} oef.`}</span>}
-            {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4}}>{day.type==="gym"?`🏋️ ${day.exercises.length} oef.`:`📋 ${day.routineName||"Routine"}`}</span>}
+            {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4}}>☀️ {morningChipLabel}</span>}
+            {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4}}>{day.type==="gym"?"🏋️":"📋"} {eveningChipLabel}</span>}
             {hasNote&&<span style={{fontSize:11,color:C.textMuted}}>📝</span>}
           </div>
         </div>
@@ -408,12 +497,14 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
               <span style={{fontSize:13}}>☀️</span>
               <span style={{fontSize:12,fontWeight:700,color:C.amber,textTransform:"uppercase",letterSpacing:0.5}}>Ochtend · Mobiliteit</span>
             </div>
-            {/* Segmented control */}
+            {/* Segmented control: 4 options */}
             <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-              <Seg active={day.morningType==="exercises"} color={C.amber} bg={C.amberLight} onClick={()=>upd({morningType:"exercises"})}>Oefeningen</Seg>
-              <Seg active={day.morningType==="routine"}   color={C.green} bg={C.greenLight}  onClick={()=>upd({morningType:"routine"})}>Routine</Seg>
-              <Seg active={day.morningType===null}        onClick={()=>upd({morningType:null})}>—</Seg>
+              <Seg active={day.morningType==="exercises"} color={C.amber}  bg={C.amberLight} onClick={()=>upd({morningType:"exercises"})}>Oefeningen</Seg>
+              <Seg active={day.morningType==="routine"}   color={C.green}  bg={C.greenLight}  onClick={()=>upd({morningType:"routine"})}>Routine</Seg>
+              <Seg active={day.morningType==="video"}     color={C.textSub} bg={C.surfaceHover} onClick={()=>upd({morningType:"video"})}>Video</Seg>
+              <Seg active={day.morningType===null}                                              onClick={()=>upd({morningType:null})}>—</Seg>
             </div>
+
             {day.morningType==="exercises"&&(
               <div style={{paddingBottom:14}}>
                 <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
@@ -424,7 +515,42 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
                   onOpenDbModal={()=>upd({showMorningDbModal:true})} />
               </div>
             )}
+
             {day.morningType==="routine"&&(
+              <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
+                {/* Picker */}
+                <button onClick={()=>upd({showMorningRoutineModal:true})} style={{
+                  display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                  background:selectedMorningRoutine?C.greenLight:C.surfaceAlt,
+                  border:`1px solid ${selectedMorningRoutine?C.green:C.border}`,
+                  borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
+                }}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:selectedMorningRoutine?C.green:C.borderMid,flexShrink:0}} />
+                  <span style={{fontSize:14,fontWeight:selectedMorningRoutine?600:400,color:selectedMorningRoutine?C.green:C.textMuted,flex:1}}>
+                    {selectedMorningRoutine?.name||"Kies routine…"}
+                  </span>
+                  <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
+                </button>
+
+                {selectedMorningRoutine&&(
+                  <>
+                    {/* Sync checkbox */}
+                    <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                      <input type="checkbox" checked={!!day.morningRoutineSync}
+                        onChange={e=>upd({morningRoutineSync:e.target.checked})}
+                        style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                      <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                    </label>
+                    {/* Exercise list */}
+                    <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
+                      accentColor={C.green} accentBg={C.greenLight}
+                      setsPlaceholder="60s" />
+                  </>
+                )}
+              </div>
+            )}
+
+            {day.morningType==="video"&&(
               <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
                 <input value={day.morningRoutineName} onChange={e=>upd({morningRoutineName:e.target.value})}
                   placeholder="Naam (bijv. Strength Side follow-along)" style={inp({fontSize:14})} />
@@ -432,7 +558,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
                   placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
                 {day.morningRoutineUrl&&(
                   <a href={day.morningRoutineUrl} target="_blank" rel="noopener noreferrer"
-                    style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open routine</a>
+                    style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
                 )}
               </div>
             )}
@@ -449,10 +575,12 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
                 <span style={{fontSize:12,fontWeight:700,color:C.textSub,textTransform:"uppercase",letterSpacing:0.5}}>Avond · Training</span>
               </div>
               <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-                <Seg active={day.type==="gym"}     color={C.purple} bg={C.purpleLight} onClick={()=>upd({type:"gym"})}>Gym</Seg>
-                <Seg active={day.type==="routine"} color={C.green}  bg={C.greenLight}  onClick={()=>upd({type:"routine"})}>Routine</Seg>
-                <Seg active={day.type===null}                                           onClick={()=>upd({type:null})}>—</Seg>
+                <Seg active={day.type==="gym"}     color={C.purple}  bg={C.purpleLight}    onClick={()=>upd({type:"gym"})}>Gym</Seg>
+                <Seg active={day.type==="routine"} color={C.green}   bg={C.greenLight}     onClick={()=>upd({type:"routine"})}>Routine</Seg>
+                <Seg active={day.type==="video"}   color={C.textSub} bg={C.surfaceHover}   onClick={()=>upd({type:"video"})}>Video</Seg>
+                <Seg active={day.type===null}                                               onClick={()=>upd({type:null})}>—</Seg>
               </div>
+
               {day.type==="gym"&&(
                 <div style={{paddingBottom:14}}>
                   <ExerciseBlock exercises={day.exercises} onChange={updEx}
@@ -462,7 +590,41 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
                     onOpenDbModal={()=>upd({showDbModal:true})} />
                 </div>
               )}
+
               {day.type==="routine"&&(
+                <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
+                  {/* Picker */}
+                  <button onClick={()=>upd({showRoutineModal:true})} style={{
+                    display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                    background:selectedEveningRoutine?C.greenLight:C.surfaceAlt,
+                    border:`1px solid ${selectedEveningRoutine?C.green:C.border}`,
+                    borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
+                  }}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:selectedEveningRoutine?C.green:C.borderMid,flexShrink:0}} />
+                    <span style={{fontSize:14,fontWeight:selectedEveningRoutine?600:400,color:selectedEveningRoutine?C.green:C.textMuted,flex:1}}>
+                      {selectedEveningRoutine?.name||"Kies routine…"}
+                    </span>
+                    <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
+                  </button>
+
+                  {selectedEveningRoutine&&(
+                    <>
+                      {/* Sync checkbox */}
+                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                        <input type="checkbox" checked={!!day.routineSync}
+                          onChange={e=>upd({routineSync:e.target.checked})}
+                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                      </label>
+                      {/* Exercise list */}
+                      <ExerciseBlock exercises={day.exercises} onChange={updEx}
+                        accentColor={C.green} accentBg={C.greenLight} />
+                    </>
+                  )}
+                </div>
+              )}
+
+              {day.type==="video"&&(
                 <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
                   <input value={day.routineName} onChange={e=>upd({routineName:e.target.value})}
                     placeholder="Naam (bijv. Strength Side Ground)" style={inp({fontSize:14})} />
@@ -470,7 +632,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
                     placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
                   {day.routineUrl&&(
                     <a href={day.routineUrl} target="_blank" rel="noopener noreferrer"
-                      style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open routine</a>
+                      style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
                   )}
                 </div>
               )}
@@ -507,10 +669,20 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb}) {
           onClose={()=>upd({showMorningDbModal:false})}
           onSelect={ex=>upd({morningExercises:[...day.morningExercises,{name:ex.name,sets:""}],showMorningDbModal:false})} />
       )}
+      {day.showMorningRoutineModal&&(
+        <RoutinePickerModal routines={routines||[]}
+          onClose={()=>upd({showMorningRoutineModal:false})}
+          onSelect={loadRoutineIntoMorning} />
+      )}
       {day.showDbModal&&db&&(
         <DbModal db={db}
           onClose={()=>upd({showDbModal:false})}
           onSelect={ex=>upd({exercises:[...day.exercises,{name:ex.name,sets:""}],showDbModal:false})} />
+      )}
+      {day.showRoutineModal&&(
+        <RoutinePickerModal routines={routines||[]}
+          onClose={()=>upd({showRoutineModal:false})}
+          onSelect={loadRoutineIntoEvening} />
       )}
     </div>
   );
@@ -564,13 +736,80 @@ function WeekEval({week,onSave}) {
   );
 }
 
+// ─── ROUTINES TAB ─────────────────────────────────────────────────────────────
+function RoutineCard({routine,onChangeName,onChangeExercises,onDelete}) {
+  const [open,setOpen] = useState(true);
+
+  const addEx   = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
+  const updEx   = (i,v) => { const e=[...routine.exercises]; e[i]=v; onChangeExercises(e); };
+  const delEx   = i => onChangeExercises(routine.exercises.filter((_,j)=>j!==i));
+
+  return (
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
+      <div style={{
+        display:"flex",alignItems:"center",gap:8,padding:"12px 14px",
+        background:open?C.surfaceAlt:C.surface,
+        borderBottom:open?`1px solid ${C.border}`:"none",
+      }}>
+        <button onClick={()=>setOpen(p=>!p)} style={{background:"none",border:"none",cursor:"pointer",color:C.textMuted,fontSize:14,padding:0,flexShrink:0,lineHeight:1,transition:"transform .15s",transform:open?"rotate(90deg)":"rotate(0deg)"}}>▶</button>
+        <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}} />
+        <input value={routine.name} onChange={e=>onChangeName(e.target.value)}
+          style={{fontFamily:font,fontSize:14,fontWeight:600,color:C.text,background:"transparent",border:"none",outline:"none",flex:1,minWidth:0}} />
+        <span style={{fontSize:12,color:C.textMuted,flexShrink:0}}>{routine.exercises.length} oef.</span>
+        <button onClick={onDelete} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:18,padding:"0 2px",lineHeight:1,flexShrink:0}}>×</button>
+      </div>
+      {open&&(
+        <div style={{padding:"12px 14px 14px"}}>
+          {routine.exercises.length===0&&(
+            <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 10px"}}>Nog geen oefeningen</div>
+          )}
+          {routine.exercises.map((ex,i)=>(
+            <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" />
+          ))}
+          <Btn onClick={addEx} variant="green" size="sm">+ Oefening</Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoutinesTab({routines,onChange}) {
+  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",exercises:[]}]);
+  const removeRoutine = (id) => onChange(routines.filter(r=>r.id!==id));
+  const updateRoutine = (id,patch) => onChange(routines.map(r=>r.id===id?{...r,...patch}:r));
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div>
+          <div style={{fontSize:16,fontWeight:700,color:C.text}}>Routines</div>
+          <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>Maak oefenroutines die je in dagkaarten kunt laden</div>
+        </div>
+        <Btn onClick={addRoutine} variant="primary" size="sm">+ Routine</Btn>
+      </div>
+      {routines.length===0?(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"32px 20px",textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:10}}>📋</div>
+          <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>Nog geen routines</div>
+          <div style={{fontSize:13,color:C.textMuted,marginBottom:16}}>Maak een routine aan en laad hem in elke dag met één klik.</div>
+          <Btn onClick={addRoutine} variant="primary">+ Eerste routine</Btn>
+        </div>
+      ):routines.map(r=>(
+        <RoutineCard key={r.id} routine={r}
+          onChangeName={name=>updateRoutine(r.id,{name})}
+          onChangeExercises={exs=>updateRoutine(r.id,{exercises:exs})}
+          onDelete={()=>removeRoutine(r.id)} />
+      ))}
+    </div>
+  );
+}
+
 // ─── DATABASE TAB ─────────────────────────────────────────────────────────────
 function DatabaseTab({db,onChange}) {
   const [expanded,setExpanded]     = useState({});
   const [exExpanded,setExExpanded] = useState({});
-  // drag state: {eid, fromSection, fromPartId}
   const [dragging,setDragging]     = useState(null);
-  const [dragOver,setDragOver]     = useState(null); // {section, partId, idx}
+  const [dragOver,setDragOver]     = useState(null);
 
   const toggle   = id => setExpanded(p=>({...p,[id]:!p[id]}));
   const toggleEx = id => setExExpanded(p=>({...p,[id]:!p[id]}));
@@ -582,22 +821,17 @@ function DatabaseTab({db,onChange}) {
   const removeEx   = (s,pid,eid) => onChange({...db,[s]:db[s].map(p=>p.id===pid?{...p,exercises:p.exercises.filter(e=>e.id!==eid)}:p)});
   const updateEx   = (s,pid,eid,field,val) => onChange({...db,[s]:db[s].map(p=>p.id===pid?{...p,exercises:p.exercises.map(e=>e.id===eid?{...e,[field]:val}:e)}:p)});
 
-  // Drop: move exercise from any section/part to target section/part at index
   const dropExercise = useCallback((toSection, toPartId, toIdx) => {
     if(!dragging) return;
     const {eid, fromSection, fromPartId} = dragging;
-    // find the exercise
     const fromPart = db[fromSection].find(p=>p.id===fromPartId);
     if(!fromPart) return;
     const ex = fromPart.exercises.find(e=>e.id===eid);
     if(!ex) return;
-    // build new db
     let newDb = {...db};
-    // remove from source
     newDb[fromSection] = newDb[fromSection].map(p=>
       p.id===fromPartId ? {...p, exercises:p.exercises.filter(e=>e.id!==eid)} : p
     );
-    // insert into target
     newDb[toSection] = newDb[toSection].map(p=>{
       if(p.id!==toPartId) return p;
       const exs = [...p.exercises.filter(e=>e.id!==eid)];
@@ -617,7 +851,6 @@ function DatabaseTab({db,onChange}) {
 
   return (
     <div>
-      {/* Ghost drag indicator */}
       {dragging&&(
         <div style={{
           position:"fixed",top:0,left:0,right:0,zIndex:200,pointerEvents:"none",
@@ -653,7 +886,6 @@ function DatabaseTab({db,onChange}) {
                 onDrop={e=>{e.preventDefault();dropExercise(s.key,part.id,part.exercises.length);}}
                 onDragLeave={()=>setDragOver(null)}
               >
-                {/* Part header */}
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:expanded[part.id]?C.surfaceAlt:C.surface,borderBottom:expanded[part.id]?`1px solid ${C.border}`:"none"}}>
                   <button onClick={()=>toggle(part.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.textMuted,fontSize:14,padding:0,flexShrink:0,lineHeight:1,transition:"transform .15s",transform:expanded[part.id]?"rotate(90deg)":"rotate(0deg)"}}>▶</button>
                   <div style={{width:8,height:8,borderRadius:"50%",background:s.color,flexShrink:0}} />
@@ -664,14 +896,12 @@ function DatabaseTab({db,onChange}) {
                   <button onClick={()=>removePart(s.key,part.id)} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:18,padding:"0 2px",lineHeight:1,flexShrink:0}}>×</button>
                 </div>
 
-                {/* Drop zone hint when collapsed */}
                 {!expanded[part.id]&&dragging&&(
                   <div style={{padding:"8px 14px",fontSize:12,color:C.purple,fontStyle:"italic",background:C.purpleLight,borderTop:`1px solid ${C.purpleMid}`}}>
                     ↓ Laat hier los om toe te voegen
                   </div>
                 )}
 
-                {/* Exercises */}
                 {expanded[part.id]&&(
                   <div style={{padding:"10px 14px 14px"}}>
                     {part.exercises.length===0&&(
@@ -688,7 +918,6 @@ function DatabaseTab({db,onChange}) {
                       const isHoverSlot = dragOver?.section===s.key && dragOver?.partId===part.id && dragOver?.idx===exIdx;
                       return (
                         <div key={ex.id}>
-                          {/* Drop slot above */}
                           {dragging&&!isDraggingThis&&(
                             <div
                               onDragOver={e=>{e.preventDefault();e.stopPropagation();setDragOver({section:s.key,partId:part.id,idx:exIdx});}}
@@ -703,13 +932,12 @@ function DatabaseTab({db,onChange}) {
                             onDragEnd={()=>{setDragging(null);setDragOver(null);}}
                             style={{
                               background:isDraggingThis?"transparent":C.surfaceAlt,
-                              borderRadius:10,marginBottom:isDraggingThis?0:0,overflow:"hidden",
+                              borderRadius:10,overflow:"hidden",
                               border:`1px solid ${isDraggingThis?C.border+"40":C.border}`,
                               opacity:isDraggingThis?0.3:1,transition:"opacity .15s",
                             }}
                           >
                             <div style={{display:"flex",alignItems:"center",gap:6,padding:"10px 12px",borderBottom:exExpanded[ex.id]?`1px solid ${C.border}`:"none"}}>
-                              {/* Drag handle */}
                               <span
                                 draggable
                                 onDragStart={e=>{e.dataTransfer.effectAllowed="move";setDragging({eid:ex.id,fromSection:s.key,fromPartId:part.id});}}
@@ -741,7 +969,6 @@ function DatabaseTab({db,onChange}) {
                         </div>
                       );
                     })}
-                    {/* Drop slot at end */}
                     {dragging&&part.exercises.length>0&&(()=>{
                       const isEnd = dragOver?.section===s.key && dragOver?.partId===part.id && dragOver?.idx===part.exercises.length;
                       return (
@@ -766,18 +993,21 @@ function DatabaseTab({db,onChange}) {
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [weeks,setWeeks]   = useState(null);
+  const [weeks,setWeeks]       = useState(null);
   const [activeIdx,setActiveIdx] = useState(0);
-  const [tab,setTab]       = useState("plan");
-  const [db,setDb]         = useState(null);
+  const [tab,setTab]           = useState("plan");
+  const [db,setDb]             = useState(null);
+  const [routines,setRoutines] = useState(null);
 
   useEffect(()=>{
     loadData().then(w=>{setWeeks(w);setActiveIdx(w.length-1);});
     loadDb().then(d=>setDb(d));
+    loadRoutines().then(r=>setRoutines(r));
   },[]);
 
-  const persist   = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
-  const persistDb = useCallback((d)=>{setDb(d);saveDb(d);},[]);
+  const persist         = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
+  const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
+  const persistRoutines = useCallback((r)=>{setRoutines(r);saveRoutines(r);},[]);
 
   const updateDay = (wi,dk,val) => persist(weeks.map((wk,i)=>i!==wi?wk:{...wk,days:{...wk.days,[dk]:val}}));
   const closeWeek = (wi,ratings,note) => {
@@ -787,7 +1017,15 @@ export default function App() {
     persist(w); setActiveIdx(w.length-1);
   };
 
-  if(!weeks||!db) return (
+  const updateRoutineExercises = useCallback((routineId,exercises) => {
+    setRoutines(prev=>{
+      const next=(prev||[]).map(r=>r.id===routineId?{...r,exercises}:r);
+      saveRoutines(next);
+      return next;
+    });
+  },[]);
+
+  if(!weeks||!db||routines===null) return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{color:C.textMuted,fontSize:14}}>Laden…</div>
     </div>
@@ -796,7 +1034,7 @@ export default function App() {
   const aw     = weeks[activeIdx];
   const skills = SKILL_WEEKS[Math.min(aw.weekNum,8)];
 
-  const TABS = [["plan","Plan"],["history","Geschiedenis"],["database","Database"]];
+  const TABS = [["plan","Plan"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
   return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text}}>
@@ -864,6 +1102,7 @@ export default function App() {
             {DAYS.map(d=>(
               <DayCard key={d} dayKey={d} day={aw.days[d]} weekNum={aw.weekNum}
                 onChange={v=>updateDay(activeIdx,d,v)} db={db}
+                routines={routines} onUpdateRoutine={updateRoutineExercises}
                 onSaveToDb={(section,partId,name)=>{
                   const newEx={id:mkId(),name,uitleg:"",video:""};
                   persistDb({...db,[section]:db[section].map(p=>p.id===partId?{...p,exercises:[...p.exercises,newEx]}:p)});
@@ -890,6 +1129,9 @@ export default function App() {
             )}
           </div>
         )}
+
+        {/* ROUTINES */}
+        {tab==="routines"&&<RoutinesTab routines={routines} onChange={persistRoutines} />}
 
         {/* HISTORY */}
         {tab==="history"&&(
@@ -924,8 +1166,9 @@ export default function App() {
                   <div style={{padding:"10px 14px",display:"flex",gap:5,flexWrap:"wrap"}}>
                     {DAYS.map(d=>{
                       const day=w.days[d];
-                      const col=day.type==="gym"?C.purple:day.type==="routine"?C.green:C.textMuted;
-                      const bg=day.type==="gym"?C.purpleLight:day.type==="routine"?C.greenLight:C.surfaceAlt;
+                      const hasActivity = day.type==="gym"||day.type==="routine"||day.type==="video";
+                      const col=day.type==="gym"?C.purple:hasActivity?C.green:C.textMuted;
+                      const bg=day.type==="gym"?C.purpleLight:hasActivity?C.greenLight:C.surfaceAlt;
                       return <span key={d} style={{padding:"3px 8px",borderRadius:5,fontSize:11,fontWeight:500,background:bg,color:col}}>{DAY_SHORT[d]}</span>;
                     })}
                   </div>
