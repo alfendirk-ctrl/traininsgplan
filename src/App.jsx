@@ -269,7 +269,13 @@ function ExItem({ex,onSelect}) {
 }
 
 // ─── ROUTINE PICKER MODAL ─────────────────────────────────────────────────────
-function RoutinePickerModal({routines,onSelect,onClose}) {
+function RoutinePickerModal({routines,onSelect,onClose,context}) {
+  // sort: matching type first, then "beide", then other
+  const sorted = [...routines].sort((a,b)=>{
+    const aMatch = !a.type||(a.type===context);
+    const bMatch = !b.type||(b.type===context);
+    return bMatch-aMatch;
+  });
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
       <div onClick={e=>e.stopPropagation()} style={{
@@ -287,25 +293,34 @@ function RoutinePickerModal({routines,onSelect,onClose}) {
           </div>
         </div>
         <div style={{overflowY:"auto",padding:"12px 16px",WebkitOverflowScrolling:"touch"}}>
-          {routines.length===0 ? (
+          {sorted.length===0 ? (
             <div style={{textAlign:"center",padding:"32px 0",color:C.textMuted,fontSize:14}}>
               Nog geen routines aangemaakt.<br/>
               <span style={{fontSize:12}}>Ga naar het Routines-tabblad om er een te maken.</span>
             </div>
-          ) : routines.map(r=>(
-            <button key={r.id} onClick={()=>onSelect(r)} style={{
-              display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",
-              background:"none",border:`1px solid ${C.border}`,borderRadius:10,marginBottom:6,
-              cursor:"pointer",fontFamily:font,textAlign:"left",
-            }}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}} />
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:600,color:C.text}}>{r.name||"Naamloze routine"}</div>
-                <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>{(r.exercises||[]).length} oefeningen</div>
-              </div>
-              <span style={{color:C.green,fontSize:13,fontWeight:500,flexShrink:0}}>Laden →</span>
-            </button>
-          ))}
+          ) : sorted.map(r=>{
+            const typeLabel = r.type==="ochtend"?"☀️ Ochtend":r.type==="avond"?"🌙 Avond":null;
+            const typeColor = r.type==="ochtend"?C.amber:r.type==="avond"?C.purple:null;
+            const typeBg    = r.type==="ochtend"?C.amberLight:r.type==="avond"?C.purpleLight:null;
+            const mismatch  = context&&r.type&&r.type!==context;
+            return (
+              <button key={r.id} onClick={()=>onSelect(r)} style={{
+                display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",
+                background:"none",border:`1px solid ${C.border}`,borderRadius:10,marginBottom:6,
+                cursor:"pointer",fontFamily:font,textAlign:"left",
+                opacity:mismatch?0.55:1,
+              }}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                    <span style={{fontSize:14,fontWeight:600,color:C.text}}>{r.name||"Naamloze routine"}</span>
+                    {typeLabel&&<span style={{fontSize:10,fontWeight:600,color:typeColor,background:typeBg,padding:"1px 6px",borderRadius:4,flexShrink:0}}>{typeLabel}</span>}
+                  </div>
+                  <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>{(r.exercises||[]).length} oefeningen</div>
+                </div>
+                <span style={{color:C.green,fontSize:13,fontWeight:500,flexShrink:0}}>Laden →</span>
+              </button>
+            );
+          })}
           <div style={{height:24}} />
         </div>
       </div>
@@ -670,7 +685,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
           onSelect={ex=>upd({morningExercises:[...day.morningExercises,{name:ex.name,sets:""}],showMorningDbModal:false})} />
       )}
       {day.showMorningRoutineModal&&(
-        <RoutinePickerModal routines={routines||[]}
+        <RoutinePickerModal routines={routines||[]} context="ochtend"
           onClose={()=>upd({showMorningRoutineModal:false})}
           onSelect={loadRoutineIntoMorning} />
       )}
@@ -680,7 +695,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
           onSelect={ex=>upd({exercises:[...day.exercises,{name:ex.name,sets:""}],showDbModal:false})} />
       )}
       {day.showRoutineModal&&(
-        <RoutinePickerModal routines={routines||[]}
+        <RoutinePickerModal routines={routines||[]} context="avond"
           onClose={()=>upd({showRoutineModal:false})}
           onSelect={loadRoutineIntoEvening} />
       )}
@@ -737,12 +752,15 @@ function WeekEval({week,onSave}) {
 }
 
 // ─── ROUTINES TAB ─────────────────────────────────────────────────────────────
-function RoutineCard({routine,onChangeName,onChangeExercises,onDelete}) {
-  const [open,setOpen] = useState(true);
+function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onDelete,db}) {
+  const [open,setOpen]           = useState(true);
+  const [showDbModal,setShowDbModal] = useState(false);
 
-  const addEx   = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
-  const updEx   = (i,v) => { const e=[...routine.exercises]; e[i]=v; onChangeExercises(e); };
-  const delEx   = i => onChangeExercises(routine.exercises.filter((_,j)=>j!==i));
+  const addEx = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
+  const updEx = (i,v) => { const e=[...routine.exercises]; e[i]=v; onChangeExercises(e); };
+  const delEx = i => onChangeExercises(routine.exercises.filter((_,j)=>j!==i));
+
+  const typeIcon  = routine.type==="ochtend"?"☀️":routine.type==="avond"?"🌙":"·";
 
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
@@ -752,7 +770,7 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onDelete}) {
         borderBottom:open?`1px solid ${C.border}`:"none",
       }}>
         <button onClick={()=>setOpen(p=>!p)} style={{background:"none",border:"none",cursor:"pointer",color:C.textMuted,fontSize:14,padding:0,flexShrink:0,lineHeight:1,transition:"transform .15s",transform:open?"rotate(90deg)":"rotate(0deg)"}}>▶</button>
-        <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}} />
+        <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{typeIcon}</span>
         <input value={routine.name} onChange={e=>onChangeName(e.target.value)}
           style={{fontFamily:font,fontSize:14,fontWeight:600,color:C.text,background:"transparent",border:"none",outline:"none",flex:1,minWidth:0}} />
         <span style={{fontSize:12,color:C.textMuted,flexShrink:0}}>{routine.exercises.length} oef.</span>
@@ -760,21 +778,38 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onDelete}) {
       </div>
       {open&&(
         <div style={{padding:"12px 14px 14px"}}>
+          {/* Type selector */}
+          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
+            <Seg active={routine.type==="ochtend"} color={C.amber}  bg={C.amberLight}  onClick={()=>onChangeType("ochtend")}>☀️ Ochtend</Seg>
+            <Seg active={routine.type==="avond"}   color={C.purple} bg={C.purpleLight} onClick={()=>onChangeType("avond")}>🌙 Avond</Seg>
+            <Seg active={!routine.type}                                                 onClick={()=>onChangeType(null)}>Beide</Seg>
+          </div>
+          {/* Exercises */}
           {routine.exercises.length===0&&(
-            <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 10px"}}>Nog geen oefeningen</div>
+            <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 8px"}}>Nog geen oefeningen</div>
           )}
           {routine.exercises.map((ex,i)=>(
             <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" />
           ))}
-          <Btn onClick={addEx} variant="green" size="sm">+ Oefening</Btn>
+          {/* Action buttons */}
+          <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
+            <Btn onClick={addEx} variant="green" size="sm">+ Nieuw</Btn>
+            {db&&<Btn onClick={()=>setShowDbModal(true)} variant="subtle" size="sm">⊕ Uit database</Btn>}
+          </div>
         </div>
+      )}
+      {showDbModal&&db&&(
+        <DbModal db={db}
+          filterSection={routine.type==="ochtend"?"mobiliteit":routine.type==="avond"?"gym":undefined}
+          onClose={()=>setShowDbModal(false)}
+          onSelect={ex=>{onChangeExercises([...routine.exercises,{name:ex.name,sets:""}]);setShowDbModal(false);}} />
       )}
     </div>
   );
 }
 
-function RoutinesTab({routines,onChange}) {
-  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",exercises:[]}]);
+function RoutinesTab({routines,onChange,db}) {
+  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",type:null,exercises:[]}]);
   const removeRoutine = (id) => onChange(routines.filter(r=>r.id!==id));
   const updateRoutine = (id,patch) => onChange(routines.map(r=>r.id===id?{...r,...patch}:r));
 
@@ -798,7 +833,9 @@ function RoutinesTab({routines,onChange}) {
         <RoutineCard key={r.id} routine={r}
           onChangeName={name=>updateRoutine(r.id,{name})}
           onChangeExercises={exs=>updateRoutine(r.id,{exercises:exs})}
-          onDelete={()=>removeRoutine(r.id)} />
+          onChangeType={type=>updateRoutine(r.id,{type})}
+          onDelete={()=>removeRoutine(r.id)}
+          db={db} />
       ))}
     </div>
   );
@@ -1131,7 +1168,7 @@ export default function App() {
         )}
 
         {/* ROUTINES */}
-        {tab==="routines"&&<RoutinesTab routines={routines} onChange={persistRoutines} />}
+        {tab==="routines"&&<RoutinesTab routines={routines} onChange={persistRoutines} db={db} />}
 
         {/* HISTORY */}
         {tab==="history"&&(
