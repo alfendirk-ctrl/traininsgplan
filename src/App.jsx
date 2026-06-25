@@ -3,52 +3,44 @@ import { useState, useEffect, useCallback } from "react";
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
 const SKILL_WEEKS = {
   1: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Scapula push-ups 2×10","Wall hold 3×20s","5× kick-up – gevoel zoeken"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["Band pull-ups 3×6","Passive→Active hang 3×5","1-arm hang 3×5s e/s"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Kuit stretch 60s e/s","Assisted pistol aan muur 3×5 e/s","Cossack squat 2×5 e/s"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Val-techniek: leer cartwheel-out – 5 min dagelijks oefenen","Frog stand: rocks → hold 3×10s → leg taps (doel: 20s hold)","Pike hold (grond): schouders boven oren, armen gestrekt, 3×15s"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["Scapulaire pulls 3×10 (actief omhoog duwen)","Dead hang 3×20s","Band pull-ups 3×6"] },
   },
   2: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Scapula push-ups 2×10","Wall hold 3×25s ↑","5× kick-up – 1-2s balans vasthouden"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["Band pull-ups 3×8 ↑","Active hang bovenaan 2s vasthouden","1-arm hang 3×8s e/s ↑"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Kuit stretch aan muur 90s e/s ↑","Heel elevated squat 2×8 (boek ~2cm)","Assisted pistol 3×5 e/s – hiel actief naar beneden"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Shrug push-ups 3×8 (schouder primer voor elke sessie)","Pike hold (grond): max gewicht op handen, 3×20s ↑","Pike hold (voeten op box): schouders boven oren, 3×15s"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["Band pull-ups 3×8 ↑","Passief → actief hang 3×5","Negatief 3×3 – 3s neer, gecontroleerd"] },
   },
   3: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Wall hold 3×30s ↑","5× freestanding poging – 3s balans","Piked HS push-up 3×5"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["Band pull-ups 3×9 ↑","Negative pull-up 3×3 (5s neer) ↑","1-arm hang 3×10s e/s ↑"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Heel elevated pistol 3×5 e/s ↑","Stoel-assisted pistol 3×3 e/s","Cossack squat 2×8 e/s ↑"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Chest-to-wall HS: begin dicht bij muur, bekken intrekken, 3×20s","Doel: 3×30s volledig geëngageerd aan de muur","Geen banana back – core actief, toes omhoog gestrekt"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["Band pull-ups 3×10 ↑","Negatief 3×5 – 4s neer ↑","Actief hang bovenkant: 2s vasthouden per rep"] },
   },
   4: {
-    handstand: { label:"Handstand – Deload", color:"#7C3AED", items:["Wall hold 3×30s (maintainen)","3× freestanding – kwaliteit boven kwantiteit","Geen nieuwe progressie"] },
-    pullup:    { label:"Pull-ups – Deload",  color:"#059669", items:["Band pull-ups 2×6","Active hang 2×5","Rust – herstel prioriteit"] },
-    pistol:    { label:"Pistol – Deload", color:"#DC2626", items:["Kuit stretch 90s e/s","Stoel-assisted pistol 2×5 e/s","Geen nieuwe progressie"] },
+    handstand: { label:"Handstand – Deload", color:"#7C3AED", items:["Pike hold (grond) 2×15s – onderhoud, geen progressie","Chest-to-wall 2×20s – focus op techniek","Pols & schouder stretching: butcher's block 2×30s"] },
+    pullup:    { label:"Pull-ups – Deload",  color:"#059669", items:["Band pull-ups 2×6","Dead hang 2×20s","Rust – herstel prioriteit"] },
   },
   5: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Wall hold 3×30s","Freestanding 5×5s ↑","Piked HS push-up 3×8 ↑","Handstand walk: eerste 1-2 stappen"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["3×3 zonder band + rest met band ↑","Negative pull-up 3×5 (5s neer) ↑","1-arm hang 3×12s e/s ↑"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Vrije pistol poging 3×3 e/s ↑","Counterweight pistol 3×5 e/s","Enkelmobiliteit 2min e/s"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Chest-to-wall 3×30s consolideren","Scissor positie naast muur: lean → gewicht verplaatsen, 3×10s","Kick-up oefenen: controle staat centraal, geen haast naar balans"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["3×3 zonder band + rest met band ↑","Negatief 3×5 – 5s neer ↑","Dead hang 3×30s"] },
   },
   6: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Freestanding 5×8s ↑","Handstand walk 3×3-5 stappen ↑","Tuck HS: eerste pogingen"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["3×5 zonder band ↑","Negative pull-up 3×5 (6s neer) ↑","Band pull-apart 2×15"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Vrije pistol 3×5 e/s ↑","Counterweight pistol 3×8 e/s ↑","Cossack als cooldown 2×5 e/s"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Scissor positie naast muur: hold 3×15s ↑","Kick-up naar scissor: 6-8 pogingen – kijk tussen duimen","Scissor → legs sluiten: eerste vrije HS balans-pogingen"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["3×5 zonder band ↑","Negatief 3×5 – 6s neer ↑","Band pull-apart 2×15"] },
   },
   7: {
-    handstand: { label:"Handstand", color:"#7C3AED", items:["Freestanding 5×10s ↑","Handstand walk 3×5+ stappen ↑","Tuck HS press 3×3"] },
-    pullup:    { label:"Pull-ups",  color:"#059669", items:["5×5 zonder band ↑","Negative 3×5 (8s neer) ↑","Dead hang 3×45s"] },
-    pistol:    { label:"Pistol Squat", color:"#DC2626", items:["Vrije pistol 3×8 e/s ↑","Gewogen pistol (licht) 3×3 e/s","Single-leg RDL 3×8 e/s"] },
+    handstand: { label:"Handstand", color:"#7C3AED", items:["Vrije HS: 8-10 sets – doel 3-5s balans","Kick-up → scissor → sluiten: vloeiend maken","Eerste handstand walk pogingen – elke stap telt"] },
+    pullup:    { label:"Pull-ups",  color:"#059669", items:["5×5 zonder band ↑","Negatief 3×5 – 8s neer ↑","Dead hang 3×45s"] },
   },
   8: {
-    handstand: { label:"Handstand – Test", color:"#7C3AED", items:["TEST: 3× freestanding – hoe lang?","Handstand walk: maximale afstand","Reflecteer: wat was je limiet?"] },
-    pullup:    { label:"Pull-ups – Test",  color:"#059669", items:["TEST: max reps zonder band","Doel was 10 – hoe ver ben je?","Plan volgende cyclus"] },
-    pistol:    { label:"Pistol – Test", color:"#DC2626", items:["TEST: 3×5 clean e/s?","Gewogen pistol: hoeveel kg?","Noteer voor volgende cyclus"] },
+    handstand: { label:"Handstand – Test", color:"#7C3AED", items:["TEST: 3× beste poging – noteer hoeveel seconden","Handstand walk: maximale afstand in één poging","Reflecteer: wat was de limiterende factor?"] },
+    pullup:    { label:"Pull-ups – Test",  color:"#059669", items:["TEST: max reps zonder band – doel is 10","Noteer je score voor de volgende cyclus","Reflecteer: wat voelde zwaar?"] },
   },
 };
 
 const DAYS = ["ma","di","wo","do","vr","za","zo"];
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
-const DAY_SKILL  = { ma:"handstand", di:"pullup", wo:"pistol", do:"handstand", vr:"pullup", za:"handstand", zo:null };
-const SKILL_KEYS = ["handstand","pullup","pistol"];
+const DAY_SKILL  = { ma:"handstand", di:"pullup", wo:"handstand", do:"pullup", vr:"handstand", za:"pullup", zo:null };
+const SKILL_KEYS = ["handstand","pullup"];
 const RATINGS    = ["Te makkelijk","Goed","Zwaar","Niet gelukt"];
 const RATING_COLORS = ["#059669","#7C3AED","#D97706","#DC2626"];
 const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Test week"];
@@ -815,7 +807,7 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 0"}}>
             <div>
               <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Trainingsplan</h1>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · Pistol · 8 weken</div>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · 8 weken</div>
             </div>
             <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
           </div>
@@ -863,12 +855,9 @@ export default function App() {
                 <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5}}>{PHASE_LABELS[aw.weekNum-1]}</div>
                 <div style={{fontSize:19,fontWeight:700,color:C.text}}>Week {aw.weekNum}</div>
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
                 <Tag color="#7C3AED" bg="#EDE9FD">🤸 3×</Tag>
-                <div style={{display:"flex",gap:4}}>
-                  <Tag color="#059669" bg="#D1FAE5">💪 2×</Tag>
-                  <Tag color="#DC2626" bg="#FEE2E2">🦵 2×</Tag>
-                </div>
+                <Tag color="#059669" bg="#D1FAE5">💪 3×</Tag>
               </div>
             </div>
 
