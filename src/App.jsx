@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from './supabase.js';
 
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
 const SKILL_WEEKS = {
@@ -64,9 +65,57 @@ const MOBILITY_TEMPLATES = [
 ];
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY   = "training_v5";
-const DB_KEY        = "training_db_v1";
-const ROUTINES_KEY  = "training_routines_v1";
+const STORAGE_KEY    = "training_v5";
+const DB_KEY         = "training_db_v1";
+const ROUTINES_KEY   = "training_routines_v1";
+const SYNC_KEY_LOCAL = "training_sync_key";
+
+function getSyncKey(){
+  let k = localStorage.getItem(SYNC_KEY_LOCAL);
+  if(!k){ k = crypto.randomUUID(); localStorage.setItem(SYNC_KEY_LOCAL,k); }
+  return k;
+}
+
+function pushToSupabase(patch){
+  if(!supabase) return;
+  supabase.from('trainingsplan').upsert(
+    {sync_key:getSyncKey(),...patch,updated_at:new Date().toISOString()},
+    {onConflict:'sync_key'}
+  ).then(()=>{});
+}
+
+// On first load: pull from Supabase → localStorage (or push if no remote row yet)
+async function initSync(){
+  if(!supabase) return;
+  const key = getSyncKey();
+  const {data,error} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
+  if(error) return;
+  if(data){
+    if(data.weeks)       localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks));
+    if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
+    if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
+  } else {
+    // No remote row yet → upload whatever is in localStorage
+    const w=localStorage.getItem(STORAGE_KEY);
+    const d=localStorage.getItem(DB_KEY);
+    const r=localStorage.getItem(ROUTINES_KEY);
+    supabase.from('trainingsplan').upsert({
+      sync_key:key,
+      weeks:      w?JSON.parse(w):[],
+      exercise_db:d?JSON.parse(d):DEFAULT_DB,
+      routines:   r?JSON.parse(r):[],
+      updated_at: new Date().toISOString(),
+    },{onConflict:'sync_key'}).then(()=>{});
+  }
+}
+
+// Switch to a different sync key; returns the loaded data or null if not found
+async function loadRemoteKey(newKey){
+  if(!supabase) return null;
+  const {data,error} = await supabase.from('trainingsplan').select('*').eq('sync_key',newKey).maybeSingle();
+  if(error||!data) return null;
+  return data;
+}
 
 const mkDay = () => ({
   morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"",
@@ -107,33 +156,28 @@ const DEFAULT_DB = {
   ],
 };
 
-async function loadData(){
-  try{
-    const r=localStorage.getItem(STORAGE_KEY);
-    if(!r) return [mkWeek(1)];
-    const data=JSON.parse(r);
-    return data.map(week=>({
-      ...week,
-      days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
-        ...day,
-        showMorningDbModal:false, showDbModal:false,
-        showMorningRoutineModal:false, showRoutineModal:false,
-        // migrate old "routine" type (URL-based) to "video"
-        morningType: day.morningType==="routine" ? "video" : (day.morningType||null),
-        type: day.type==="routine" ? "video" : (day.type||null),
-        morningRoutineId: day.morningRoutineId||null,
-        morningRoutineSync: day.morningRoutineSync||false,
-        routineId: day.routineId||null,
-        routineSync: day.routineSync||false,
-      }]))
-    }));
-  }catch{ return [mkWeek(1)]; }
+function migrateWeeks(data){
+  return data.map(week=>({
+    ...week,
+    days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
+      ...day,
+      showMorningDbModal:false, showDbModal:false,
+      showMorningRoutineModal:false, showRoutineModal:false,
+      morningType: day.morningType==="routine"?"video":(day.morningType||null),
+      type: day.type==="routine"?"video":(day.type||null),
+      morningRoutineId: day.morningRoutineId||null,
+      morningRoutineSync: day.morningRoutineSync||false,
+      routineId: day.routineId||null,
+      routineSync: day.routineSync||false,
+    }]))
+  }));
 }
-async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} }
+async function loadData(){ try{ const r=localStorage.getItem(STORAGE_KEY); return r?migrateWeeks(JSON.parse(r)):[mkWeek(1)]; }catch{ return [mkWeek(1)]; } }
+async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} pushToSupabase({weeks:d}); }
 async function loadDb(){ try{ const r=localStorage.getItem(DB_KEY); return r?JSON.parse(r):DEFAULT_DB; }catch{ return DEFAULT_DB; } }
-async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }catch{} }
+async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }catch{} pushToSupabase({exercise_db:d}); }
 async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); return r?JSON.parse(r):[]; }catch{ return []; } }
-async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} }
+async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} pushToSupabase({routines:d}); }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -322,6 +366,96 @@ function RoutinePickerModal({routines,onSelect,onClose,context}) {
             );
           })}
           <div style={{height:24}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SYNC MODAL ───────────────────────────────────────────────────────────────
+function SyncModal({syncKey,onSwitch,onClose}) {
+  const [input,setInput]     = useState("");
+  const [phase,setPhase]     = useState("idle"); // idle | confirm | loading | error | success
+  const [copied,setCopied]   = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(syncKey).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+  };
+
+  const handleSwitch = async () => {
+    const trimmed = input.trim();
+    if(!trimmed||trimmed===syncKey) return;
+    if(phase==="confirm"){
+      setPhase("loading");
+      const data = await loadRemoteKey(trimmed);
+      if(!data){ setPhase("error"); return; }
+      if(data.weeks)       localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks));
+      if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
+      if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
+      localStorage.setItem(SYNC_KEY_LOCAL, trimmed);
+      onSwitch(); // reloads app state
+    } else {
+      setPhase("confirm");
+    }
+  };
+
+  const supEnabled = !!supabase;
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:2000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.surface,width:"100%",maxWidth:560,borderRadius:"16px 16px 0 0",
+        padding:"20px 20px 36px",boxShadow:C.shadowLg,
+      }}>
+        {/* Handle */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <div style={{fontSize:16,fontWeight:700,color:C.text}}>Sync code</div>
+          <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+
+        {!supEnabled&&(
+          <div style={{background:C.amberLight,border:`1px solid ${C.amber}`,borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:C.amber}}>
+            Supabase is niet geconfigureerd — sync werkt niet. Zie de setup-instructies.
+          </div>
+        )}
+
+        {/* Current key */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Jouw sync code</div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <div style={{
+              flex:1,fontFamily:mono,fontSize:13,color:C.text,
+              background:C.surfaceAlt,border:`1px solid ${C.border}`,
+              borderRadius:8,padding:"10px 12px",wordBreak:"break-all",letterSpacing:0.5,
+            }}>{syncKey}</div>
+            <button onClick={copy} style={{
+              background:copied?C.greenLight:C.purpleLight,color:copied?C.green:C.purple,
+              border:"none",borderRadius:8,padding:"10px 14px",fontFamily:font,
+              fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0,transition:"all .2s",
+            }}>{copied?"✓ Gekopieerd":"Kopieer"}</button>
+          </div>
+          <div style={{fontSize:12,color:C.textMuted,marginTop:6}}>Voer deze code in op een ander apparaat om je data te synchroniseren.</div>
+        </div>
+
+        {/* Switch key */}
+        <div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Sync met ander apparaat</div>
+          <input value={input} onChange={e=>{setInput(e.target.value);setPhase("idle");}}
+            placeholder="Plak hier de sync code van een ander apparaat"
+            style={inp({fontSize:13,marginBottom:8})} />
+          {phase==="error"&&<div style={{fontSize:12,color:C.red,marginBottom:8}}>Code niet gevonden. Controleer of je de juiste code hebt ingevoerd.</div>}
+          {phase==="confirm"&&<div style={{fontSize:12,color:C.amber,marginBottom:8}}>Je huidige data wordt vervangen door de data van de andere code. Klik nogmaals om te bevestigen.</div>}
+          <Btn
+            onClick={handleSwitch}
+            variant={phase==="confirm"?"amber":input.trim()&&input.trim()!==syncKey?"primary":"subtle"}
+            size="sm"
+          >
+            {phase==="loading"?"Laden…":phase==="confirm"?"Bevestigen – data overschrijven":"Sync code instellen"}
+          </Btn>
         </div>
       </div>
     </div>
@@ -1030,17 +1164,25 @@ function DatabaseTab({db,onChange}) {
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [weeks,setWeeks]       = useState(null);
+  const [weeks,setWeeks]         = useState(null);
   const [activeIdx,setActiveIdx] = useState(0);
-  const [tab,setTab]           = useState("plan");
-  const [db,setDb]             = useState(null);
-  const [routines,setRoutines] = useState(null);
+  const [tab,setTab]             = useState("plan");
+  const [db,setDb]               = useState(null);
+  const [routines,setRoutines]   = useState(null);
+  const [syncKey,setSyncKey]     = useState("");
+  const [showSync,setShowSync]   = useState(false);
 
-  useEffect(()=>{
-    loadData().then(w=>{setWeeks(w);setActiveIdx(w.length-1);});
-    loadDb().then(d=>setDb(d));
-    loadRoutines().then(r=>setRoutines(r));
+  const loadAll = useCallback(async()=>{
+    await initSync();
+    const [w,d,r] = await Promise.all([loadData(),loadDb(),loadRoutines()]);
+    setWeeks(w);
+    setActiveIdx(w.length-1);
+    setDb(d);
+    setRoutines(r);
+    setSyncKey(getSyncKey());
   },[]);
+
+  useEffect(()=>{ loadAll(); },[loadAll]);
 
   const persist         = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
@@ -1084,7 +1226,17 @@ export default function App() {
               <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Trainingsplan</h1>
               <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · 8 weken</div>
             </div>
-            <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button onClick={()=>setShowSync(true)} title="Sync code" style={{
+                background:"none",border:`1px solid ${C.border}`,borderRadius:8,
+                padding:"6px 10px",cursor:"pointer",fontSize:13,color:C.textMuted,fontFamily:font,
+                display:"flex",alignItems:"center",gap:4,
+              }}>
+                <span style={{fontSize:14}}>⇄</span>
+                <span style={{fontSize:11,display:supabase?"inline":"none",color:C.green}}>●</span>
+              </button>
+              <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
+            </div>
           </div>
           {/* Tab bar */}
           <div style={{display:"flex",marginTop:6}}>
@@ -1219,6 +1371,12 @@ export default function App() {
         {tab==="database"&&db&&<DatabaseTab db={db} onChange={persistDb} />}
 
       </div>
+
+      {/* Sync modal */}
+      {showSync&&syncKey&&(
+        <SyncModal syncKey={syncKey} onClose={()=>setShowSync(false)}
+          onSwitch={()=>{ setShowSync(false); loadAll(); }} />
+      )}
     </div>
   );
 }
