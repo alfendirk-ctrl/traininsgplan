@@ -487,13 +487,22 @@ function SyncModal({syncKey,onSwitch,onClose}) {
           </div>
         )}
 
+        {/* Steps */}
+        <div style={{background:C.surfaceAlt,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:C.textMuted,lineHeight:1.6}}>
+          <strong style={{color:C.text,display:"block",marginBottom:4}}>Zo koppel je twee apparaten:</strong>
+          <div>1. Kopieer jouw sync code hieronder (op dit apparaat).</div>
+          <div>2. Open de app op het andere apparaat, tik op ⇄ en plak de code.</div>
+          <div>3. Bevestig — daarna deelt alles dezelfde data.</div>
+          <div style={{marginTop:6,borderTop:`1px solid ${C.border}`,paddingTop:6}}>Wijzigingen zijn meteen zichtbaar zodra je terugkeert naar de tab.</div>
+        </div>
+
         {/* Current key */}
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Jouw sync code</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Jouw sync code (kopieer dit)</div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <div style={{
               flex:1,fontFamily:mono,fontSize:13,color:C.text,
-              background:C.surfaceAlt,border:`1px solid ${C.border}`,
+              background:C.surface,border:`1px solid ${C.border}`,
               borderRadius:8,padding:"10px 12px",wordBreak:"break-all",letterSpacing:0.5,
             }}>{syncKey}</div>
             <button onClick={copy} style={{
@@ -502,23 +511,22 @@ function SyncModal({syncKey,onSwitch,onClose}) {
               fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0,transition:"all .2s",
             }}>{copied?"✓ Gekopieerd":"Kopieer"}</button>
           </div>
-          <div style={{fontSize:12,color:C.textMuted,marginTop:6}}>Voer deze code in op een ander apparaat om je data te synchroniseren.</div>
         </div>
 
         {/* Switch key */}
         <div>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Sync met ander apparaat</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Code van ander apparaat invoeren</div>
           <input value={input} onChange={e=>{setInput(e.target.value);setPhase("idle");}}
-            placeholder="Plak hier de sync code van een ander apparaat"
+            placeholder="Plak hier de sync code van het andere apparaat"
             style={inp({fontSize:13,marginBottom:8})} />
           {phase==="error"&&<div style={{fontSize:12,color:C.red,marginBottom:8}}>Code niet gevonden. Controleer of je de juiste code hebt ingevoerd.</div>}
-          {phase==="confirm"&&<div style={{fontSize:12,color:C.amber,marginBottom:8}}>Je huidige data wordt vervangen door de data van de andere code. Klik nogmaals om te bevestigen.</div>}
+          {phase==="confirm"&&<div style={{fontSize:12,color:C.amber,marginBottom:8}}>Je huidige data op dit apparaat wordt vervangen. Klik nogmaals om te bevestigen.</div>}
           <Btn
             onClick={handleSwitch}
             variant={phase==="confirm"?"amber":input.trim()&&input.trim()!==syncKey?"primary":"subtle"}
             size="sm"
           >
-            {phase==="loading"?"Laden…":phase==="confirm"?"Bevestigen – data overschrijven":"Sync code instellen"}
+            {phase==="loading"?"Laden…":phase==="confirm"?"Bevestigen – data overnemen":"Code instellen en data laden"}
           </Btn>
         </div>
       </div>
@@ -1247,6 +1255,23 @@ export default function App() {
   },[]);
 
   useEffect(()=>{ loadAll(); },[loadAll]);
+
+  // Re-pull from Supabase when the user switches back to this tab
+  const pullSync = useCallback(async()=>{
+    if(!supabase) return;
+    const key = getSyncKey();
+    const {data} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
+    if(!data) return;
+    if(data.weeks)       { localStorage.setItem(STORAGE_KEY,   JSON.stringify(data.weeks));       setWeeks(migrateWeeks(data.weeks)); }
+    if(data.exercise_db) { localStorage.setItem(DB_KEY,        JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
+    if(data.routines)    { localStorage.setItem(ROUTINES_KEY,  JSON.stringify(data.routines));    setRoutines(data.routines); }
+  },[]);
+
+  useEffect(()=>{
+    const onVisible = ()=>{ if(document.visibilityState==='visible') pullSync(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return ()=> document.removeEventListener('visibilitychange', onVisible);
+  },[pullSync]);
 
   const persist         = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
