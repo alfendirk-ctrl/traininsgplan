@@ -5,98 +5,290 @@ import { supabase } from './supabase.js';
 const SKILL_WEEKS = {
   1: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Val-techniek (cartwheel-out): als je omvalt, draai je zijdelings weg en zet één hand opzij op de grond. Dit is je veilige uitgang bij elke handstand — oefen dit 5 minuten per dag tot het automatisch voelt.",
-      "Frog stand: handen op de grond, knieën op de buitenkant van je ellebogen, leun voorover tot je gewicht op je handen rust. Progressie: voor-achter wiebelen → 10 seconden vasthouden → één been optillen. Doel: 20 seconden stabiel.",
-      "Pike hold (op de grond): handen en voeten op de grond, heupen zo hoog mogelijk (omgekeerde V). Duw je schouders actief naar je oren met gestrekte armen. 3 sets van 15 seconden.",
+      { name:"Val-techniek (cartwheel-out)", steps:[
+        "Voel je wankelen → zet direct één hand opzij op de grond.",
+        "Draai je lichaam zijwaarts mee — alsof je een halve rad doet.",
+        "Zet één voet neer en stap er rustig uit.",
+      ], goal:"Oefen dit los van de handstand, 5 min/dag, tot het automatisch gaat" },
+      { name:"Frog stand", steps:[
+        "Hurk neer, handen schouderbreedte op de grond.",
+        "Zet je knieën op de buitenkant van je ellebogen.",
+        "Leun langzaam voorover tot je voeten loskomen van de grond.",
+      ], goal:"3 sets van 10 seconden, opbouwen naar 20 seconden" },
+      { name:"Pike hold (grond)", steps:[
+        "Handen en voeten op de grond, heupen zo hoog mogelijk (omgekeerde V).",
+        "Duw je schouders actief naar je oren — armen volledig gestrekt.",
+        "Houd vast, daarna kort rusten.",
+      ], goal:"3 sets van 15 seconden" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Scapulaire pulls: hang aan de stang met rechte armen. Trek je schouderbladen omlaag zonder je armen te buigen — dit is de startbeweging van elke pull-up. 3 sets van 10 herhalingen.",
-      "Dead hang: hang stil aan de stang, schouders actief omlaag houden (niet laten optrekken naar je oren). Bouwt gripkracht en schouderstabiliteit. 3 sets van 20 seconden.",
-      "Band pull-ups: hang een weerstandsband over de stang en steun met je knie erin. Voer een volledige pull-up uit — kin boven de stang, daarna volledig naar beneden. 3 sets van 6 herhalingen.",
+      { name:"Scapulaire pulls", steps:[
+        "Hang aan de stang met rechte armen.",
+        "Trek je schouderbladen omlaag — armen blijven gestrekt, je gaat iets omhoog.",
+        "Laat ze weer ontspannen omhoog zakken.",
+      ], goal:"3 sets van 10 herhalingen" },
+      { name:"Dead hang", steps:[
+        "Hang stil aan de stang, armen gestrekt.",
+        "Trek je schouders actief omlaag — niet laten optrekken naar je oren.",
+        "Houd deze spanning vast gedurende de hele hang.",
+      ], goal:"3 sets van 20 seconden" },
+      { name:"Band pull-ups", steps:[
+        "Hang een weerstandsband over de stang, steun met je knie erin.",
+        "Trek jezelf omhoog tot je kin boven de stang is.",
+        "Laat jezelf volledig terug naar beneden zakken — armen helemaal gestrekt.",
+      ], goal:"3 sets van 6 herhalingen" },
     ]},
   },
   2: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Shrug push-ups (warming-up voor elke sessie): ga in pikestand (heupen hoog), duw je schouders omhoog naar je oren en laat ze dan zakken. Activeert de juiste spieren voor de handstand. 3 sets van 8.",
-      "Pike hold (grond): zoveel mogelijk gewicht op de handen brengen door ver voorover te leunen — schouders loodrecht boven de polsen. 3 sets van 20 seconden (5 seconden langer dan week 1).",
-      "Pike hold met voeten op een box of stoel: hogere hoek zorgt voor meer gewicht op je handen. Schouders naar oren duwen, armen volledig gestrekt. 3 sets van 15 seconden.",
+      { name:"Shrug push-ups (warming-up)", steps:[
+        "Ga in pikestand: heupen hoog, gewicht op handen en voeten.",
+        "Duw je schouders omhoog naar je oren — alleen schouders bewegen.",
+        "Laat ze gecontroleerd zakken. Herhaal.",
+      ], goal:"3 sets van 8, elke sessie als opwarming" },
+      { name:"Pike hold met meer gewicht op handen", steps:[
+        "Ga in pikestand op de grond.",
+        "Leun ver voorover zodat schouders loodrecht boven je polsen staan.",
+        "Duw schouders naar oren en houd vast.",
+      ], goal:"3 sets van 20 seconden" },
+      { name:"Pike hold met voeten op een box", steps:[
+        "Zet je voeten op een stoel of box, handen op de grond.",
+        "Duw je heupen zo hoog mogelijk omhoog.",
+        "Schouders naar oren, armen volledig gestrekt.",
+      ], goal:"3 sets van 15 seconden" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Band pull-ups: gebruik iets minder bandondersteuning dan vorige week (dunnere band of minder ver erdoorheen). 3 sets van 8 herhalingen.",
-      "Passief → actief hang: hang ontspannen (passief), activeer dan bewust je schouderbladen omlaag (actief) — wisselen en het verschil leren voelen. 3 sets van 5 herhalingen.",
-      "Negatieve pull-up: spring of stap naar de bovenpositie (kin boven stang), laat je daarna gecontroleerd neer in 3 seconden. Bouwt spierkracht op voor de echte pull-up. 3 sets van 3 herhalingen.",
+      { name:"Band pull-ups (minder steun)", steps:[
+        "Gebruik een dunnere band, of steek je knie minder ver erdoorheen.",
+        "Trek omhoog tot kin boven stang.",
+        "Volledig naar beneden zakken — armen gestrekt.",
+      ], goal:"3 sets van 8 herhalingen" },
+      { name:"Passief → actief hang", steps:[
+        "Hang ontspannen: schouders optrekken naar oren (passief).",
+        "Trek nu bewust je schouderbladen omlaag (actief) — voel hoe je iets omhoog gaat.",
+        "Wissel dit 5 keer af en voel het verschil.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Negatieve pull-up", steps:[
+        "Spring of stap naar bovenpositie: kin boven de stang.",
+        "Laat jezelf in 3 seconden gecontroleerd neer — zo langzaam mogelijk.",
+        "Laat los, herhaal.",
+      ], goal:"3 sets van 3 herhalingen" },
     ]},
   },
   3: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Chest-to-wall handstand: handen heel dicht bij de muur plaatsen en omhoog lopen tot je borst de muur raakt. Bekken iets intrekken (geen holle rug), core en billen aanspannen. 3 sets van 20 seconden.",
-      "Doel voor deze week: bouw op naar 3 sets van 30 seconden. Probeer zo min mogelijk op de muur te leunen — gebruik hem alleen als vangnet.",
-      "Kwaliteitscheck: geen holle rug, core volledig aanspannen, voeten gestrekt omhoog alsof je naar het plafond wil reiken.",
+      { name:"Chest-to-wall handstand", steps:[
+        "Zet handen ±10 cm van de muur. Loop je voeten langs de muur omhoog.",
+        "Borst raakt de muur — dit is de startpositie.",
+        "Span core en billen aan, bekken iets intrekken. Geen holle rug.",
+      ], goal:"3 sets van 20 sec, opbouwen naar 30 sec" },
+      { name:"Schouders actief houden", steps:[
+        "Sta in chest-to-wall positie.",
+        "Duw je schouders naar je oren alsof je de grond van je af wil duwen.",
+        "Houd dit actief door de hele hold — niet laten inzakken.",
+      ], goal:"Schouders actief houden is het verschil tussen hangen en kracht" },
+      { name:"Lichaamslijning controleren", steps:[
+        "Voeten gestrekt omhoog, tenen naar het plafond.",
+        "Billen aanspannen zodat je heupen niet wegzakken.",
+        "Kijk naar de grond tussen je duimen — niet naar handen of opzij.",
+      ], goal:"Rechte lijn van hielen tot schouders" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Band pull-ups: opnieuw iets minder bandondersteuning. 3 sets van 10 herhalingen.",
-      "Negatieve pull-up: 4 seconden gecontroleerd neer. 3 sets van 5 herhalingen.",
-      "Actief hang bovenpositie: trek je op tot boven de stang en houd die positie 2 seconden vast bij elke herhaling. 3 sets van 5 herhalingen.",
+      { name:"Band pull-ups (nog minder steun)", steps:[
+        "Gebruik een nog dunnere band dan vorige week.",
+        "Trek omhoog tot kin boven stang.",
+        "Volledig naar beneden zakken.",
+      ], goal:"3 sets van 10 herhalingen" },
+      { name:"Negatieve pull-up (4 sec)", steps:[
+        "Spring naar bovenpositie: kin boven de stang.",
+        "Laat jezelf in 4 seconden gecontroleerd neer.",
+        "Laat los, herhaal.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Vasthouden boven", steps:[
+        "Trek jezelf op tot kin boven de stang.",
+        "Houd de bovenpositie 2 seconden vast.",
+        "Laat daarna gecontroleerd zakken.",
+      ], goal:"3 sets van 5 herhalingen" },
     ]},
   },
   4: {
-    handstand: { label:"Handstand – Deload week", color:"#7C3AED", items:[
-      "Deloadweek: half volume, lichte belasting — je lichaam herstelt en verwerkt de trainingen van de vorige weken. Pike hold (grond) 2 sets van 15 seconden.",
-      "Chest-to-wall handstand 2 sets van 20 seconden — focus op techniek, geen nieuwe doelen stellen.",
-      "Mobiliteit: polsstretches en schoudermobilisatie (wrist circles, butcher's block stretch). 2 sets van 30 seconden per oefening.",
+    handstand: { label:"Handstand – Deload", color:"#7C3AED", items:[
+      { name:"Deloadweek — half volume", steps:[
+        "Pike hold (grond): 2 sets van 15 seconden.",
+        "Chest-to-wall: 2 sets van 20 seconden — focus op techniek, geen nieuwe doelen.",
+        "Stop als iets pijnlijk voelt. Herstel staat centraal.",
+      ], goal:"Lichaam laten verwerken en opbouwen" },
+      { name:"Polsmobiliteit", steps:[
+        "Wrist circles: handen plat op de grond, maak cirkels met je gewicht. 10 per richting.",
+        "Vingers naar achteren: handen plat, vingers richting lichaam, licht druk zetten. 30 sec.",
+        "Knokkel-steun: steun op gebalde vuisten, zet gewicht erop. 30 sec.",
+      ], goal:"2 sets per oefening" },
+      { name:"Schoudermobiliteit", steps:[
+        "Arm circles: grote cirkels met gestrekte armen, 10 per richting.",
+        "Doorway stretch: ellebogen op deurpost schouderhoogte, leun er doorheen. 30 sec.",
+        "Overhead reach: armen omhoog gestrekt, leun zijwaarts. 20 sec per kant.",
+      ], goal:"2 sets per oefening" },
     ]},
-    pullup: { label:"Pull-ups – Deload week", color:"#059669", items:[
-      "Band pull-ups met lichte ondersteuning: 2 sets van 6 herhalingen op gevoel.",
-      "Dead hang 2 sets van 20 seconden — herstel en mobiliteit.",
-      "Prioriteit deze week: rust. Je lichaam wordt sterker in de rustperiodes, niet tijdens de training zelf.",
+    pullup: { label:"Pull-ups – Deload", color:"#059669", items:[
+      { name:"Lichte band pull-ups", steps:[
+        "Gebruik de lichtste band die je hebt.",
+        "Trek omhoog tot kin boven stang, laat gecontroleerd zakken.",
+        "Geen maximale inspanning — herstel staat centraal.",
+      ], goal:"2 sets van 6 herhalingen op gevoel" },
+      { name:"Dead hang (herstel)", steps:[
+        "Hang stil aan de stang, armen gestrekt.",
+        "Schouders actief omlaag — niet laten optrekken.",
+        "Adem rustig in en uit.",
+      ], goal:"2 sets van 20 seconden" },
+      { name:"Prioriteit: rust", steps:[
+        "Je lichaam wordt sterker in de rustperiodes, niet tijdens de training.",
+        "Slaap 7-9 uur per nacht deze week.",
+        "Pijn ≠ vooruitgang — sla een oefening over als iets pijnlijk aanvoelt.",
+      ], goal:"Fris en uitgerust beginnen aan week 5" },
     ]},
   },
   5: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Chest-to-wall handstand consolideren: 3 sets van 30 seconden met perfecte techniek. Dit is nu de basis — zorg dat het betrouwbaar en stabiel voelt.",
-      "Scissor-positie naast de muur: sta naast de muur, handen op de grond, breng één been omhoog terwijl het andere op de grond blijft (zoals een schaar). Voel het gewicht op je handen. 3 sets van 10 seconden per kant.",
-      "Kick-up oefenen: vanuit pikestand, duw één been omhoog en volg met het andere. Het doel is controle over de beweging — nog niet balanceren. 5 tot 8 pogingen per sessie.",
+      { name:"Chest-to-wall consolideren", steps:[
+        "Chest-to-wall positie: borst aan de muur, core en billen aanspannen.",
+        "Duw schouders naar oren, armen volledig gestrekt.",
+        "Probeer zo min mogelijk op de muur te steunen — gebruik hem als vangnet.",
+      ], goal:"3 sets van 30 seconden" },
+      { name:"Scissor-positie naast de muur", steps:[
+        "Sta naast de muur, handen op de grond.",
+        "Breng één been omhoog terwijl het andere op de grond blijft — als een schaar.",
+        "Muur achter je als steun. Voel het gewicht op je handen.",
+      ], goal:"3 sets van 10 seconden per kant" },
+      { name:"Kick-up oefenen", steps:[
+        "Ga in pikestand, één been iets voor het andere.",
+        "Gooi het achterste been omhoog en volg met het andere.",
+        "Doel: controle over de beweging leren — nog niet balanceren.",
+      ], goal:"5-8 pogingen per sessie" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Pull-ups zonder band: 3 sets van 3 herhalingen — vul de rest van elke set aan met bandondersteuning.",
-      "Negatieve pull-up: 5 seconden gecontroleerd neer. 3 sets van 5 herhalingen.",
-      "Dead hang 3 sets van 30 seconden.",
+      { name:"Pull-ups zonder band", steps:[
+        "Hang aan de stang zonder hulp.",
+        "Trek omhoog tot kin boven stang.",
+        "Vul de rest van de set aan met band als je er niet genoeg haalt.",
+      ], goal:"3 sets van 3 herhalingen zonder band" },
+      { name:"Negatieve pull-up (5 sec)", steps:[
+        "Spring naar bovenpositie: kin boven stang.",
+        "Laat jezelf in 5 seconden gecontroleerd neer.",
+        "Houd spanning in je rug — niet slap neerhangen.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Dead hang", steps:[
+        "Hang stil, schouders actief omlaag.",
+        "Adem rustig in en uit.",
+        "Houd zo lang mogelijk vast.",
+      ], goal:"3 sets van 30 seconden" },
     ]},
   },
   6: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Scissor-positie naast de muur: vergroot de hold naar 3 sets van 15 seconden. Let op hoe je bijstuurt met je vingertoppen — dit is hetzelfde als bij vrije handstand.",
-      "Kick-up naar scissor: gooi één been omhoog zodat je in de scissor-positie landt naast de muur. 6 tot 8 pogingen — kijk tussen je duimen (niet naar de grond).",
-      "Scissor → benen sluiten: vanuit de scissor, breng langzaam je benen bij elkaar. Dit zijn je eerste echte vrije handstand-pogingen. 3 tot 5 pogingen.",
+      { name:"Scissor-positie naast de muur", steps:[
+        "Handen op de grond naast de muur, één been omhoog (scissor-stand).",
+        "Let op hoe je bijstuurt met je vingertoppen — precies zoals bij vrije handstand.",
+        "Probeer de muur steeds minder te gebruiken.",
+      ], goal:"3 sets van 15 seconden" },
+      { name:"Kick-up naar scissor", steps:[
+        "Gooi één been omhoog zodat je in de scissor-positie landt.",
+        "Kijk tussen je duimen — niet naar de grond of opzij.",
+        "Land terug, herhaal.",
+      ], goal:"6-8 pogingen per sessie" },
+      { name:"Scissor → benen sluiten", steps:[
+        "Kom in de scissor-positie naast de muur.",
+        "Breng langzaam je benen bij elkaar tot één lijn.",
+        "Houd zo lang als je kunt — dit zijn je eerste vrije handstand-pogingen.",
+      ], goal:"3-5 pogingen per sessie" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Pull-ups zonder band: 3 sets van 5 herhalingen.",
-      "Negatieve pull-up: 6 seconden gecontroleerd neer. 3 sets van 5 herhalingen.",
-      "Band pull-aparts: houd een band voor je vast op schouderbreedte, trek hem uiteen tot je armen gestrekt zijn naar de zijkanten. Traint de achterkant van de schouder. 2 sets van 15.",
+      { name:"Pull-ups zonder band", steps:[
+        "Hang zonder hulp.",
+        "Trek omhoog — schouderbladen eerst omlaag, dan omhoog trekken.",
+        "Kin boven stang, dan volledig naar beneden.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Negatieve pull-up (6 sec)", steps:[
+        "Spring naar bovenpositie.",
+        "Laat jezelf in 6 seconden gecontroleerd neer.",
+        "Houd spanning in je rug — niet slap neerhangen.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Band pull-aparts", steps:[
+        "Houd een band voor je op schouderbreedte, armen gestrekt.",
+        "Trek de band uiteen tot armen gestrekt naar de zijkanten zijn.",
+        "Houd 1 sec vast, dan terug.",
+      ], goal:"2 sets van 15 herhalingen" },
     ]},
   },
   7: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      "Vrije handstand: 8 tot 10 pogingen per sessie. Doel: 3 tot 5 seconden balanceren. Volledig vrij van de muur — stuur bij met je vingertoppen, niet met je pols.",
-      "Kick-up → scissor → benen sluiten: maak de hele overgang vloeiend als één beweging. Niet drie aparte stappen, maar één doorlopende actie.",
-      "Handstand walk (probeer het): zet kleine stapjes op je handen vanuit de handstand. Elke stap is winst — ook 1 stap telt.",
+      { name:"Vrije handstand", steps:[
+        "Kick-up → scissor → benen sluiten als één vloeiende beweging.",
+        "Stuur bij met je vingertoppen — niet met je pols of onderarmen.",
+        "Val je om: gebruik de val-techniek (cartwheel-out) uit week 1.",
+      ], goal:"8-10 pogingen per sessie, doel: 3-5 seconden balanceren" },
+      { name:"Kick-up als één beweging", steps:[
+        "Niet drie losse stappen, maar één doorlopende actie.",
+        "Been omhoog → ander been volgt → benen sluiten — in één flow.",
+        "Oefen dit herhaalbaar en consistent te maken.",
+      ], goal:"Vloeiende, betrouwbare kick-up" },
+      { name:"Handstand walk (probeer het)", steps:[
+        "Kom in handstand (vrij of vlakbij muur).",
+        "Verschuif je gewicht van links naar rechts en zet kleine stapjes op je handen.",
+        "Elke stap is winst — ook 1 stap telt.",
+      ], goal:"Probeer 1-3 stappen te zetten" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
-      "Pull-ups zonder band: 5 sets van 5 herhalingen.",
-      "Negatieve pull-up: 8 seconden gecontroleerd neer. 3 sets van 5 herhalingen.",
-      "Dead hang 3 sets van 45 seconden.",
+      { name:"Pull-ups zonder band", steps:[
+        "Hang zonder hulp.",
+        "Trek omhoog — kin boven stang.",
+        "Volledig naar beneden, herhaal.",
+      ], goal:"5 sets van 5 herhalingen" },
+      { name:"Negatieve pull-up (8 sec)", steps:[
+        "Spring naar bovenpositie.",
+        "Laat jezelf in 8 seconden gecontroleerd neer — zo langzaam als je kunt.",
+        "Houd spanning in je rug.",
+      ], goal:"3 sets van 5 herhalingen" },
+      { name:"Dead hang", steps:[
+        "Hang stil, schouders actief omlaag.",
+        "Probeer zo lang mogelijk vast te houden.",
+        "Adem rustig.",
+      ], goal:"3 sets van 45 seconden" },
     ]},
   },
   8: {
     handstand: { label:"Handstand – Testweek", color:"#7C3AED", items:[
-      "TEST: doe 3 beste pogingen vrije handstand — noteer hoeveel seconden je elke keer balanceert. Rust 2 tot 3 minuten tussen de pogingen.",
-      "Handstand walk: 1 maximale poging — noteer het aantal stappen of de afstand in meters.",
-      "Reflecteer: wat was de limiterende factor? Kracht, balans, angst of techniek? Dit bepaalt de focus van je volgende 8 weken.",
+      { name:"TEST: vrije handstand", steps:[
+        "Warm op: 5 min val-techniek + shrug push-ups.",
+        "Doe je beste kick-up en houd zo lang mogelijk vast.",
+        "Noteer de seconden. Rust 2-3 minuten. Herhaal 3 keer.",
+      ], goal:"Noteer je beste poging" },
+      { name:"TEST: handstand walk", steps:[
+        "Kom in handstand.",
+        "Loop zo ver als je kunt op je handen.",
+        "Noteer het aantal stappen of de afstand in meters.",
+      ], goal:"1 maximale poging" },
+      { name:"Reflecteer op de cyclus", steps:[
+        "Wat was de limiterende factor: kracht, balans, angst of techniek?",
+        "Wanneer viel je het vaakst om — en hoe?",
+        "Dit bepaalt de focus van je volgende 8 weken.",
+      ], goal:"Inzicht voor cyclus 2" },
     ]},
     pullup: { label:"Pull-ups – Testweek", color:"#059669", items:[
-      "TEST: doe maximaal aantal pull-ups zonder band in één set. Rust volledig uit voor de test — doe hem als allereerste oefening. Doel: 10 herhalingen.",
-      "Noteer je score voor de volgende cyclus.",
-      "Reflecteer: wat voelde zwaar — de start, de bovenkant of de uithouding? Dit helpt bij het plannen van cyclus 2.",
+      { name:"TEST: maximaal aantal pull-ups", steps:[
+        "Doe de test als allereerste oefening — volledig uitgerust.",
+        "Hang zonder band, trek omhoog tot kin boven stang, herhaal tot je niet meer kunt.",
+        "Noteer het aantal.",
+      ], goal:"Doel: 10 herhalingen — noteer je score" },
+      { name:"Reflecteer op de pull-up progressie", steps:[
+        "Wat voelde zwaar — de start, de bovenkant of de uithouding?",
+        "Hoe verliep het vergeleken met week 1?",
+        "Dit helpt bij het plannen van cyclus 2.",
+      ], goal:"Inzicht voor cyclus 2" },
+      { name:"Score vastleggen", steps:[
+        "Noteer je eindresultaten voor beide skills.",
+        "Vergelijk met waar je week 1 begon.",
+        "Plan je volgende 8 weken op basis van de zwakste schakel.",
+      ], goal:"Startpunt cyclus 2 bepalen" },
     ]},
   },
 };
@@ -871,8 +1063,19 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
                 <span style={{fontSize:12,fontWeight:700,color:skill.color,textTransform:"uppercase",letterSpacing:0.5}}>Skill · {skill.label}</span>
               </div>
               {skill.items.map((item,i)=>(
-                <div key={i} style={{display:"flex",gap:8,fontSize:13,color:C.textSub,alignItems:"flex-start",marginBottom:4}}>
-                  <span style={{color:skill.color,fontWeight:700,flexShrink:0}}>·</span><span>{item}</span>
+                <div key={i} style={{marginBottom: i<skill.items.length-1?12:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:skill.color,marginBottom:5}}>{item.name}</div>
+                  {item.steps.map((step,j)=>(
+                    <div key={j} style={{display:"flex",gap:7,fontSize:12,color:C.textSub,alignItems:"flex-start",marginBottom:3}}>
+                      <span style={{color:skill.color,fontWeight:700,flexShrink:0,minWidth:16,opacity:0.7}}>{j+1}.</span>
+                      <span style={{lineHeight:1.5}}>{step}</span>
+                    </div>
+                  ))}
+                  {item.goal&&(
+                    <div style={{fontSize:11,color:C.textMuted,marginTop:5,paddingLeft:23,fontStyle:"italic"}}>
+                      → {item.goal}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
