@@ -1283,7 +1283,13 @@ export default function App() {
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
   const persistRoutines = useCallback((r)=>{setRoutines(r);saveRoutines(r);},[]);
 
-  const updateDay = (wi,dk,val) => persist(weeks.map((wk,i)=>i!==wi?wk:{...wk,days:{...wk.days,[dk]:val}}));
+  const updateDay = useCallback((wi,dk,val) => {
+    setWeeks(prev => {
+      const next = prev.map((wk,i)=>i!==wi?wk:{...wk,days:{...wk.days,[dk]:val}});
+      saveData(next);
+      return next;
+    });
+  }, []);
   const closeWeek = (wi,ratings,note) => {
     const w=weeks.map((wk,i)=>i!==wi?wk:{...wk,ratings,note,done:true});
     const next=w[w.length-1].weekNum+1;
