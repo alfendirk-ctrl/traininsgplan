@@ -140,7 +140,10 @@ function getSyncKey(){
   return k;
 }
 
+let lastLocalSaveMs = 0;
+
 function pushToSupabase(patch){
+  lastLocalSaveMs = Date.now();
   if(!supabase) return;
   supabase.from('trainingsplan').upsert(
     {sync_key:getSyncKey(),...patch,updated_at:new Date().toISOString()},
@@ -1256,9 +1259,12 @@ export default function App() {
 
   useEffect(()=>{ loadAll(); },[loadAll]);
 
-  // Re-pull from Supabase when the user switches back to this tab
+  // Re-pull from Supabase when the user switches back to this tab.
+  // Skip if we just wrote data locally — the Supabase write may still be in flight
+  // and we'd risk overwriting our own unsaved changes with stale remote data.
   const pullSync = useCallback(async()=>{
     if(!supabase) return;
+    if(Date.now() - lastLocalSaveMs < 5000) return;
     const key = getSyncKey();
     const {data} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
     if(!data) return;
