@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from './supabase.js';
 
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
@@ -422,8 +422,8 @@ function migrateWeeks(data){
       ...day,
       showMorningDbModal:false, showDbModal:false,
       showMorningRoutineModal:false, showRoutineModal:false,
-      morningType: day.morningType==="routine"?"video":(day.morningType||null),
-      type: day.type==="routine"?"video":(day.type||null),
+      morningType: day.morningType||null,
+      type: day.type||null,
       morningRoutineId: day.morningRoutineId||null,
       morningRoutineSync: day.morningRoutineSync||false,
       routineId: day.routineId||null,
@@ -788,8 +788,8 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
 // ─── SETS PARSER ──────────────────────────────────────────────────────────────
 function parseSets(str) {
   if (!str || !str.trim()) return { numSets:1, value:null, isTime:false, perSide:false };
-  const perSide = /e\/s|per\s*(kant|zijde)/i.test(str);
-  const s = str.replace(/e\/s|per\s*(kant|zijde)/gi,'').trim();
+  const perSide = /e\/s|\s+e\s*$|per\s*(kant|zijde)/i.test(str);
+  const s = str.replace(/e\/s|\s+e\s*$|per\s*(kant|zijde)/gi,'').trim();
   let m;
   if ((m=s.match(/^(\d+)\s*[×xX]\s*(\d+)\s*s$/i))) return {numSets:+m[1],value:+m[2],isTime:true, perSide};
   if ((m=s.match(/^(\d+)\s*s$/i)))                  return {numSets:1,    value:+m[1],isTime:true, perSide};
@@ -1120,8 +1120,9 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
   ):null;
 
   return (
+    <>
+    {workoutExs&&<WorkoutMode exercises={workoutExs} onClose={()=>setWorkoutExs(null)} />}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
-      {workoutExs&&<WorkoutMode exercises={workoutExs} onClose={()=>setWorkoutExs(null)} />}
       {/* ── Collapsed header */}
       <button onClick={()=>setOpen(p=>!p)} style={{
         display:"flex",alignItems:"center",gap:12,padding:"13px 14px",
@@ -1357,6 +1358,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
           onSelect={loadRoutineIntoEvening} />
       )}
     </div>
+    </>
   );
 }
 
