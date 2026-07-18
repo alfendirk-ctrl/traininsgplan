@@ -270,8 +270,8 @@ const SKILL_WEEKS = {
       { name:"Reflecteer op de cyclus", steps:[
         "Wat was de limiterende factor: kracht, balans, angst of techniek?",
         "Wanneer viel je het vaakst om — en hoe?",
-        "Dit bepaalt de focus van je volgende 8 weken.",
-      ], goal:"Inzicht voor cyclus 2" },
+        "Dit bepaalt de focus van week 9-10.",
+      ], goal:"Inzicht voor de eindsprint" },
     ]},
     pullup: { label:"Pull-ups – Testweek", color:"#059669", items:[
       { name:"TEST: maximaal aantal pull-ups", steps:[
@@ -282,25 +282,134 @@ const SKILL_WEEKS = {
       { name:"Reflecteer op de pull-up progressie", steps:[
         "Wat voelde zwaar — de start, de bovenkant of de uithouding?",
         "Hoe verliep het vergeleken met week 1?",
-        "Dit helpt bij het plannen van cyclus 2.",
-      ], goal:"Inzicht voor cyclus 2" },
+        "Dit helpt bij de eindsprint.",
+      ], goal:"Inzicht voor week 9-10" },
       { name:"Score vastleggen", steps:[
-        "Noteer je eindresultaten voor beide skills.",
-        "Vergelijk met waar je week 1 begon.",
-        "Plan je volgende 8 weken op basis van de zwakste schakel.",
+        "Noteer je tussentijdse resultaten.",
+        "Vergelijk met week 1.",
+        "Pas je schema voor week 9 aan op basis van je scores.",
+      ], goal:"Startpunt eindsprint" },
+    ]},
+  },
+  9: {
+    handstand: { label:"Handstand – Verdieping", color:"#7C3AED", items:[
+      { name:"Vrije handstand (volume)", steps:[
+        "12-15 pogingen per sessie — zoveel als je nodig hebt.",
+        "Doel: 5-8 seconden balanceren op je beste poging.",
+        "Film jezelf: check je lichaamslijning van opzij.",
+      ], goal:"15 pogingen, beste poging ≥ 5 seconden" },
+      { name:"Handstand walk opbouwen", steps:[
+        "Kick-up → balanceer → zet bewust stappen op je handen.",
+        "Verplaats gewicht via je vingertoppen, niet je schouders.",
+        "3-5 looppogingen per sessie.",
+      ], goal:"5-8 stappen per poging" },
+      { name:"Gewichtsoverdracht één arm (voorbereiding)", steps:[
+        "Sta in chest-to-wall handstand.",
+        "Verschuif langzaam je gewicht naar één arm — andere hand blijft licht op de muur.",
+        "Voel hoe het gewicht verdeelt.",
+      ], goal:"3 sets van 10 seconden per kant" },
+    ]},
+    pullup: { label:"Pull-ups – Verdieping", color:"#059669", items:[
+      { name:"Pull-ups (volume)", steps:[
+        "Trek omhoog tot kin boven stang — schone herhaling, geen kip.",
+        "Volledig naar beneden — armen helemaal gestrekt.",
+        "Rust 90 seconden tussen sets.",
+      ], goal:"4 sets van 8 herhalingen" },
+      { name:"Archer pull-up (introductie)", steps:[
+        "Hang met brede grip.",
+        "Trek één arm recht, buig de andere — kin beweegt naar de gebogen kant.",
+        "Wissel kant per set.",
+      ], goal:"3 sets van 5 herhalingen per kant" },
+      { name:"L-sit hang", steps:[
+        "Hang aan de stang, hef benen gestrekt tot horizontaal.",
+        "Core stijf — geen zwaaien.",
+        "Zo lang mogelijk vasthouden.",
+      ], goal:"3 sets van 10 seconden" },
+    ]},
+  },
+  10: {
+    handstand: { label:"Handstand – Finale", color:"#7C3AED", items:[
+      { name:"TEST: vrije handstand 10 seconden", steps:[
+        "Warm op: 5 min val-techniek + 5 shrug push-ups.",
+        "Doe je beste kick-up en balanceer zo lang als je kunt.",
+        "Noteer je beste poging in het notitiefeld.",
+      ], goal:"Doel: 10 seconden aaneengesloten" },
+      { name:"TEST: handstand walk 3 meter", steps:[
+        "Kick-up → loop zo ver als je kunt op je handen.",
+        "Noteer het aantal stappen of de afstand.",
+        "3 pogingen met 2 minuten rust.",
+      ], goal:"Doel: 3 meter of 12+ stappen" },
+      { name:"Terugblik en cyclus 2", steps:[
+        "Vergelijk je score van week 1 met nu.",
+        "Wat was de limiterende factor: balans, kracht of techniek?",
+        "Noteer je plan voor de volgende cyclus in het notitiefeld.",
       ], goal:"Startpunt cyclus 2 bepalen" },
+    ]},
+    pullup: { label:"Pull-ups – Finale", color:"#059669", items:[
+      { name:"TEST: maximaal pull-ups", steps:[
+        "Eerste oefening — volledig uitgerust.",
+        "Hang zonder band, trek tot kin boven stang, herhaal tot je niet meer kunt.",
+        "Noteer het exacte aantal.",
+      ], goal:"Doel: 15 herhalingen" },
+      { name:"Terugblik pull-up progressie", steps:[
+        "Vergelijk: week 1 vs. nu — hoeveel meer?",
+        "Zwaarste moment: start, bovenkant of uithouding?",
+        "Dit bepaalt de focus van cyclus 2.",
+      ], goal:"Inzicht voor cyclus 2" },
+      { name:"Scores vastleggen", steps:[
+        "Noteer beide testresultaten in het notitiefeld.",
+        "Vergelijk met je startsituatie 10 weken geleden.",
+        "Plan je volgende 10 weken op basis hiervan.",
+      ], goal:"Cyclus 2 startpunt gereed" },
     ]},
   },
 };
 
-const DAYS = ["ma","di","wo","do","vr","za","zo"];
+const DAYS       = ["ma","di","wo","do","vr","za","zo"];
+const SKILL_DAYS = ["ma","di","wo","do","vr","za"]; // no sunday for skill planning
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
-const DAY_SKILL  = { ma:"handstand", di:"pullup", wo:"handstand", do:"pullup", vr:"handstand", za:"pullup", zo:null };
 const SKILL_KEYS = ["handstand","pullup"];
 const RATINGS    = ["Te makkelijk","Goed","Zwaar","Niet gelukt"];
 const RATING_COLORS = ["#059669","#7C3AED","#D97706","#DC2626"];
-const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Test week"];
+const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Testweek","Verdieping","Finale"];
+
+const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"], pullup:["di","do","za"] };
+const DEFAULT_SKILL_LEVEL    = { handstand:1, pullup:1 };
+
+function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
+  const schedule = {}, level = {}, reasons = {};
+  const usedSoFar = new Set();
+  for (const skill of SKILL_KEYS) {
+    const curDays  = (prevSchedule||DEFAULT_SKILL_SCHEDULE)[skill] || [];
+    const curLevel = (prevLevel||DEFAULT_SKILL_LEVEL)[skill] || 1;
+    const ri       = RATINGS.indexOf(ratings[skill]);
+    let newLevel = curLevel, newDays = [...curDays], reason = "";
+    if (ri === 0) { // Te makkelijk → niveau omhoog + dag erbij
+      newLevel = Math.min(10, curLevel + 1);
+      if (newDays.length < 5) {
+        const extra = SKILL_DAYS.find(d => !newDays.includes(d) && !usedSoFar.has(d));
+        if (extra) newDays = [...newDays, extra].sort((a,b)=>SKILL_DAYS.indexOf(a)-SKILL_DAYS.indexOf(b));
+      }
+      reason = "te makkelijk → niveau omhoog, +1 dag";
+    } else if (ri === 1) { // Goed → niveau omhoog
+      newLevel = Math.min(10, curLevel + 1);
+      reason = "goed → niveau omhoog";
+    } else if (ri === 2) { // Zwaar → zelfde niveau bewaren
+      reason = "zwaar → zelfde niveau bewaren";
+    } else if (ri === 3) { // Niet gelukt → zelfde niveau, 1 dag minder
+      if (newDays.length > 1) newDays = newDays.slice(0,-1);
+      reason = "niet gelukt → herhalen, 1 dag minder";
+    } else {
+      reason = "geen beoordeling, zelfde schema";
+    }
+    newDays.forEach(d => usedSoFar.add(d));
+    schedule[skill] = newDays;
+    level[skill]    = newLevel;
+    reasons[skill]  = reason;
+  }
+  return { schedule, level, reasons };
+}
 
 const FB_TEMPLATES = {
   ma:[["Squat","3×5"],["Bench Press","3×5"],["Barbell Row","3×8"],["Romanian Deadlift","3×8"]],
@@ -382,7 +491,10 @@ const mkDay = () => ({
   type:null, exercises:[], routineName:"", routineUrl:"",
   routineId:null, routineSync:false, note:"", showDbModal:false, showRoutineModal:false,
 });
-const mkWeek = (n) => ({ weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])), ratings:{}, note:"", done:false });
+const mkWeek = (n, skillSchedule=DEFAULT_SKILL_SCHEDULE, skillLevel=DEFAULT_SKILL_LEVEL, adaptReason=null) => ({
+  weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])),
+  ratings:{}, note:"", done:false, skillSchedule, skillLevel, adaptReason,
+});
 
 const DEFAULT_DB = {
   mobiliteit:[
@@ -418,6 +530,9 @@ const DEFAULT_DB = {
 function migrateWeeks(data){
   return data.map(week=>({
     ...week,
+    skillSchedule: week.skillSchedule || DEFAULT_SKILL_SCHEDULE,
+    skillLevel:    week.skillLevel    || DEFAULT_SKILL_LEVEL,
+    adaptReason:   week.adaptReason   || null,
     days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
       ...day,
       showMorningDbModal:false, showDbModal:false,
@@ -1049,14 +1164,73 @@ function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,ge
   );
 }
 
+// ─── SKILL PLANNER ────────────────────────────────────────────────────────────
+const SKILL_INFO = {
+  handstand:{label:"Handstand",color:"#7C3AED",bg:"#EDE9FD",emoji:"🤸"},
+  pullup:{label:"Pull-ups",color:"#059669",bg:"#D1FAE5",emoji:"💪"},
+};
+
+function SkillPlanner({week, onChangeSchedule}) {
+  const schedule = week.skillSchedule || DEFAULT_SKILL_SCHEDULE;
+  const level    = week.skillLevel    || DEFAULT_SKILL_LEVEL;
+
+  const toggleDay = (skill, day) => {
+    const cur  = schedule[skill] || [];
+    const next = cur.includes(day)
+      ? cur.filter(d=>d!==day)
+      : [...cur,day].sort((a,b)=>SKILL_DAYS.indexOf(a)-SKILL_DAYS.indexOf(b));
+    onChangeSchedule({...schedule,[skill]:next});
+  };
+
+  return (
+    <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:C.shadow}}>
+      {week.adaptReason&&!week.done&&(
+        <div style={{fontSize:11,color:C.textMuted,marginBottom:10,padding:"6px 10px",background:C.surfaceAlt,borderRadius:7,lineHeight:1.6}}>
+          ↻ Aangepast op basis van vorige week: {week.adaptReason}
+        </div>
+      )}
+      <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Skill planning</div>
+      {SKILL_KEYS.map((skill,si)=>{
+        const info = SKILL_INFO[skill];
+        const days = schedule[skill]||[];
+        const lvl  = level[skill]||1;
+        return (
+          <div key={skill} style={{display:"flex",alignItems:"center",gap:8,marginBottom:si<SKILL_KEYS.length-1?8:0}}>
+            <div style={{minWidth:88,fontSize:12,fontWeight:600,color:info.color}}>
+              {info.emoji} {info.label}
+            </div>
+            <div style={{display:"flex",gap:3,flex:1}}>
+              {SKILL_DAYS.map(d=>{
+                const active=days.includes(d);
+                return (
+                  <button key={d} onClick={()=>!week.done&&toggleDay(skill,d)} style={{
+                    width:34,height:28,borderRadius:6,border:"none",fontFamily:font,
+                    background:active?info.color:C.surfaceAlt,
+                    color:active?"#fff":C.textMuted,
+                    fontSize:11,fontWeight:600,cursor:week.done?"default":"pointer",
+                    transition:"all .15s",opacity:week.done?0.6:1,
+                  }}>{DAY_SHORT[d]}</button>
+                );
+              })}
+            </div>
+            <div style={{fontSize:11,color:C.textMuted,whiteSpace:"nowrap"}}>niv.{lvl} · {days.length}×</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── DAY CARD ─────────────────────────────────────────────────────────────────
-function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRoutine}) {
+function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSaveToDb,routines,onUpdateRoutine}) {
   const [open,setOpen] = useState(false);
   const [workoutExs,setWorkoutExs] = useState(null);
-  const skills = SKILL_WEEKS[Math.min(weekNum,8)];
-  const skillKey = DAY_SKILL[dayKey];
-  const skill = skillKey?skills[skillKey]:null;
-  const isRest = dayKey==="zo";
+  const sched    = skillSchedule || DEFAULT_SKILL_SCHEDULE;
+  const lvls     = skillLevel    || DEFAULT_SKILL_LEVEL;
+  const skillKey = SKILL_KEYS.find(sk=>(sched[sk]||[]).includes(dayKey)) || null;
+  const skillLvl = skillKey ? Math.min(lvls[skillKey]||weekNum, 10) : weekNum;
+  const skill    = skillKey ? (SKILL_WEEKS[skillLvl]?.[skillKey]||null) : null;
+  const isRest   = dayKey==="zo";
 
   const upd = (patch) => onChange({...day,...patch});
 
@@ -1366,7 +1540,7 @@ function DayCard({dayKey,day,weekNum,onChange,db,onSaveToDb,routines,onUpdateRou
 function WeekEval({week,onSave}) {
   const [ratings,setRatings] = useState(week.ratings||{});
   const [note,setNote] = useState(week.note||"");
-  const skills = SKILL_WEEKS[Math.min(week.weekNum,8)];
+  const skills = SKILL_WEEKS[Math.min(week.weekNum,10)];
 
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",marginTop:16,boxShadow:C.shadowLg}}>
@@ -1733,6 +1907,14 @@ export default function App() {
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
   const persistRoutines = useCallback((r)=>{setRoutines(r);saveRoutines(r);},[]);
 
+  const updateSkillSchedule = useCallback((wi,schedule) => {
+    setWeeks(prev=>{
+      const next=prev.map((wk,i)=>i!==wi?wk:{...wk,skillSchedule:schedule});
+      saveData(next);
+      return next;
+    });
+  },[]);
+
   const updateDay = useCallback((wi,dk,val) => {
     setWeeks(prev => {
       const next = prev.map((wk,i)=>i!==wi?wk:{...wk,days:{...wk.days,[dk]:val}});
@@ -1741,9 +1923,14 @@ export default function App() {
     });
   }, []);
   const closeWeek = (wi,ratings,note) => {
-    const w=weeks.map((wk,i)=>i!==wi?wk:{...wk,ratings,note,done:true});
-    const next=w[w.length-1].weekNum+1;
-    if(next<=8&&!w.find(wk=>wk.weekNum===next)) w.push(mkWeek(next));
+    const closed = {...weeks[wi],ratings,note,done:true};
+    const w = weeks.map((wk,i)=>i!==wi?wk:closed);
+    const next = closed.weekNum+1;
+    if(next<=10&&!w.find(wk=>wk.weekNum===next)){
+      const {schedule,level,reasons} = adaptSkillSchedule(closed.skillSchedule,closed.skillLevel,ratings);
+      const reason = SKILL_KEYS.map(k=>`${SKILL_WEEKS[1][k].label}: ${reasons[k]}`).join(' · ');
+      w.push(mkWeek(next,schedule,level,reason));
+    }
     persist(w); setActiveIdx(w.length-1);
   };
 
@@ -1762,7 +1949,7 @@ export default function App() {
   );
 
   const aw     = weeks[activeIdx];
-  const skills = SKILL_WEEKS[Math.min(aw.weekNum,8)];
+  const skills = SKILL_WEEKS[Math.min(aw.weekNum,10)];
 
   const TABS = [["plan","Plan"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
@@ -1775,7 +1962,7 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 0"}}>
             <div>
               <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Trainingsplan</h1>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · 8 weken</div>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · 10 weken</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button onClick={()=>setShowSync(true)} title="Sync code" style={{
@@ -1828,19 +2015,30 @@ export default function App() {
             </div>
 
             {/* Week title bar */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,marginBottom:12,boxShadow:C.shadow}}>
-              <div>
-                <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5}}>{PHASE_LABELS[aw.weekNum-1]}</div>
-                <div style={{fontSize:19,fontWeight:700,color:C.text}}>Week {aw.weekNum}</div>
-              </div>
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                <Tag color="#7C3AED" bg="#EDE9FD">🤸 3×</Tag>
-                <Tag color="#059669" bg="#D1FAE5">💪 3×</Tag>
-              </div>
-            </div>
+            {(()=>{
+              const awSched = aw.skillSchedule||DEFAULT_SKILL_SCHEDULE;
+              return (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,marginBottom:12,boxShadow:C.shadow}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5}}>{PHASE_LABELS[Math.min(aw.weekNum-1,9)]}</div>
+                    <div style={{fontSize:19,fontWeight:700,color:C.text}}>Week {aw.weekNum}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    {SKILL_KEYS.map(sk=>(
+                      <Tag key={sk} color={SKILL_INFO[sk].color} bg={SKILL_INFO[sk].bg}>
+                        {SKILL_INFO[sk].emoji} {(awSched[sk]||[]).length}×
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <SkillPlanner week={aw} onChangeSchedule={s=>updateSkillSchedule(activeIdx,s)} />
 
             {DAYS.map(d=>(
               <DayCard key={d} dayKey={d} day={aw.days[d]} weekNum={aw.weekNum}
+                skillSchedule={aw.skillSchedule} skillLevel={aw.skillLevel}
                 onChange={v=>updateDay(activeIdx,d,v)} db={db}
                 routines={routines} onUpdateRoutine={updateRoutineExercises}
                 onSaveToDb={(section,partId,name)=>{
@@ -1849,7 +2047,7 @@ export default function App() {
                 }} />
             ))}
 
-            {!aw.done&&aw.weekNum<=8&&<WeekEval week={aw} onSave={(r,n)=>closeWeek(activeIdx,r,n)} />}
+            {!aw.done&&aw.weekNum<=10&&<WeekEval week={aw} onSave={(r,n)=>closeWeek(activeIdx,r,n)} />}
 
             {aw.done&&(
               <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginTop:14}}>
