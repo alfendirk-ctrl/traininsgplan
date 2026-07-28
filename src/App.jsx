@@ -5,21 +5,21 @@ import { supabase } from './supabase.js';
 const SKILL_WEEKS = {
   1: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Val-techniek (cartwheel-out)", steps:[
-        "Voel je wankelen → zet direct één hand opzij op de grond.",
-        "Draai je lichaam zijwaarts mee — alsof je een halve rad doet.",
-        "Zet één voet neer en stap er rustig uit.",
-      ], goal:"Oefen dit los van de handstand, 5 min/dag, tot het automatisch gaat" },
-      { name:"Frog stand", steps:[
-        "Hurk neer, handen schouderbreedte op de grond.",
-        "Zet je knieën op de buitenkant van je ellebogen.",
-        "Leun langzaam voorover tot je voeten loskomen van de grond.",
-      ], goal:"3 sets van 10 seconden, opbouwen naar 20 seconden" },
-      { name:"Pike hold (grond)", steps:[
-        "Handen en voeten op de grond, heupen zo hoog mogelijk (omgekeerde V).",
-        "Duw je schouders actief naar je oren — armen volledig gestrekt.",
-        "Houd vast, daarna kort rusten.",
-      ], goal:"3 sets van 15 seconden" },
+      { name:"Polsopwarming", steps:[
+        "Wrist circles: handen plat op grond, maak cirkels met je gewicht. 10 per richting.",
+        "Vingers naar achteren: handen plat, vingers richting lichaam, licht druk. 30 sec.",
+        "Doe dit vóór elke handstand-sessie — beschermt je polsen op lange termijn.",
+      ], goal:"Vaste routine vóór elke sessie" },
+      { name:"Chest-to-wall handstand", steps:[
+        "Zet handen ±10 cm van de muur. Loop je voeten langs de muur omhoog.",
+        "Borst raakt de muur — dit is de startpositie.",
+        "Duw de grond actief van je af: schouders naar oren, armen volledig gestrekt. Core en billen aanspannen.",
+      ], goal:"3 sets van 30 seconden — dit is de belangrijkste oefening van het hele programma" },
+      { name:"Actieve schouderhouding", steps:[
+        "Sta in chest-to-wall positie.",
+        "Duw je schouders actief naar je oren — alsof je de grond van je af wil duwen.",
+        "Houd dit actief door de hele hold. Inzakken = terug naar begin.",
+      ], goal:"Schouders actief = kracht. Inzakken = hangen. Voel het verschil." },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Scapulaire pulls", steps:[
@@ -41,21 +41,21 @@ const SKILL_WEEKS = {
   },
   2: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Shrug push-ups (warming-up)", steps:[
-        "Ga in pikestand: heupen hoog, gewicht op handen en voeten.",
-        "Duw je schouders omhoog naar je oren — alleen schouders bewegen.",
-        "Laat ze gecontroleerd zakken. Herhaal.",
-      ], goal:"3 sets van 8, elke sessie als opwarming" },
-      { name:"Pike hold met meer gewicht op handen", steps:[
-        "Ga in pikestand op de grond.",
-        "Leun ver voorover zodat schouders loodrecht boven je polsen staan.",
-        "Duw schouders naar oren en houd vast.",
-      ], goal:"3 sets van 20 seconden" },
-      { name:"Pike hold met voeten op een box", steps:[
-        "Zet je voeten op een stoel of box, handen op de grond.",
-        "Duw je heupen zo hoog mogelijk omhoog.",
-        "Schouders naar oren, armen volledig gestrekt.",
-      ], goal:"3 sets van 15 seconden" },
+      { name:"Chest-to-wall handstand (opbouwen)", steps:[
+        "Polsopwarming eerst. Dan chest-to-wall positie: borst aan de muur.",
+        "Duw de grond actief van je af, schouders naar oren, core strak.",
+        "Probeer elke set iets langer vast te houden dan vorige week.",
+      ], goal:"3 sets van 45 seconden" },
+      { name:"Kickup niveau 1: split-leg hold", steps:[
+        "Ga in pikestand, één been iets voor het andere.",
+        "Gooi het achterste been omhoog — stop halverwege in split-leg positie.",
+        "Houd de split-leg positie zo lang als je kunt. Terugzetten, herhaal.",
+      ], goal:"8-10 pogingen per sessie — focus op stabiele split-leg, niet op volledig omhoog" },
+      { name:"Schouders verbinden", steps:[
+        "Ga in chest-to-wall. Trek je schouderbladen licht samen vóórdat je de hold begint.",
+        "Dan duw je ze omhoog naar oren — dit is de 'vergrendelde' positie.",
+        "Houd dit gevoel door de hele set. Schouders = de ruggengraat van je handstand.",
+      ], goal:"Voel het verschil tussen los en vergrendeld — zorg voor vergrendeld bij elke hold" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Band pull-ups (minder steun)", steps:[
@@ -77,21 +77,21 @@ const SKILL_WEEKS = {
   },
   3: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Chest-to-wall handstand", steps:[
-        "Zet handen ±10 cm van de muur. Loop je voeten langs de muur omhoog.",
-        "Borst raakt de muur — dit is de startpositie.",
-        "Span core en billen aan, bekken iets intrekken. Geen holle rug.",
-      ], goal:"3 sets van 20 sec, opbouwen naar 30 sec" },
-      { name:"Schouders actief houden", steps:[
-        "Sta in chest-to-wall positie.",
-        "Duw je schouders naar je oren alsof je de grond van je af wil duwen.",
-        "Houd dit actief door de hele hold — niet laten inzakken.",
-      ], goal:"Schouders actief houden is het verschil tussen hangen en kracht" },
-      { name:"Lichaamslijning controleren", steps:[
-        "Voeten gestrekt omhoog, tenen naar het plafond.",
-        "Billen aanspannen zodat je heupen niet wegzakken.",
-        "Kijk naar de grond tussen je duimen — niet naar handen of opzij.",
-      ], goal:"Rechte lijn van hielen tot schouders" },
+      { name:"Chest-to-wall handstand (60 sec doel)", steps:[
+        "Polsopwarming eerst. Dan chest-to-wall: borst aan de muur.",
+        "Actieve schouders, strakke core, billen aanspannen — rechte lijn van hielen tot pols.",
+        "Bouw naar 60 seconden toe — doe 2 sets als 60 sec te lang is.",
+      ], goal:"3 sets van 45-60 seconden" },
+      { name:"Kickup niveau 2: split → langzaam volledig", steps:[
+        "Gooi het achterste been omhoog naar split-leg positie.",
+        "Breng het voorste been langzaam omhoog tot naast het andere — zo langzaam als je kunt.",
+        "Houd de volledige handstand zo lang mogelijk. Val gecontroleerd terug.",
+      ], goal:"8-10 pogingen — focus op beheersing van de overgang, niet de tijd boven" },
+      { name:"Split-leg muur drill", steps:[
+        "Zet handen ±15-20 cm van de muur. Kickup naar split-leg positie.",
+        "Tik je achterste teen even van de muur — dan zweven. Zet hem terug.",
+        "Volgende poging: laat die voet een seconde hangen zonder muur. Dan steeds langer.",
+      ], goal:"10 pogingen per sessie — brug tussen muur en vrije handstand" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Band pull-ups (nog minder steun)", steps:[
@@ -113,11 +113,11 @@ const SKILL_WEEKS = {
   },
   4: {
     handstand: { label:"Handstand – Deload", color:"#7C3AED", items:[
-      { name:"Deloadweek — half volume", steps:[
-        "Pike hold (grond): 2 sets van 15 seconden.",
-        "Chest-to-wall: 2 sets van 20 seconden — focus op techniek, geen nieuwe doelen.",
+      { name:"Lichte chest-to-wall (herstel)", steps:[
+        "Chest-to-wall: borst aan de muur, actieve schouders, core strak.",
+        "Geen nieuwe doelen — houd de vorm die je hebt opgebouwd.",
         "Stop als iets pijnlijk voelt. Herstel staat centraal.",
-      ], goal:"Lichaam laten verwerken en opbouwen" },
+      ], goal:"2 sets van 30 seconden" },
       { name:"Polsmobiliteit", steps:[
         "Wrist circles: handen plat op de grond, maak cirkels met je gewicht. 10 per richting.",
         "Vingers naar achteren: handen plat, vingers richting lichaam, licht druk zetten. 30 sec.",
@@ -149,21 +149,21 @@ const SKILL_WEEKS = {
   },
   5: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Chest-to-wall consolideren", steps:[
-        "Chest-to-wall positie: borst aan de muur, core en billen aanspannen.",
-        "Duw schouders naar oren, armen volledig gestrekt.",
-        "Probeer zo min mogelijk op de muur te steunen — gebruik hem als vangnet.",
-      ], goal:"3 sets van 30 seconden" },
-      { name:"Scissor-positie naast de muur", steps:[
-        "Sta naast de muur, handen op de grond.",
-        "Breng één been omhoog terwijl het andere op de grond blijft — als een schaar.",
-        "Muur achter je als steun. Voel het gewicht op je handen.",
-      ], goal:"3 sets van 10 seconden per kant" },
-      { name:"Kick-up oefenen", steps:[
-        "Ga in pikestand, één been iets voor het andere.",
-        "Gooi het achterste been omhoog en volg met het andere.",
-        "Doel: controle over de beweging leren — nog niet balanceren.",
-      ], goal:"5-8 pogingen per sessie" },
+      { name:"Chest-to-wall: minimaal muurcontact", steps:[
+        "Begin in chest-to-wall. Duw schouders actief naar oren.",
+        "Probeer je borst 1-2 cm van de muur te halen — gebruik de muur alleen als vangnet.",
+        "Dit bouwt het gevoel voor vrije balans zonder volledig los te zijn.",
+      ], goal:"3 sets van 45 seconden" },
+      { name:"Kickup niveau 3: efficiënte kick-up", steps:[
+        "Gooi het achterste been omhoog — ander been volgt direct en snel.",
+        "Benen sluiten in één vloeiende beweging: niet split vasthouden, maar snel sluiten.",
+        "Herhaalbaar en consistent maken — dit is de kick-up die je overal gebruikt.",
+      ], goal:"10-12 pogingen per sessie" },
+      { name:"Heel pull drill (overbalance correctie)", steps:[
+        "Kom in handstand (muur of vrij). Ga bewust iets te ver — overbalance.",
+        "Grijp de grond met je vingertoppen en druk je voorste knokkels neer.",
+        "Voel hoe de druk je terugtrekt. Dit is je reddingslijn bij overbalance.",
+      ], goal:"8-10 pogingen — overbalance leren corrigeren via hand/vingerkracht" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Pull-ups zonder band", steps:[
@@ -185,21 +185,21 @@ const SKILL_WEEKS = {
   },
   6: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Scissor-positie naast de muur", steps:[
-        "Handen op de grond naast de muur, één been omhoog (scissor-stand).",
-        "Let op hoe je bijstuurt met je vingertoppen — precies zoals bij vrije handstand.",
-        "Probeer de muur steeds minder te gebruiken.",
-      ], goal:"3 sets van 15 seconden" },
-      { name:"Kick-up naar scissor", steps:[
-        "Gooi één been omhoog zodat je in de scissor-positie landt.",
-        "Kijk tussen je duimen — niet naar de grond of opzij.",
-        "Land terug, herhaal.",
+      { name:"Overbalance drill", steps:[
+        "Kom in handstand (vrij of muur dichtbij). Ga bewust te ver — overbalance.",
+        "Grijp de grond met je vingertips en druk knokkels neer om terug te sturen.",
+        "Doel: overbalance herkennen én corrigeren voordat je valt.",
+      ], goal:"8-10 pogingen — bewust oefenen is sneller leren dan per ongeluk vallen" },
+      { name:"Underbalance strategie 1: schouders", steps:[
+        "Kom in handstand. Laat je bewust te veel terugkantelen — underbalance.",
+        "Herstel: plant je schouders neer (borst sluiten) om voorwaarts gewicht te pakken.",
+        "Dit is de snelste correctie voor kleine underbalance — leer het als reflex.",
       ], goal:"6-8 pogingen per sessie" },
-      { name:"Scissor → benen sluiten", steps:[
-        "Kom in de scissor-positie naast de muur.",
-        "Breng langzaam je benen bij elkaar tot één lijn.",
-        "Houd zo lang als je kunt — dit zijn je eerste vrije handstand-pogingen.",
-      ], goal:"3-5 pogingen per sessie" },
+      { name:"Underbalance strategie 2: heup/onderrug", steps:[
+        "Kom in handstand. Laat je opnieuw te ver terug kantelen.",
+        "Herstel: activeer je onderrug en heupen om je lichaam terug te buigen.",
+        "Verschilt van schouderstrategie — grotere correctie, meer tijd. Combineer beide.",
+      ], goal:"6-8 pogingen per sessie" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Pull-ups zonder band", steps:[
@@ -221,21 +221,21 @@ const SKILL_WEEKS = {
   },
   7: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Vrije handstand", steps:[
-        "Kick-up → scissor → benen sluiten als één vloeiende beweging.",
-        "Stuur bij met je vingertoppen — niet met je pols of onderarmen.",
-        "Val je om: gebruik de val-techniek (cartwheel-out) uit week 1.",
-      ], goal:"8-10 pogingen per sessie, doel: 3-5 seconden balanceren" },
-      { name:"Kick-up als één beweging", steps:[
-        "Niet drie losse stappen, maar één doorlopende actie.",
-        "Been omhoog → ander been volgt → benen sluiten — in één flow.",
-        "Oefen dit herhaalbaar en consistent te maken.",
-      ], goal:"Vloeiende, betrouwbare kick-up" },
-      { name:"Handstand walk (probeer het)", steps:[
-        "Kom in handstand (vrij of vlakbij muur).",
-        "Verschuif je gewicht van links naar rechts en zet kleine stapjes op je handen.",
-        "Elke stap is winst — ook 1 stap telt.",
-      ], goal:"Probeer 1-3 stappen te zetten" },
+      { name:"Vrije handstand (volume)", steps:[
+        "Kick-up (niveau 3) → benen sluiten → balanceer zo lang je kunt.",
+        "Stuur bij met vingertips (overbalance) of schouders/heupen (underbalance).",
+        "Rust 60 sec tussen pogingen. Film jezelf als je kunt — check je lijn van opzij.",
+      ], goal:"8-10 pogingen per sessie, doel: 3-5 seconden aaneengesloten" },
+      { name:"Kick-up als één vloeiende beweging", steps:[
+        "Niet drie losse stappen. Been omhoog → ander been volgt direct → sluiten: één flow.",
+        "Gooi bewust iets te ver om te zoeken naar de 'sweet spot' van equilibrium.",
+        "Herhaalbaar en consistent maken — dit is jouw standaard kick-up.",
+      ], goal:"10+ pogingen — focus op herhaling en consistentie" },
+      { name:"Chest-to-wall onderhoud", steps:[
+        "Chest-to-wall: borst aan de muur, actieve schouders, strakke lijn.",
+        "Minimaal muurcontact — gebruik hem alleen als vangnet.",
+        "Dit houdt je basissterkte en lichaamsgevoel scherp.",
+      ], goal:"2 sets van 45 seconden" },
     ]},
     pullup: { label:"Pull-ups", color:"#059669", items:[
       { name:"Pull-ups zonder band", steps:[
@@ -258,18 +258,18 @@ const SKILL_WEEKS = {
   8: {
     handstand: { label:"Handstand – Testweek", color:"#7C3AED", items:[
       { name:"TEST: vrije handstand", steps:[
-        "Warm op: 5 min val-techniek + shrug push-ups.",
-        "Doe je beste kick-up en houd zo lang mogelijk vast.",
-        "Noteer de seconden. Rust 2-3 minuten. Herhaal 3 keer.",
-      ], goal:"Noteer je beste poging" },
-      { name:"TEST: handstand walk", steps:[
-        "Kom in handstand.",
-        "Loop zo ver als je kunt op je handen.",
-        "Noteer het aantal stappen of de afstand in meters.",
-      ], goal:"1 maximale poging" },
+        "Warm op: polsopwarming + 5 chest-to-wall (30 sec).",
+        "Doe je beste kick-up en balanceer zo lang als je kunt.",
+        "Noteer de seconden van je beste poging. Rust 2-3 minuten. 3 pogingen totaal.",
+      ], goal:"Noteer je beste poging — eerlijk meten, geen hulp van muur" },
+      { name:"TEST: kick-up efficiëntie", steps:[
+        "Doe 5 kick-ups zo consistent en efficiënt mogelijk.",
+        "Noteer: hoe snel sluiten je benen? Kom je direct in evenwicht of moet je veel bijsturen?",
+        "Dit laat zien of de kick-up je sterke of zwakke schakel is.",
+      ], goal:"Reflecteer op je kick-up kwaliteit — schrijf het op in de notitie" },
       { name:"Reflecteer op de cyclus", steps:[
         "Wat was de limiterende factor: kracht, balans, angst of techniek?",
-        "Wanneer viel je het vaakst om — en hoe?",
+        "Overbalance of underbalance — welke kant val je vaker op?",
         "Dit bepaalt de focus van week 9-10.",
       ], goal:"Inzicht voor de eindsprint" },
     ]},
@@ -293,21 +293,21 @@ const SKILL_WEEKS = {
   },
   9: {
     handstand: { label:"Handstand – Verdieping", color:"#7C3AED", items:[
-      { name:"Vrije handstand (volume)", steps:[
-        "12-15 pogingen per sessie — zoveel als je nodig hebt.",
-        "Doel: 5-8 seconden balanceren op je beste poging.",
-        "Film jezelf: check je lichaamslijning van opzij.",
-      ], goal:"15 pogingen, beste poging ≥ 5 seconden" },
-      { name:"Handstand walk opbouwen", steps:[
-        "Kick-up → balanceer → zet bewust stappen op je handen.",
-        "Verplaats gewicht via je vingertoppen, niet je schouders.",
-        "3-5 looppogingen per sessie.",
-      ], goal:"5-8 stappen per poging" },
-      { name:"Gewichtsoverdracht één arm (voorbereiding)", steps:[
-        "Sta in chest-to-wall handstand.",
-        "Verschuif langzaam je gewicht naar één arm — andere hand blijft licht op de muur.",
-        "Voel hoe het gewicht verdeelt.",
-      ], goal:"3 sets van 10 seconden per kant" },
+      { name:"Vrije handstand (hoog volume)", steps:[
+        "15+ pogingen per sessie. Rust 45-60 sec tussen pogingen.",
+        "Doel: 5-8 seconden op je beste poging. Film jezelf om je lijn te checken.",
+        "Zoek actief de grens van over- en underbalance op — zo leer je sneller.",
+      ], goal:"15+ pogingen, beste poging ≥ 5 seconden" },
+      { name:"Beide correctiestrategieën combineren", steps:[
+        "Bij overbalance: vingertips grijpen, knokkels drukken — halt.",
+        "Bij underbalance: schouders eerst (snel), dan heupen als extra correctie.",
+        "Wissel bewust van strategie per poging om beide te automatiseren.",
+      ], goal:"Per poging: benoem welke strategie je gebruikte. Zo bouw je bewuste reflex op." },
+      { name:"Split-leg muur drill verfijnen", steps:[
+        "Handen 15-20 cm van muur. Kickup naar split-leg.",
+        "Laat de achterste voet langer zweven — bouw op van 1 naar 3 seconden.",
+        "Poging: beide benen in één beweging sluiten zonder muurcontact.",
+      ], goal:"10 pogingen — dit is de brug naar volledig vrij" },
     ]},
     pullup: { label:"Pull-ups – Verdieping", color:"#059669", items:[
       { name:"Pull-ups (volume)", steps:[
@@ -330,19 +330,19 @@ const SKILL_WEEKS = {
   10: {
     handstand: { label:"Handstand – Finale", color:"#7C3AED", items:[
       { name:"TEST: vrije handstand 10 seconden", steps:[
-        "Warm op: 5 min val-techniek + 5 shrug push-ups.",
+        "Warm op: polsopwarming + 3 chest-to-wall (30 sec).",
         "Doe je beste kick-up en balanceer zo lang als je kunt.",
-        "Noteer je beste poging in het notitiefeld.",
+        "3 pogingen met 2 minuten rust — noteer je beste tijd in de notitie.",
       ], goal:"Doel: 10 seconden aaneengesloten" },
-      { name:"TEST: handstand walk 3 meter", steps:[
-        "Kick-up → loop zo ver als je kunt op je handen.",
-        "Noteer het aantal stappen of de afstand.",
-        "3 pogingen met 2 minuten rust.",
-      ], goal:"Doel: 3 meter of 12+ stappen" },
+      { name:"TEST: handstand walk", steps:[
+        "Kick-up → balanceer → zet stappen op je handen.",
+        "Verplaats gewicht via je vingertoppen — kleine, gecontroleerde stappen.",
+        "3 pogingen met 2 minuten rust — noteer stappen of afstand.",
+      ], goal:"Doel: zo ver als je kunt — elke stap is vooruitgang" },
       { name:"Terugblik en cyclus 2", steps:[
-        "Vergelijk je score van week 1 met nu.",
-        "Wat was de limiterende factor: balans, kracht of techniek?",
-        "Noteer je plan voor de volgende cyclus in het notitiefeld.",
+        "Vergelijk je score van week 8 (tussentest) met nu — wat is verbeterd?",
+        "Wat was de limiterende factor: overbalance, underbalance, kick-up of kracht?",
+        "Noteer je startpunt voor cyclus 2 — dit is waar week 1 van de volgende cyclus begint.",
       ], goal:"Startpunt cyclus 2 bepalen" },
     ]},
     pullup: { label:"Pull-ups – Finale", color:"#059669", items:[
