@@ -918,40 +918,131 @@ function WorkoutMode({exercises, onClose}) {
   const validExs = exercises.filter(e=>e.name&&e.name.trim());
 
   const buildStep = (eIdx, sIdx, siIdx) => {
-    const ex  = validExs[eIdx];
-    const p   = ex ? parseSets(ex.sets) : {numSets:1,value:null,isTime:false,perSide:false};
-    return { eIdx, sIdx, siIdx, p,
-      timeLeft: p.isTime ? p.value : null,
-      running:  p.isTime,
-    };
+    const ex = validExs[eIdx];
+    const p  = ex ? parseSets(ex.sets) : {numSets:1,value:null,isTime:false,perSide:false};
+    return {eIdx, sIdx, siIdx, p, timeLeft: p.isTime ? p.value : null, running: p.isTime};
   };
 
-  const [cur,     setCur]     = useState(() => buildStep(0,0,0));
-  const [phase,   setPhase]   = useState('exercise'); // exercise | rest | done
-  const [restSec, setRestSec] = useState(60);
-  const nextRef = useRef(null);
+  const [cur,        setCur]        = useState(() => buildStep(0,0,0));
+  const [phase,      setPhase]      = useState('exercise');
+  const [restSec,    setRestSec]    = useState(60);
+  const [repsLeft,   setRepsLeft]   = useState(null);
+  const [speechOn,   setSpeechOn]   = useState(true);
+  const [micOn,      setMicOn]      = useState(false);
+  const [micAllowed, setMicAllowed] = useState(true);
 
-  const ex     = validExs[cur.eIdx];
-  const sides  = ['Links','Rechts'];
-  const sideLabel = cur.p.perSide ? sides[cur.siIdx] : null;
+  const nextRef      = useRef(null);
+  const audioRef     = useRef(null);
+  const micActiveRef = useRef(false);
+  const repDebounce  = useRef(0);
+  const speechOnRef  = useRef(true);
+  const sides        = ['Links','Rechts'];
+  const ex           = validExs[cur.eIdx];
+  const sideLabel    = cur.p.perSide ? sides[cur.siIdx] : null;
 
-  // advance after completing a side/set/exercise
+  useEffect(() => { speechOnRef.current = speechOn; }, [speechOn]);
+
+  // ── speech ────────────────────────────────────────────────────────────────
+  const speak = useCallback((text) => {
+    if (!speechOnRef.current || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'nl-NL'; u.rate = 1.1;
+    window.speechSynthesis.speak(u);
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'exercise' && ex)
+      speak(cur.p.perSide ? `${ex.name} — ${sides[cur.siIdx]}` : ex.name);
+  }, [phase, cur.eIdx, cur.siIdx]);
+
+  useEffect(() => { if (phase === 'rest') speak('Rust'); }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'rest') return;
+    if (restSec === 3) speak('3');
+    else if (restSec === 2) speak('2');
+    else if (restSec === 1) speak('1');
+    else if (restSec === 0) speak('Begin!');
+  }, [restSec, phase]);
+
+  // ── microphone (volume-spike rep counting) ────────────────────────────────
+  const stopMic = useCallback(() => {
+    micActiveRef.current = false;
+    setMicOn(false);
+    if (audioRef.current) {
+      audioRef.current.stream.getTracks().forEach(t => t.stop());
+      try { audioRef.current.ctx.close(); } catch(_) {}
+      audioRef.current = null;
+    }
+  }, []);
+
+  const startMic = useCallback(async () => {
+    if (audioRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = ctx.createMediaStreamSource(stream);
+      const an  = ctx.createAnalyser();
+      an.fftSize = 256;
+      src.connect(an);
+      audioRef.current = {ctx, analyser:an, stream};
+      micActiveRef.current = true;
+      setMicOn(true); setMicAllowed(true);
+      const data = new Uint8Array(an.frequencyBinCount);
+      const loop = () => {
+        if (!micActiveRef.current) return;
+        an.getByteFrequencyData(data);
+        const peak = Math.max(...data);
+        const now  = Date.now();
+        if (peak > 80 && now - repDebounce.current > 800) {
+          repDebounce.current = now;
+          setRepsLeft(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
+        }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    } catch(_) { setMicAllowed(false); }
+  }, []);
+
+  const isRepEx = !cur.p.isTime && cur.p.value !== null && phase === 'exercise';
+
+  useEffect(() => { if (isRepEx) startMic(); else stopMic(); }, [isRepEx]);
+  useEffect(() => () => stopMic(), []);
+
+  // reset rep counter when exercise/set/side changes
+  useEffect(() => {
+    if (!cur.p.isTime && cur.p.value !== null) setRepsLeft(cur.p.value);
+    else setRepsLeft(null);
+  }, [cur.eIdx, cur.sIdx, cur.siIdx]);
+
+  // auto-advance when reps reach 0
+  useEffect(() => {
+    if (repsLeft === 0 && phase === 'exercise' && !cur.p.isTime) {
+      const t = setTimeout(advance, 400);
+      return () => clearTimeout(t);
+    }
+  }, [repsLeft, phase]);
+
+  // ── advance / skipRest ────────────────────────────────────────────────────
   const advance = useCallback(() => {
     setCur(prev => {
       const p = prev.p;
       const totalSides = p.perSide ? 2 : 1;
       if (prev.siIdx + 1 < totalSides) {
-        return {...prev, siIdx: prev.siIdx+1, timeLeft: p.isTime ? p.value : null, running: p.isTime};
+        nextRef.current = {eIdx: prev.eIdx, sIdx: prev.sIdx, siIdx: prev.siIdx+1};
+        setPhase('rest'); setRestSec(45);
+        return {...prev, running:false};
       }
       const nextSIdx = prev.sIdx + 1;
       if (nextSIdx < p.numSets) {
-        nextRef.current = {eIdx: prev.eIdx, sIdx: nextSIdx};
+        nextRef.current = {eIdx: prev.eIdx, sIdx: nextSIdx, siIdx:0};
         setPhase('rest'); setRestSec(60);
         return {...prev, running:false};
       }
       const nextEIdx = prev.eIdx + 1;
       if (nextEIdx < validExs.length) {
-        nextRef.current = {eIdx: nextEIdx, sIdx: 0};
+        nextRef.current = {eIdx: nextEIdx, sIdx:0, siIdx:0};
         setPhase('rest'); setRestSec(90);
         return {...prev, running:false};
       }
@@ -963,30 +1054,25 @@ function WorkoutMode({exercises, onClose}) {
   const skipRest = useCallback(() => {
     const n = nextRef.current;
     if (!n) return;
-    const step = buildStep(n.eIdx, n.sIdx, 0);
-    setCur(step);
+    setCur(buildStep(n.eIdx, n.sIdx, n.siIdx??0));
     setPhase('exercise');
   }, []);
 
-  // exercise timer
+  // ── timers ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'exercise' || !cur.running || cur.timeLeft === null) return;
-    const id = setInterval(() => {
-      setCur(prev => {
-        if (!prev.running || prev.timeLeft === null) return prev;
-        if (prev.timeLeft <= 1) return {...prev, running:false, timeLeft:0};
-        return {...prev, timeLeft: prev.timeLeft-1};
-      });
-    }, 1000);
+    const id = setInterval(() => setCur(prev => {
+      if (!prev.running || prev.timeLeft === null) return prev;
+      if (prev.timeLeft <= 1) return {...prev, running:false, timeLeft:0};
+      return {...prev, timeLeft: prev.timeLeft-1};
+    }), 1000);
     return () => clearInterval(id);
   }, [phase, cur.running, cur.eIdx, cur.sIdx, cur.siIdx]);
 
-  // react to timer hitting 0
   useEffect(() => {
     if (phase === 'exercise' && cur.timeLeft === 0 && !cur.running && cur.p.isTime) advance();
   }, [cur.timeLeft, cur.running, phase]);
 
-  // rest timer
   useEffect(() => {
     if (phase !== 'rest') return;
     const id = setInterval(() => setRestSec(s => Math.max(0, s-1)), 1000);
@@ -997,15 +1083,18 @@ function WorkoutMode({exercises, onClose}) {
 
   if (!validExs.length) return null;
 
-  const totalSets = cur.p.numSets;
-  const setLabel  = totalSets > 1 ? `Set ${cur.sIdx+1} van ${totalSets}` : null;
-  const exLabel   = `${cur.eIdx+1} / ${validExs.length}`;
-  const pct       = ((cur.eIdx * 100) / validExs.length) + ((cur.sIdx * 100) / (validExs.length * totalSets));
-  const progress  = Math.min(100, pct);
-
-  const bigNum = cur.p.isTime
-    ? (cur.timeLeft !== null ? cur.timeLeft : cur.p.value)
-    : (cur.p.value !== null ? cur.p.value : null);
+  // ── derived ───────────────────────────────────────────────────────────────
+  const totalSets    = cur.p.numSets;
+  const setLabel     = totalSets > 1 ? `Set ${cur.sIdx+1} van ${totalSets}` : null;
+  const exLabel      = `${cur.eIdx+1} / ${validExs.length}`;
+  const pct          = ((cur.eIdx*100)/validExs.length) + ((cur.sIdx*100)/(validExs.length*totalSets));
+  const progress     = Math.min(100, pct);
+  const nextStep     = nextRef.current;
+  const nextEx       = nextStep ? validExs[nextStep.eIdx] : null;
+  const isSideSwitch = nextStep && nextStep.eIdx===cur.eIdx && nextStep.sIdx===cur.sIdx;
+  const isNewEx      = nextStep && nextStep.eIdx!==cur.eIdx;
+  const nextSide     = isSideSwitch ? sides[nextStep.siIdx] : null;
+  const displayReps  = repsLeft !== null ? repsLeft : cur.p.value;
 
   return (
     <div style={{
@@ -1021,10 +1110,19 @@ function WorkoutMode({exercises, onClose}) {
       {/* header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",flexShrink:0}}>
         <div style={{fontSize:13,color:"#888",fontWeight:500}}>
-          {phase==='done' ? 'Klaar' : `Oefening ${exLabel}`}{setLabel&&phase==='exercise'&&` · ${setLabel}`}
+          {phase==='done'?'Klaar':`Oefening ${exLabel}`}{setLabel&&phase==='exercise'&&` · ${setLabel}`}
         </div>
-        <button onClick={onClose} style={{background:"#1e1e2a",border:"none",borderRadius:20,width:32,height:32,
-          cursor:"pointer",fontSize:18,color:"#888",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setSpeechOn(s=>!s)} style={{
+            background:"#1e1e2a",border:"none",borderRadius:20,width:32,height:32,
+            cursor:"pointer",fontSize:16,color:speechOn?C.purple:"#444",
+            display:"flex",alignItems:"center",justifyContent:"center",
+          }}>{speechOn?"🔊":"🔇"}</button>
+          <button onClick={onClose} style={{
+            background:"#1e1e2a",border:"none",borderRadius:20,width:32,height:32,
+            cursor:"pointer",fontSize:18,color:"#888",display:"flex",alignItems:"center",justifyContent:"center",
+          }}>×</button>
+        </div>
       </div>
 
       {/* main */}
@@ -1040,24 +1138,42 @@ function WorkoutMode({exercises, onClose}) {
               padding:"16px 40px",fontSize:17,fontWeight:700,cursor:"pointer",fontFamily:font,
             }}>Afsluiten</button>
           </>
+
         ) : phase==='rest' ? (
           <>
-            <div style={{fontSize:13,fontWeight:600,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:20}}>
-              {nextRef.current?.sIdx===0 ? 'Volgende oefening' : 'Rust'}
+            <div style={{fontSize:13,fontWeight:600,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>
+              {nextSide ? 'Wissel kant' : isNewEx ? 'Volgende oefening' : 'Rust'}
             </div>
-            {nextRef.current?.eIdx < validExs.length && (
-              <div style={{fontSize:15,color:"#aaa",marginBottom:12}}>
-                Daarna: <span style={{color:"#fff",fontWeight:600}}>{validExs[nextRef.current.eIdx]?.name}</span>
+            {nextSide ? (
+              <div style={{fontSize:28,fontWeight:800,color:"#fff",marginBottom:20}}>
+                → {nextSide}e kant
               </div>
-            )}
-            <div style={{fontSize:80,fontWeight:800,color:restSec>10?"#fff":C.red,lineHeight:1,marginBottom:32,fontVariantNumeric:"tabular-nums"}}>
-              {restSec}
+            ) : nextEx && isNewEx ? (
+              <div style={{fontSize:15,color:"#aaa",marginBottom:20}}>
+                Daarna: <span style={{color:"#fff",fontWeight:600}}>{nextEx.name}</span>
+              </div>
+            ) : null}
+            <div style={{
+              fontSize:88,fontWeight:800,lineHeight:1,marginBottom:20,
+              fontVariantNumeric:"tabular-nums",
+              color: restSec>5?"#fff":C.red,
+            }}>{restSec}</div>
+            <div style={{display:"flex",gap:12,marginBottom:24}}>
+              <button onClick={()=>setRestSec(s=>Math.max(5,s-10))} style={{
+                background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
+                padding:"8px 20px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:font,
+              }}>−10s</button>
+              <button onClick={()=>setRestSec(s=>s+10)} style={{
+                background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
+                padding:"8px 20px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:font,
+              }}>+10s</button>
             </div>
             <button onClick={skipRest} style={{
               background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:12,
               padding:"12px 28px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:font,
             }}>Overslaan →</button>
           </>
+
         ) : (
           <>
             {sideLabel&&(
@@ -1065,33 +1181,57 @@ function WorkoutMode({exercises, onClose}) {
                 {sideLabel}e kant
               </div>
             )}
-            <div style={{fontSize:26,fontWeight:700,color:"#fff",marginBottom:28,lineHeight:1.3}}>
+            <div style={{fontSize:26,fontWeight:700,color:"#fff",marginBottom:24,lineHeight:1.3}}>
               {ex?.name}
             </div>
 
-            {bigNum !== null ? (
-              cur.p.isTime ? (
-                /* countdown */
-                <div style={{marginBottom:36}}>
+            {cur.p.isTime ? (
+              /* timed exercise */
+              <div style={{marginBottom:36}}>
+                <div style={{
+                  fontSize:100,fontWeight:800,lineHeight:1,fontVariantNumeric:"tabular-nums",transition:"color .3s",
+                  color: cur.timeLeft!==null&&cur.timeLeft<=5 ? C.red : "#fff",
+                }}>{cur.timeLeft??cur.p.value}</div>
+                <div style={{fontSize:14,color:"#666",marginTop:8}}>seconden</div>
+                <button onClick={()=>setCur(p=>({...p,running:!p.running}))} style={{
+                  marginTop:20,background:"#1e1e2a",color:cur.running?"#aaa":C.purple,
+                  border:"1px solid #333",borderRadius:12,padding:"10px 24px",
+                  fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:font,
+                }}>{cur.running?'⏸ Pauzeer':'▶ Start'}</button>
+              </div>
+
+            ) : cur.p.value !== null ? (
+              /* rep exercise — mic counts down */
+              <div style={{marginBottom:24}}>
+                <div style={{
+                  fontSize:100,fontWeight:800,lineHeight:1,fontVariantNumeric:"tabular-nums",transition:"color .3s",
+                  color: displayReps===0?"#4ade80": displayReps!==null&&displayReps<=3?"#F59E0B":"#fff",
+                }}>{displayReps}</div>
+                <div style={{fontSize:14,color:"#666",marginTop:8,marginBottom:20}}>herhalingen</div>
+                <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center"}}>
+                  <button onClick={()=>setRepsLeft(r=>r!==null&&r>0?r-1:r)} style={{
+                    background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
+                    width:44,height:44,fontSize:22,cursor:"pointer",fontFamily:font,fontWeight:700,
+                  }}>−</button>
                   <div style={{
-                    fontSize:100,fontWeight:800,lineHeight:1,
-                    color: cur.timeLeft !== null && cur.timeLeft <= 5 ? C.red : "#fff",
-                    fontVariantNumeric:"tabular-nums",transition:"color .3s",
-                  }}>{cur.timeLeft ?? bigNum}</div>
-                  <div style={{fontSize:14,color:"#666",marginTop:8}}>seconden</div>
-                  <button onClick={()=>setCur(p=>({...p,running:!p.running}))} style={{
-                    marginTop:20,background:"#1e1e2a",color:cur.running?"#aaa":C.purple,
-                    border:"1px solid #333",borderRadius:12,padding:"10px 24px",
-                    fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:font,
-                  }}>{cur.running ? '⏸ Pauzeer' : '▶ Start'}</button>
+                    fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:20,
+                    display:"flex",alignItems:"center",gap:6,
+                    background:"#1e1e2a",border:`1px solid ${micOn?"#4ade8033":"#2a2a2a"}`,
+                    color: micOn?"#4ade80":"#555",
+                  }}>
+                    <span style={{
+                      width:7,height:7,borderRadius:"50%",flexShrink:0,
+                      background:micOn?"#4ade80":"#444",display:"inline-block",
+                    }}/>
+                    {micOn?"Luistert...":micAllowed?"Mic laden...":"Tel handmatig"}
+                  </div>
+                  <button onClick={()=>setRepsLeft(r=>r!==null?r+1:r)} style={{
+                    background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
+                    width:44,height:44,fontSize:22,cursor:"pointer",fontFamily:font,fontWeight:700,
+                  }}>+</button>
                 </div>
-              ) : (
-                /* rep target */
-                <div style={{marginBottom:36}}>
-                  <div style={{fontSize:100,fontWeight:800,color:"#fff",lineHeight:1}}>{bigNum}</div>
-                  <div style={{fontSize:14,color:"#666",marginTop:8}}>herhalingen</div>
-                </div>
-              )
+              </div>
+
             ) : ex?.sets ? (
               <div style={{fontSize:18,color:"#aaa",marginBottom:36,background:"#1e1e2a",padding:"12px 20px",borderRadius:10}}>
                 {ex.sets}
@@ -1101,26 +1241,26 @@ function WorkoutMode({exercises, onClose}) {
             <button onClick={advance} style={{
               background:C.purple,color:"#fff",border:"none",borderRadius:16,
               padding:"18px 48px",fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:font,
-              boxShadow:"0 4px 20px "+C.purple+"55",
+              boxShadow:"0 4px 20px "+C.purple+"55",marginTop:8,
             }}>
-              {cur.p.perSide && cur.siIdx===0 ? `Wissel → Rechterkant` :
-               cur.sIdx+1 < cur.p.numSets ? `Set ${cur.sIdx+2} →` :
-               cur.eIdx+1 < validExs.length ? `Volgende oefening →` : `Klaar 🎉`}
+              {cur.p.perSide&&cur.siIdx===0?`Wissel → Rechterkant`:
+               cur.sIdx+1<cur.p.numSets?`Set ${cur.sIdx+2} →`:
+               cur.eIdx+1<validExs.length?`Volgende oefening →`:`Klaar 🎉`}
             </button>
           </>
         )}
       </div>
 
-      {/* exercise list pills at bottom */}
+      {/* exercise pills */}
       {phase==='exercise'&&(
         <div style={{padding:"12px 20px 28px",display:"flex",gap:6,flexWrap:"wrap",justifyContent:"center",flexShrink:0}}>
           {validExs.map((e,i)=>(
             <div key={i} style={{
               fontSize:11,padding:"3px 10px",borderRadius:20,
-              background: i<cur.eIdx?"#1e1e2a": i===cur.eIdx?C.purple+"33":"#1e1e2a",
-              color: i<cur.eIdx?"#444": i===cur.eIdx?C.purple:"#555",
-              border: i===cur.eIdx?`1px solid ${C.purple}33`:"1px solid transparent",
-              fontWeight: i===cur.eIdx?600:400,
+              background:i<cur.eIdx?"#1e1e2a":i===cur.eIdx?C.purple+"33":"#1e1e2a",
+              color:i<cur.eIdx?"#444":i===cur.eIdx?C.purple:"#555",
+              border:i===cur.eIdx?`1px solid ${C.purple}33`:"1px solid transparent",
+              fontWeight:i===cur.eIdx?600:400,
             }}>{e.name}</div>
           ))}
         </div>
