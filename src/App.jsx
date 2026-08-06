@@ -927,9 +927,13 @@ function WorkoutMode({exercises, onClose}) {
   const [phase,    setPhase]    = useState('exercise');
   const [restSec,  setRestSec]  = useState(60);
   const [speechOn, setSpeechOn] = useState(true);
+  const [showRestCfg, setShowRestCfg] = useState(false);
+  const [restDef,  setRestDef]  = useState({side:30, set:60, ex:90});
 
   const nextRef     = useRef(null);
   const speechOnRef = useRef(true);
+  const restDefRef  = useRef(restDef);
+  useEffect(() => { restDefRef.current = restDef; }, [restDef]);
   const sides        = ['Links','Rechts'];
   const ex           = validExs[cur.eIdx];
   const sideLabel    = cur.p.perSide ? sides[cur.siIdx] : null;
@@ -968,19 +972,19 @@ function WorkoutMode({exercises, onClose}) {
       const totalSides = p.perSide ? 2 : 1;
       if (prev.siIdx + 1 < totalSides) {
         nextRef.current = {eIdx: prev.eIdx, sIdx: prev.sIdx, siIdx: prev.siIdx+1};
-        setPhase('rest'); setRestSec(45);
+        setPhase('rest'); setRestSec(restDefRef.current.side);
         return {...prev, running:false};
       }
       const nextSIdx = prev.sIdx + 1;
       if (nextSIdx < p.numSets) {
         nextRef.current = {eIdx: prev.eIdx, sIdx: nextSIdx, siIdx:0};
-        setPhase('rest'); setRestSec(60);
+        setPhase('rest'); setRestSec(restDefRef.current.set);
         return {...prev, running:false};
       }
       const nextEIdx = prev.eIdx + 1;
       if (nextEIdx < validExs.length) {
         nextRef.current = {eIdx: nextEIdx, sIdx:0, siIdx:0};
-        setPhase('rest'); setRestSec(90);
+        setPhase('rest'); setRestSec(restDefRef.current.ex);
         return {...prev, running:false};
       }
       setPhase('done');
@@ -1054,12 +1058,44 @@ function WorkoutMode({exercises, onClose}) {
             cursor:"pointer",fontSize:16,color:speechOn?C.purple:"#444",
             display:"flex",alignItems:"center",justifyContent:"center",
           }}>{speechOn?"🔊":"🔇"}</button>
+          <button onClick={()=>setShowRestCfg(s=>!s)} style={{
+            background:showRestCfg?"#2a2a3a":"#1e1e2a",border:"none",borderRadius:20,width:32,height:32,
+            cursor:"pointer",fontSize:15,color:showRestCfg?C.purple:"#666",
+            display:"flex",alignItems:"center",justifyContent:"center",
+          }}>⏱</button>
           <button onClick={onClose} style={{
             background:"#1e1e2a",border:"none",borderRadius:20,width:32,height:32,
             cursor:"pointer",fontSize:18,color:"#888",display:"flex",alignItems:"center",justifyContent:"center",
           }}>×</button>
         </div>
       </div>
+
+      {/* rust-instellingen */}
+      {showRestCfg&&(
+        <div style={{background:"#16161f",borderBottom:"1px solid #2a2a2a",padding:"12px 20px",flexShrink:0}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:0.5,marginBottom:10}}>Rusttijd instellen</div>
+          {[
+            {label:"Kant-wissel",key:"side"},
+            {label:"Volgende set",key:"set"},
+            {label:"Volgende oefening",key:"ex"},
+          ].map(({label,key})=>(
+            <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+              <span style={{fontSize:13,color:"#aaa",minWidth:140}}>{label}</span>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <button onClick={()=>setRestDef(d=>({...d,[key]:Math.max(5,d[key]-5)}))} style={{
+                  background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:8,
+                  width:30,height:30,fontSize:16,cursor:"pointer",fontFamily:font,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
+                }}>−</button>
+                <span style={{fontSize:15,fontWeight:700,color:"#fff",minWidth:36,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{restDef[key]}s</span>
+                <button onClick={()=>setRestDef(d=>({...d,[key]:d[key]+5}))} style={{
+                  background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:8,
+                  width:30,height:30,fontSize:16,cursor:"pointer",fontFamily:font,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
+                }}>+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* main */}
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",textAlign:"center"}}>
