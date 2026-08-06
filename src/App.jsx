@@ -923,19 +923,13 @@ function WorkoutMode({exercises, onClose}) {
     return {eIdx, sIdx, siIdx, p, timeLeft: p.isTime ? p.value : null, running: p.isTime};
   };
 
-  const [cur,        setCur]        = useState(() => buildStep(0,0,0));
-  const [phase,      setPhase]      = useState('exercise');
-  const [restSec,    setRestSec]    = useState(60);
-  const [repsLeft,   setRepsLeft]   = useState(null);
-  const [speechOn,   setSpeechOn]   = useState(true);
-  const [micOn,      setMicOn]      = useState(false);
-  const [micAllowed, setMicAllowed] = useState(true);
+  const [cur,      setCur]      = useState(() => buildStep(0,0,0));
+  const [phase,    setPhase]    = useState('exercise');
+  const [restSec,  setRestSec]  = useState(60);
+  const [speechOn, setSpeechOn] = useState(true);
 
-  const nextRef      = useRef(null);
-  const audioRef     = useRef(null);
-  const micActiveRef = useRef(false);
-  const repDebounce  = useRef(0);
-  const speechOnRef  = useRef(true);
+  const nextRef     = useRef(null);
+  const speechOnRef = useRef(true);
   const sides        = ['Links','Rechts'];
   const ex           = validExs[cur.eIdx];
   const sideLabel    = cur.p.perSide ? sides[cur.siIdx] : null;
@@ -966,64 +960,6 @@ function WorkoutMode({exercises, onClose}) {
     else if (restSec === 0) speak('Begin!');
   }, [restSec, phase]);
 
-  // ── microphone (volume-spike rep counting) ────────────────────────────────
-  const stopMic = useCallback(() => {
-    micActiveRef.current = false;
-    setMicOn(false);
-    if (audioRef.current) {
-      audioRef.current.stream.getTracks().forEach(t => t.stop());
-      try { audioRef.current.ctx.close(); } catch(_) {}
-      audioRef.current = null;
-    }
-  }, []);
-
-  const startMic = useCallback(async () => {
-    if (audioRef.current) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const src = ctx.createMediaStreamSource(stream);
-      const an  = ctx.createAnalyser();
-      an.fftSize = 256;
-      src.connect(an);
-      audioRef.current = {ctx, analyser:an, stream};
-      micActiveRef.current = true;
-      setMicOn(true); setMicAllowed(true);
-      const data = new Uint8Array(an.frequencyBinCount);
-      const loop = () => {
-        if (!micActiveRef.current) return;
-        an.getByteFrequencyData(data);
-        let peak = 0;
-        for (let i = 0; i < data.length; i++) if (data[i] > peak) peak = data[i];
-        const now  = Date.now();
-        if (peak > 140 && now - repDebounce.current > 1000) {
-          repDebounce.current = now;
-          setRepsLeft(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
-        }
-        requestAnimationFrame(loop);
-      };
-      requestAnimationFrame(loop);
-    } catch(_) { setMicAllowed(false); }
-  }, []);
-
-  const isRepEx = !cur.p.isTime && cur.p.value !== null && phase === 'exercise';
-
-  useEffect(() => { if (isRepEx) startMic(); else stopMic(); }, [isRepEx]);
-  useEffect(() => () => stopMic(), []);
-
-  // reset rep counter when exercise/set/side changes
-  useEffect(() => {
-    if (!cur.p.isTime && cur.p.value !== null) setRepsLeft(cur.p.value);
-    else setRepsLeft(null);
-  }, [cur.eIdx, cur.sIdx, cur.siIdx]);
-
-  // auto-advance when reps reach 0
-  useEffect(() => {
-    if (repsLeft === 0 && phase === 'exercise' && !cur.p.isTime) {
-      const t = setTimeout(advance, 400);
-      return () => clearTimeout(t);
-    }
-  }, [repsLeft, phase]);
 
   // ── advance / skipRest ────────────────────────────────────────────────────
   const advance = useCallback(() => {
@@ -1095,7 +1031,6 @@ function WorkoutMode({exercises, onClose}) {
   const isSideSwitch = nextStep && nextStep.eIdx===cur.eIdx && nextStep.sIdx===cur.sIdx;
   const isNewEx      = nextStep && nextStep.eIdx!==cur.eIdx;
   const nextSide     = isSideSwitch ? sides[nextStep.siIdx] : null;
-  const displayReps  = repsLeft !== null ? repsLeft : cur.p.value;
 
   return (
     <div style={{
@@ -1202,35 +1137,13 @@ function WorkoutMode({exercises, onClose}) {
               </div>
 
             ) : cur.p.value !== null ? (
-              /* rep exercise — mic counts down */
-              <div style={{marginBottom:24}}>
+              /* rep exercise — toon doel, gebruiker klikt zelf door */
+              <div style={{marginBottom:36}}>
                 <div style={{
-                  fontSize:100,fontWeight:800,lineHeight:1,fontVariantNumeric:"tabular-nums",transition:"color .3s",
-                  color: displayReps===0?"#4ade80": displayReps!==null&&displayReps<=3?"#F59E0B":"#fff",
-                }}>{displayReps}</div>
-                <div style={{fontSize:14,color:"#666",marginTop:8,marginBottom:20}}>herhalingen</div>
-                <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center"}}>
-                  <button onClick={()=>setRepsLeft(r=>r!==null&&r>0?r-1:r)} style={{
-                    background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
-                    width:44,height:44,fontSize:22,cursor:"pointer",fontFamily:font,fontWeight:700,
-                  }}>−</button>
-                  <div style={{
-                    fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:20,
-                    display:"flex",alignItems:"center",gap:6,
-                    background:"#1e1e2a",border:`1px solid ${micOn?"#4ade8033":"#2a2a2a"}`,
-                    color: micOn?"#4ade80":"#555",
-                  }}>
-                    <span style={{
-                      width:7,height:7,borderRadius:"50%",flexShrink:0,
-                      background:micOn?"#4ade80":"#444",display:"inline-block",
-                    }}/>
-                    {micOn?"Luistert...":micAllowed?"Mic laden...":"Tel handmatig"}
-                  </div>
-                  <button onClick={()=>setRepsLeft(r=>r!==null?r+1:r)} style={{
-                    background:"#1e1e2a",color:"#aaa",border:"1px solid #333",borderRadius:10,
-                    width:44,height:44,fontSize:22,cursor:"pointer",fontFamily:font,fontWeight:700,
-                  }}>+</button>
-                </div>
+                  fontSize:100,fontWeight:800,lineHeight:1,fontVariantNumeric:"tabular-nums",
+                  color:"#fff",
+                }}>{cur.p.value}</div>
+                <div style={{fontSize:14,color:"#666",marginTop:8}}>herhalingen</div>
               </div>
 
             ) : ex?.sets ? (
