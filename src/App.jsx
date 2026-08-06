@@ -993,9 +993,10 @@ function WorkoutMode({exercises, onClose}) {
       const loop = () => {
         if (!micActiveRef.current) return;
         an.getByteFrequencyData(data);
-        const peak = Math.max(...data);
+        let peak = 0;
+        for (let i = 0; i < data.length; i++) if (data[i] > peak) peak = data[i];
         const now  = Date.now();
-        if (peak > 80 && now - repDebounce.current > 800) {
+        if (peak > 140 && now - repDebounce.current > 1000) {
           repDebounce.current = now;
           setRepsLeft(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
         }
