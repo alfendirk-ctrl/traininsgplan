@@ -862,8 +862,6 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <input value={ex.name} onChange={e=>onUpdate({...ex,name:e.target.value})}
           placeholder="Oefening" style={inp({flex:1,fontSize:14,padding:"9px 10px",minWidth:0})} />
-        <input value={ex.sets} onChange={e=>onUpdate({...ex,sets:e.target.value})}
-          placeholder={setsPlaceholder} style={inp({width:64,fontSize:13,padding:"9px 8px",fontFamily:mono,textAlign:"center",flexShrink:0})} />
         {ex.name.trim()&&db&&(
           <button onClick={()=>setShowSave(p=>!p)} style={{
             width:36,height:36,borderRadius:8,flexShrink:0,
@@ -875,6 +873,7 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
         )}
         <button onClick={onDelete} style={{width:36,height:36,borderRadius:8,flexShrink:0,background:"transparent",border:`1px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
+      <SetsEditor value={ex.sets} onChange={v=>onUpdate({...ex,sets:v})} />
       {showSave&&db&&(
         <div style={{marginTop:6,padding:"10px 12px",background:C.purpleLight,borderRadius:10,display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:12,fontWeight:600,color:C.purple}}>Opslaan in database</div>
@@ -911,6 +910,62 @@ function parseSets(str) {
   if ((m=s.match(/^(\d+)\s*[×xX]\s*(\d+)$/)))      return {numSets:+m[1],value:+m[2],isTime:false,perSide};
   if ((m=s.match(/^(\d+)$/)))                       return {numSets:1,    value:+m[1],isTime:false,perSide};
   return {numSets:1,value:null,isTime:false,perSide};
+}
+
+// ─── SETS EDITOR ──────────────────────────────────────────────────────────────
+function SetsEditor({value,onChange}) {
+  const parse = str => {
+    const p = parseSets(str||"");
+    return {s:p.numSets||1, v:p.value!=null?p.value:10, t:!!p.isTime, p:!!p.perSide};
+  };
+  const fmt = ({s,v,t,p}) => {
+    let str = s>1?`${s}×${v}`:`${v}`;
+    if(t) str += " s";
+    if(p) str += " e/s";
+    return str;
+  };
+  const [st,setSt] = useState(()=>parse(value));
+  useEffect(()=>{
+    const next=parse(value);
+    setSt(prev=>
+      prev.s===next.s&&prev.v===next.v&&prev.t===next.t&&prev.p===next.p?prev:next
+    );
+  },[value]);
+
+  const emit = ns => { setSt(ns); onChange(fmt(ns)); };
+  const step = st.t?5:1, minV = st.t?5:1;
+
+  const pbS = {
+    width:28,height:28,borderRadius:6,border:`1px solid ${C.border}`,
+    background:C.surfaceAlt,color:C.text,cursor:"pointer",fontSize:14,
+    display:"flex",alignItems:"center",justifyContent:"center",fontFamily:font,lineHeight:1,flexShrink:0,
+  };
+  const chipS = active => ({
+    height:28,borderRadius:6,padding:"0 9px",
+    border:`1px solid ${active?C.purple:C.border}`,
+    background:active?C.purpleLight:C.surfaceAlt,
+    color:active?C.purple:C.textMuted,
+    cursor:"pointer",fontSize:12,fontWeight:active?700:400,
+    fontFamily:font,display:"flex",alignItems:"center",flexShrink:0,
+  });
+
+  return (
+    <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:"wrap",paddingTop:5}}>
+      <span style={{fontSize:11,color:C.textMuted,flexShrink:0,minWidth:28}}>Sets</span>
+      <button style={pbS} onClick={()=>emit({...st,s:Math.max(1,st.s-1)})}>−</button>
+      <span style={{fontSize:13,fontWeight:700,color:C.text,minWidth:14,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{st.s}</span>
+      <button style={pbS} onClick={()=>emit({...st,s:Math.min(10,st.s+1)})}>+</button>
+      <span style={{fontSize:11,color:C.textMuted,margin:"0 2px"}}>×</span>
+      <button style={pbS} onClick={()=>emit({...st,v:Math.max(minV,st.v-step)})}>−</button>
+      <span style={{fontSize:13,fontWeight:700,color:C.text,minWidth:28,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{st.v}</span>
+      <button style={pbS} onClick={()=>emit({...st,v:st.v+step})}>+</button>
+      <button style={chipS(st.t)} onClick={()=>{
+        const t=!st.t; const v=t?Math.max(5,Math.round(st.v/5)*5||30):st.v;
+        emit({...st,t,v});
+      }}>{st.t?"sec.":"herh."}</button>
+      <button style={chipS(st.p)} onClick={()=>emit({...st,p:!st.p})}>e/s</button>
+    </div>
+  );
 }
 
 // ─── WORKOUT MODE ─────────────────────────────────────────────────────────────
