@@ -369,13 +369,13 @@ const DAYS       = ["ma","di","wo","do","vr","za","zo"];
 const SKILL_DAYS = ["ma","di","wo","do","vr","za"]; // no sunday for skill planning
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
-const SKILL_KEYS = ["handstand","pullup"];
+const SKILL_KEYS = ["handstand"];
 const RATINGS    = ["Te makkelijk","Goed","Zwaar","Niet gelukt"];
 const RATING_COLORS = ["#059669","#7C3AED","#D97706","#DC2626"];
 const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Testweek","Verdieping","Finale"];
 
-const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"], pullup:["di","do","za"] };
-const DEFAULT_SKILL_LEVEL    = { handstand:1, pullup:1 };
+const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"] };
+const DEFAULT_SKILL_LEVEL    = { handstand:1 };
 
 function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
   const schedule = {}, level = {}, reasons = {};
@@ -845,7 +845,7 @@ function SyncModal({syncKey,onSwitch,onClose}) {
 }
 
 // ─── EXERCISE ROW ─────────────────────────────────────────────────────────────
-function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
+function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5",setsEditor=false}) {
   const [showSave,setShowSave] = useState(false);
   const [saveSection,setSaveSection] = useState("gym");
   const [savePartId,setSavePartId] = useState("");
@@ -862,6 +862,13 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <input value={ex.name} onChange={e=>onUpdate({...ex,name:e.target.value})}
           placeholder="Oefening" style={inp({flex:1,fontSize:14,padding:"9px 10px",minWidth:0})} />
+        {!setsEditor&&ex.sets&&(
+          <span style={{fontSize:12,color:C.textSub,flexShrink:0,fontFamily:mono,
+            background:C.surfaceAlt,border:`1px solid ${C.border}`,
+            borderRadius:5,padding:"3px 7px",whiteSpace:"nowrap"}}>
+            {ex.sets}
+          </span>
+        )}
         {ex.name.trim()&&db&&(
           <button onClick={()=>setShowSave(p=>!p)} style={{
             width:36,height:36,borderRadius:8,flexShrink:0,
@@ -873,7 +880,7 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5"}) {
         )}
         <button onClick={onDelete} style={{width:36,height:36,borderRadius:8,flexShrink:0,background:"transparent",border:`1px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
-      <SetsEditor value={ex.sets} onChange={v=>onUpdate({...ex,sets:v})} />
+      {setsEditor&&<SetsEditor value={ex.sets} onChange={v=>onUpdate({...ex,sets:v})} />}
       {showSave&&db&&(
         <div style={{marginTop:6,padding:"10px 12px",background:C.purpleLight,borderRadius:10,display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:12,fontWeight:600,color:C.purple}}>Opslaan in database</div>
@@ -1767,7 +1774,7 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onDele
             <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 8px"}}>Nog geen oefeningen</div>
           )}
           {routine.exercises.map((ex,i)=>(
-            <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" />
+            <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" setsEditor={true} />
           ))}
           {/* Action buttons */}
           <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
