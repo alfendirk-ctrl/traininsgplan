@@ -489,7 +489,7 @@ const mkDay = () => ({
   morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"",
   morningRoutineId:null, morningRoutineSync:false, showMorningDbModal:false, showMorningRoutineModal:false,
   type:null, exercises:[], routineName:"", routineUrl:"",
-  routineId:null, routineSync:false, note:"", showDbModal:false, showRoutineModal:false,
+  routineId:null, routineSync:false, note:"", mood:null, showDbModal:false, showRoutineModal:false,
 });
 const mkWeek = (n, skillSchedule=DEFAULT_SKILL_SCHEDULE, skillLevel=DEFAULT_SKILL_LEVEL, adaptReason=null) => ({
   weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])),
@@ -543,6 +543,7 @@ function migrateWeeks(data){
       morningRoutineSync: day.morningRoutineSync||false,
       routineId: day.routineId||null,
       routineSync: day.routineSync||false,
+      mood: day.mood||null,
     }]))
   }));
 }
@@ -1465,7 +1466,10 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
             {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
             {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4}}>☀️ {morningChipLabel}</span>}
             {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4}}>{day.type==="gym"?"🏋️":"📋"} {eveningChipLabel}</span>}
-            {hasNote&&<span style={{fontSize:11,color:C.textMuted}}>📝</span>}
+            {day.mood==="goed"  &&<span style={{fontSize:13}}>💪</span>}
+            {day.mood==="oke"   &&<span style={{fontSize:13}}>😐</span>}
+            {day.mood==="slecht"&&<span style={{fontSize:13}}>😴</span>}
+            {!day.mood&&hasNote&&<span style={{fontSize:11,color:C.textMuted}}>📝</span>}
           </div>
         </div>
         <span style={{fontSize:16,color:C.textMuted,flexShrink:0,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>⌄</span>
@@ -1653,10 +1657,26 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
             </div>
           )}
 
-          {/* NOTE */}
+          {/* NOTE + MOOD */}
           <div style={{padding:"0 14px 14px"}}>
+            <div style={{display:"flex",gap:6,marginBottom:8}}>
+              {[
+                {key:"goed",  label:"💪 Goed",   color:"#059669", bg:"#D1FAE5"},
+                {key:"oke",   label:"😐 Oké",    color:"#D97706", bg:"#FEF3C7"},
+                {key:"slecht",label:"😴 Slecht", color:"#DC2626", bg:"#FEE2E2"},
+              ].map(({key,label,color,bg})=>(
+                <button key={key} onClick={()=>upd({mood:day.mood===key?null:key})} style={{
+                  flex:1,padding:"7px 0",borderRadius:8,cursor:"pointer",
+                  fontFamily:font,fontSize:12,fontWeight:day.mood===key?700:400,
+                  border:`1.5px solid ${day.mood===key?color:C.border}`,
+                  background:day.mood===key?bg:C.surface,
+                  color:day.mood===key?color:C.textMuted,
+                  transition:"all .15s",
+                }}>{label}</button>
+              ))}
+            </div>
             <textarea value={day.note||""} onChange={e=>upd({note:e.target.value})}
-              placeholder="📝 Notitie voor deze dag…"
+              placeholder="📝 Optionele notitie…"
               rows={2} style={inp({resize:"vertical",lineHeight:1.5,fontSize:13,color:C.textSub})} />
           </div>
         </div>
@@ -1694,6 +1714,19 @@ function WeekEval({week,onSave}) {
   const [note,setNote] = useState(week.note||"");
   const skills = SKILL_WEEKS[Math.min(week.weekNum,10)];
 
+  // Mood summary from days
+  const moodCounts = DAYS.reduce((acc,d)=>{
+    const m=week.days[d]?.mood; if(m) acc[m]=(acc[m]||0)+1; return acc;
+  },{});
+  const badDays  = moodCounts.slecht||0;
+  const goodDays = moodCounts.goed||0;
+  const totalMoods = (moodCounts.goed||0)+(moodCounts.oke||0)+badDays;
+
+  let moodSignal = null;
+  if(badDays>=3)       moodSignal={color:"#DC2626",bg:"#FEE2E2",icon:"⚠️",text:`${badDays} slechte dagen — intensiteit volgende week bewaard.`};
+  else if(badDays>=2)  moodSignal={color:"#D97706",bg:"#FEF3C7",icon:"💡",text:`${badDays} zware dagen — let op herstel.`};
+  else if(goodDays>=5) moodSignal={color:"#059669",bg:"#D1FAE5",icon:"🚀",text:"Topweek! Klaar voor volgend niveau."};
+
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",marginTop:16,boxShadow:C.shadowLg}}>
       <div style={{padding:"14px 16px",background:C.purpleLight,borderBottom:`1px solid ${C.purpleMid}`}}>
@@ -1701,6 +1734,24 @@ function WeekEval({week,onSave}) {
         <div style={{fontSize:13,color:C.purple+"99",marginTop:2}}>Beoordeel elke skill en maak week {week.weekNum+1} aan.</div>
       </div>
       <div style={{padding:"16px"}}>
+        {/* Mood summary */}
+        {totalMoods>0&&(
+          <div style={{marginBottom:16,padding:"10px 12px",background:C.surfaceAlt,borderRadius:10}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.textSub,marginBottom:6}}>Hoe ging de week?</div>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+              {(moodCounts.goed||0)>0&&<span style={{fontSize:13,color:"#059669",fontWeight:600}}>💪 {moodCounts.goed} {moodCounts.goed===1?"dag":"dagen"} goed</span>}
+              {(moodCounts.oke||0)>0&&<span style={{fontSize:13,color:"#D97706",fontWeight:600}}>😐 {moodCounts.oke} {moodCounts.oke===1?"dag":"dagen"} oké</span>}
+              {badDays>0&&<span style={{fontSize:13,color:"#DC2626",fontWeight:600}}>😴 {badDays} {badDays===1?"dag":"dagen"} slecht</span>}
+            </div>
+            {moodSignal&&(
+              <div style={{marginTop:8,padding:"7px 10px",background:moodSignal.bg,borderRadius:7,
+                fontSize:12,fontWeight:600,color:moodSignal.color}}>
+                {moodSignal.icon} {moodSignal.text}
+              </div>
+            )}
+          </div>
+        )}
+
         {SKILL_KEYS.map(k=>{
           const s=skills[k];
           return (
@@ -2076,11 +2127,21 @@ export default function App() {
   }, []);
   const closeWeek = (wi,ratings,note) => {
     const closed = {...weeks[wi],ratings,note,done:true};
+    const badDays = DAYS.filter(d=>closed.days[d]?.mood==="slecht").length;
+    // 3+ slechte dagen → cap progressie op "Zwaar" zodat niveau niet stijgt
+    const adjustedRatings = {...ratings};
+    if(badDays>=3){
+      SKILL_KEYS.forEach(k=>{
+        if(adjustedRatings[k]==="Te makkelijk"||adjustedRatings[k]==="Goed")
+          adjustedRatings[k]="Zwaar";
+      });
+    }
     const w = weeks.map((wk,i)=>i!==wi?wk:closed);
     const next = closed.weekNum+1;
     if(next<=10&&!w.find(wk=>wk.weekNum===next)){
-      const {schedule,level,reasons} = adaptSkillSchedule(closed.skillSchedule,closed.skillLevel,ratings);
-      const reason = SKILL_KEYS.map(k=>`${SKILL_WEEKS[1][k].label}: ${reasons[k]}`).join(' · ');
+      const {schedule,level,reasons} = adaptSkillSchedule(closed.skillSchedule,closed.skillLevel,adjustedRatings);
+      const moodNote = badDays>=3?` · ${badDays} slechte dagen → intensiteit bewaard`:"";
+      const reason = SKILL_KEYS.map(k=>`${SKILL_WEEKS[1][k].label}: ${reasons[k]}`).join(' · ')+moodNote;
       w.push(mkWeek(next,schedule,level,reason));
     }
     persist(w); setActiveIdx(w.length-1);
