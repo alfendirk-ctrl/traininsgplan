@@ -21,22 +21,22 @@ const SKILL_WEEKS = {
         "Houd dit actief door de hele hold. Inzakken = terug naar begin.",
       ], goal:"Schouders actief = kracht. Inzakken = hangen. Voel het verschil." },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Scapulaire pulls", steps:[
-        "Hang aan de stang met rechte armen.",
-        "Trek je schouderbladen omlaag — armen blijven gestrekt, je gaat iets omhoog.",
-        "Laat ze weer ontspannen omhoog zakken.",
-      ], goal:"3 sets van 10 herhalingen" },
-      { name:"Dead hang", steps:[
-        "Hang stil aan de stang, armen gestrekt.",
-        "Trek je schouders actief omlaag — niet laten optrekken naar je oren.",
-        "Houd deze spanning vast gedurende de hele hang.",
-      ], goal:"3 sets van 20 seconden" },
-      { name:"Band pull-ups", steps:[
-        "Hang een weerstandsband over de stang, steun met je knie erin.",
-        "Trek jezelf omhoog tot je kin boven de stang is.",
-        "Laat jezelf volledig terug naar beneden zakken — armen helemaal gestrekt.",
-      ], goal:"3 sets van 6 herhalingen" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Spieren vinden", steps:[
+        "Ga liggen met gebogen knieën. Adem rustig door.",
+        "Span aan alsof je plas ophoudt én een wind tegenhoudt — naar binnen en omhoog.",
+        "Billen, buik en dijen blijven ontspannen. Alleen de bekkenbodem beweegt.",
+      ], goal:"Dagelijks 1 minuut — leer de juiste spier isoleren" },
+      { name:"Snelle knijpen", steps:[
+        "Span 1 seconde maximaal aan, laat 1 seconde volledig los.",
+        "Blijf doorademen — houd je adem niet in.",
+        "Volledig loslaten is net zo belangrijk als aanspannen.",
+      ], goal:"3 sets van 10 snelle knijpen" },
+      { name:"Korte holds", steps:[
+        "Span aan en houd 3 seconden vast.",
+        "Laat 5 seconden volledig los voor je opnieuw aanspant.",
+        "Voel of de kracht gelijk blijft — zakt hij weg, dan stop je de set.",
+      ], goal:"3 sets van 8 herhalingen van 3 seconden" },
     ]},
   },
   2: {
@@ -57,22 +57,22 @@ const SKILL_WEEKS = {
         "Houd dit gevoel door de hele set. Schouders = de ruggengraat van je handstand.",
       ], goal:"Voel het verschil tussen los en vergrendeld — zorg voor vergrendeld bij elke hold" },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Band pull-ups (minder steun)", steps:[
-        "Gebruik een dunnere band, of steek je knie minder ver erdoorheen.",
-        "Trek omhoog tot kin boven stang.",
-        "Volledig naar beneden zakken — armen gestrekt.",
-      ], goal:"3 sets van 8 herhalingen" },
-      { name:"Passief → actief hang", steps:[
-        "Hang ontspannen: schouders optrekken naar oren (passief).",
-        "Trek nu bewust je schouderbladen omlaag (actief) — voel hoe je iets omhoog gaat.",
-        "Wissel dit 5 keer af en voel het verschil.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Negatieve pull-up", steps:[
-        "Spring of stap naar bovenpositie: kin boven de stang.",
-        "Laat jezelf in 3 seconden gecontroleerd neer — zo langzaam mogelijk.",
-        "Laat los, herhaal.",
-      ], goal:"3 sets van 3 herhalingen" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Holds naar 5 seconden", steps:[
+        "Liggend: span aan en houd 5 seconden vast.",
+        "Laat 5 seconden volledig los — tel de rust echt uit.",
+        "Kwaliteit boven kwantiteit: een slappe hold telt niet mee.",
+      ], goal:"3 sets van 8 herhalingen van 5 seconden" },
+      { name:"Snelle knijpen uitbreiden", steps:[
+        "1 seconde aan, 1 seconde uit — maximaal tempo, volledige ontspanning.",
+        "Doe de set in één keer af zonder tussenpauze.",
+        "Merk je dat je niet meer volledig aanspant? Dan is de set klaar.",
+      ], goal:"3 sets van 15 snelle knijpen" },
+      { name:"Ademcoördinatie", steps:[
+        "Adem in door je neus en laat je buik zachtjes uitzetten.",
+        "Span de bekkenbodem aan tijdens de uitademing.",
+        "Ontspan volledig tijdens de volgende inademing.",
+      ], goal:"3 sets van 8 — elke hold gekoppeld aan je uitademing" },
     ]},
   },
   3: {
@@ -93,22 +93,22 @@ const SKILL_WEEKS = {
         "Volgende poging: laat die voet een seconde hangen zonder muur. Dan steeds langer.",
       ], goal:"10 pogingen per sessie — brug tussen muur en vrije handstand" },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Band pull-ups (nog minder steun)", steps:[
-        "Gebruik een nog dunnere band dan vorige week.",
-        "Trek omhoog tot kin boven stang.",
-        "Volledig naar beneden zakken.",
-      ], goal:"3 sets van 10 herhalingen" },
-      { name:"Negatieve pull-up (4 sec)", steps:[
-        "Spring naar bovenpositie: kin boven de stang.",
-        "Laat jezelf in 4 seconden gecontroleerd neer.",
-        "Laat los, herhaal.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Vasthouden boven", steps:[
-        "Trek jezelf op tot kin boven de stang.",
-        "Houd de bovenpositie 2 seconden vast.",
-        "Laat daarna gecontroleerd zakken.",
-      ], goal:"3 sets van 5 herhalingen" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Holds naar 8 seconden", steps:[
+        "Span aan en houd 8 seconden vast zonder je adem in te houden.",
+        "Rust 8 seconden tussen de herhalingen.",
+        "Zakt de spanning halverwege weg? Kort de hold in tot wat je wél volhoudt.",
+      ], goal:"3 sets van 8 herhalingen van 8 seconden" },
+      { name:"Zittend trainen", steps:[
+        "Zit rechtop op een stevige stoel, voeten plat op de grond.",
+        "Zittend is zwaarder dan liggend — de zwaartekracht werkt nu tegen je.",
+        "Doe de eerste set liggend als opwarming, daarna twee sets zittend.",
+      ], goal:"1 set liggend + 2 sets zittend van 8 herhalingen" },
+      { name:"Lift-oefening", steps:[
+        "Span aan in 3 stappen omhoog: een derde, twee derde, maximaal.",
+        "Houd elke verdieping 2 seconden vast voor je verder omhoog gaat.",
+        "Zak daarna in dezelfde 3 stappen gecontroleerd terug.",
+      ], goal:"3 sets van 5 liften" },
     ]},
   },
   4: {
@@ -129,22 +129,22 @@ const SKILL_WEEKS = {
         "Overhead reach: armen omhoog gestrekt, leun zijwaarts. 20 sec per kant.",
       ], goal:"2 sets per oefening" },
     ]},
-    pullup: { label:"Pull-ups – Deload", color:"#059669", items:[
-      { name:"Lichte band pull-ups", steps:[
-        "Gebruik de lichtste band die je hebt.",
-        "Trek omhoog tot kin boven stang, laat gecontroleerd zakken.",
-        "Geen maximale inspanning — herstel staat centraal.",
-      ], goal:"2 sets van 6 herhalingen op gevoel" },
-      { name:"Dead hang (herstel)", steps:[
-        "Hang stil aan de stang, armen gestrekt.",
-        "Schouders actief omlaag — niet laten optrekken.",
-        "Adem rustig in en uit.",
-      ], goal:"2 sets van 20 seconden" },
-      { name:"Prioriteit: rust", steps:[
-        "Je lichaam wordt sterker in de rustperiodes, niet tijdens de training.",
-        "Slaap 7-9 uur per nacht deze week.",
-        "Pijn ≠ vooruitgang — sla een oefening over als iets pijnlijk aanvoelt.",
-      ], goal:"Fris en uitgerust beginnen aan week 5" },
+    pelvis: { label:"Bekkenbodem – Deload", color:"#0891B2", items:[
+      { name:"Rustige holds", steps:[
+        "Liggend: span aan en houd 5 seconden vast.",
+        "Geen nieuwe doelen deze week — houd vast wat je hebt opgebouwd.",
+        "Rust ruim tussen de herhalingen.",
+      ], goal:"2 sets van 6 herhalingen van 5 seconden" },
+      { name:"Snelle knijpen (licht)", steps:[
+        "1 seconde aan, 1 seconde uit.",
+        "Halve dosis vergeleken met vorige week.",
+        "Focus op zuivere techniek, niet op aantal.",
+      ], goal:"2 sets van 10 snelle knijpen" },
+      { name:"Volledig ontspannen", steps:[
+        "Span 3 seconden aan en laat daarna 10 seconden volledig los.",
+        "Voel of je écht helemaal loslaat — een spier die nooit ontspant wordt niet sterker.",
+        "Een overactieve bekkenbodem geeft dezelfde klachten als een zwakke.",
+      ], goal:"2 sets van 8 — de ontspanning is hier de oefening" },
     ]},
   },
   5: {
@@ -165,22 +165,22 @@ const SKILL_WEEKS = {
         "Voel hoe de druk je terugtrekt. Dit is je reddingslijn bij overbalance.",
       ], goal:"8-10 pogingen — overbalance leren corrigeren via hand/vingerkracht" },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Pull-ups zonder band", steps:[
-        "Hang aan de stang zonder hulp.",
-        "Trek omhoog tot kin boven stang.",
-        "Vul de rest van de set aan met band als je er niet genoeg haalt.",
-      ], goal:"3 sets van 3 herhalingen zonder band" },
-      { name:"Negatieve pull-up (5 sec)", steps:[
-        "Spring naar bovenpositie: kin boven stang.",
-        "Laat jezelf in 5 seconden gecontroleerd neer.",
-        "Houd spanning in je rug — niet slap neerhangen.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Dead hang", steps:[
-        "Hang stil, schouders actief omlaag.",
-        "Adem rustig in en uit.",
-        "Houd zo lang mogelijk vast.",
-      ], goal:"3 sets van 30 seconden" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Holds naar 10 seconden", steps:[
+        "Span aan en houd 10 seconden vast, rustig doorademen.",
+        "Rust 10 seconden tussen de herhalingen.",
+        "De laatste 2 seconden zijn het zwaarst — daar zit de winst.",
+      ], goal:"3 sets van 8 herhalingen van 10 seconden" },
+      { name:"Staand trainen", steps:[
+        "Sta rechtop, voeten op heupbreedte, knieën licht ontspannen.",
+        "Staand is de zwaarste positie — hier vertaalt kracht zich naar het dagelijks leven.",
+        "Doe twee sets staand en één set zittend als je moe wordt.",
+      ], goal:"2 sets staand + 1 set zittend van 8 herhalingen" },
+      { name:"Lift met 4 verdiepingen", steps:[
+        "Span aan in 4 stappen omhoog, elke verdieping 2 seconden vasthouden.",
+        "Zak in 4 gecontroleerde stappen terug — niet in één keer laten vallen.",
+        "De gecontroleerde afdaling is het moeilijkste deel.",
+      ], goal:"3 sets van 5 liften" },
     ]},
   },
   6: {
@@ -201,22 +201,22 @@ const SKILL_WEEKS = {
         "Verschilt van schouderstrategie — grotere correctie, meer tijd. Combineer beide.",
       ], goal:"6-8 pogingen per sessie" },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Pull-ups zonder band", steps:[
-        "Hang zonder hulp.",
-        "Trek omhoog — schouderbladen eerst omlaag, dan omhoog trekken.",
-        "Kin boven stang, dan volledig naar beneden.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Negatieve pull-up (6 sec)", steps:[
-        "Spring naar bovenpositie.",
-        "Laat jezelf in 6 seconden gecontroleerd neer.",
-        "Houd spanning in je rug — niet slap neerhangen.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Band pull-aparts", steps:[
-        "Houd een band voor je op schouderbreedte, armen gestrekt.",
-        "Trek de band uiteen tot armen gestrekt naar de zijkanten zijn.",
-        "Houd 1 sec vast, dan terug.",
-      ], goal:"2 sets van 15 herhalingen" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Holds naar 12 seconden", steps:[
+        "Staand of zittend: span aan en houd 12 seconden vast.",
+        "Rust 12 seconden tussen de herhalingen.",
+        "Blijf normaal doorademen — dat is nu de grootste uitdaging.",
+      ], goal:"3 sets van 6 herhalingen van 12 seconden" },
+      { name:"Snelle knijpen staand", steps:[
+        "Sta rechtop. 1 seconde maximaal aan, 1 seconde volledig los.",
+        "Staand is zwaarder — verwacht dat je minder herhalingen haalt.",
+        "Stop de set zodra je niet meer volledig kunt aanspannen.",
+      ], goal:"3 sets van 15 snelle knijpen staand" },
+      { name:"Combinatieset", steps:[
+        "Houd eerst 10 seconden maximaal vast.",
+        "Ga direct door met 10 snelle knijpen zonder rust.",
+        "Rust daarna 60 seconden voor de volgende set.",
+      ], goal:"3 sets — traint kracht en uithouding tegelijk" },
     ]},
   },
   7: {
@@ -237,22 +237,22 @@ const SKILL_WEEKS = {
         "Dit houdt je basissterkte en lichaamsgevoel scherp.",
       ], goal:"2 sets van 45 seconden" },
     ]},
-    pullup: { label:"Pull-ups", color:"#059669", items:[
-      { name:"Pull-ups zonder band", steps:[
-        "Hang zonder hulp.",
-        "Trek omhoog — kin boven stang.",
-        "Volledig naar beneden, herhaal.",
-      ], goal:"5 sets van 5 herhalingen" },
-      { name:"Negatieve pull-up (8 sec)", steps:[
-        "Spring naar bovenpositie.",
-        "Laat jezelf in 8 seconden gecontroleerd neer — zo langzaam als je kunt.",
-        "Houd spanning in je rug.",
-      ], goal:"3 sets van 5 herhalingen" },
-      { name:"Dead hang", steps:[
-        "Hang stil, schouders actief omlaag.",
-        "Probeer zo lang mogelijk vast te houden.",
-        "Adem rustig.",
-      ], goal:"3 sets van 45 seconden" },
+    pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
+      { name:"Uithoudingsvermogen: 15 seconden", steps:[
+        "Span aan op ongeveer 70% van je maximum en houd 15 seconden vast.",
+        "Submaximaal aanspannen kun je langer volhouden dan maximaal.",
+        "Rust 15 seconden tussen de herhalingen.",
+      ], goal:"3 sets van 6 herhalingen van 15 seconden" },
+      { name:"Aanspannen tijdens beweging", steps:[
+        "Span aan en houd vast tijdens 10 langzame squats.",
+        "Daarna: aanspannen en vasthouden tijdens 30 seconden rustig lopen.",
+        "De spier moet werken terwijl de rest van je lichaam beweegt.",
+      ], goal:"2 rondes squats + lopen" },
+      { name:"The knack: dagelijkse reflex", steps:[
+        "Span kort en scherp aan vlak vóór je hoest, niest of iets zwaars tilt.",
+        "Oefen dit bewust 10 keer met een nep-hoest.",
+        "Doel is dat dit vanzelf gaat — daar is de hele training voor bedoeld.",
+      ], goal:"10 bewuste herhalingen per sessie" },
     ]},
   },
   8: {
@@ -273,22 +273,22 @@ const SKILL_WEEKS = {
         "Dit bepaalt de focus van week 9-10.",
       ], goal:"Inzicht voor de eindsprint" },
     ]},
-    pullup: { label:"Pull-ups – Testweek", color:"#059669", items:[
-      { name:"TEST: maximaal aantal pull-ups", steps:[
-        "Doe de test als allereerste oefening — volledig uitgerust.",
-        "Hang zonder band, trek omhoog tot kin boven stang, herhaal tot je niet meer kunt.",
+    pelvis: { label:"Bekkenbodem – Testweek", color:"#0891B2", items:[
+      { name:"TEST: maximale hold", steps:[
+        "Doe de test uitgerust, als eerste oefening van de sessie.",
+        "Span maximaal aan en houd zo lang mogelijk vast — stop zodra de kracht wegzakt.",
+        "Noteer het aantal seconden in de notitie.",
+      ], goal:"Noteer je maximale hold in seconden" },
+      { name:"TEST: snelle knijpen", steps:[
+        "Doe zoveel mogelijk snelle knijpen (1 sec aan, 1 sec uit) op rij.",
+        "Stop zodra je niet meer volledig kunt aanspannen of ontspannen.",
         "Noteer het aantal.",
-      ], goal:"Doel: 10 herhalingen — noteer je score" },
-      { name:"Reflecteer op de pull-up progressie", steps:[
-        "Wat voelde zwaar — de start, de bovenkant of de uithouding?",
-        "Hoe verliep het vergeleken met week 1?",
-        "Dit helpt bij de eindsprint.",
-      ], goal:"Inzicht voor week 9-10" },
-      { name:"Score vastleggen", steps:[
-        "Noteer je tussentijdse resultaten.",
-        "Vergelijk met week 1.",
-        "Pas je schema voor week 9 aan op basis van je scores.",
-      ], goal:"Startpunt eindsprint" },
+      ], goal:"Noteer je aantal snelle knijpen" },
+      { name:"Reflecteer op de cyclus", steps:[
+        "Merk je verschil in het dagelijks leven — bij tillen, sporten of aandrang?",
+        "Wat is zwakker: de lange hold (uithouding) of de snelle knijp (kracht)?",
+        "Dit bepaalt de focus voor week 9-10.",
+      ], goal:"Inzicht voor de eindsprint" },
     ]},
   },
   9: {
@@ -309,22 +309,22 @@ const SKILL_WEEKS = {
         "Poging: beide benen in één beweging sluiten zonder muurcontact.",
       ], goal:"10 pogingen — dit is de brug naar volledig vrij" },
     ]},
-    pullup: { label:"Pull-ups – Verdieping", color:"#059669", items:[
-      { name:"Pull-ups (volume)", steps:[
-        "Trek omhoog tot kin boven stang — schone herhaling, geen kip.",
-        "Volledig naar beneden — armen helemaal gestrekt.",
-        "Rust 90 seconden tussen sets.",
-      ], goal:"4 sets van 8 herhalingen" },
-      { name:"Archer pull-up (introductie)", steps:[
-        "Hang met brede grip.",
-        "Trek één arm recht, buig de andere — kin beweegt naar de gebogen kant.",
-        "Wissel kant per set.",
-      ], goal:"3 sets van 5 herhalingen per kant" },
-      { name:"L-sit hang", steps:[
-        "Hang aan de stang, hef benen gestrekt tot horizontaal.",
-        "Core stijf — geen zwaaien.",
-        "Zo lang mogelijk vasthouden.",
-      ], goal:"3 sets van 10 seconden" },
+    pelvis: { label:"Bekkenbodem – Verdieping", color:"#0891B2", items:[
+      { name:"Holds onder belasting", steps:[
+        "Span aan en houd vast tijdens een plank of dead hang van 20 seconden.",
+        "De bekkenbodem hoort bij je diepe core — train hier als één geheel.",
+        "Rust 60 seconden tussen de herhalingen.",
+      ], goal:"3 sets van 20 seconden onder belasting" },
+      { name:"Reverse kegels", steps:[
+        "Adem diep in en duw de bekkenbodem juist zachtjes naar beneden en naar buiten.",
+        "Dit is het tegenovergestelde van aanspannen — het traint bewuste ontspanning.",
+        "Wissel af: 5 seconden aanspannen, 5 seconden reverse, 5 seconden neutraal.",
+      ], goal:"3 sets van 8 wisselingen" },
+      { name:"Volledige integratie", steps:[
+        "Combineer alles: 10 snelle knijpen, 3 liften, 3 holds van 15 seconden.",
+        "Doe de hele reeks staand, zonder tussenpauze.",
+        "Dit is je onderhoudsreeks voor na de 10 weken.",
+      ], goal:"2 volledige rondes" },
     ]},
   },
   10: {
@@ -345,22 +345,22 @@ const SKILL_WEEKS = {
         "Noteer je startpunt voor cyclus 2 — dit is waar week 1 van de volgende cyclus begint.",
       ], goal:"Startpunt cyclus 2 bepalen" },
     ]},
-    pullup: { label:"Pull-ups – Finale", color:"#059669", items:[
-      { name:"TEST: maximaal pull-ups", steps:[
-        "Eerste oefening — volledig uitgerust.",
-        "Hang zonder band, trek tot kin boven stang, herhaal tot je niet meer kunt.",
-        "Noteer het exacte aantal.",
-      ], goal:"Doel: 15 herhalingen" },
-      { name:"Terugblik pull-up progressie", steps:[
-        "Vergelijk: week 1 vs. nu — hoeveel meer?",
-        "Zwaarste moment: start, bovenkant of uithouding?",
-        "Dit bepaalt de focus van cyclus 2.",
-      ], goal:"Inzicht voor cyclus 2" },
-      { name:"Scores vastleggen", steps:[
-        "Noteer beide testresultaten in het notitiefeld.",
-        "Vergelijk met je startsituatie 10 weken geleden.",
-        "Plan je volgende 10 weken op basis hiervan.",
-      ], goal:"Cyclus 2 startpunt gereed" },
+    pelvis: { label:"Bekkenbodem – Finale", color:"#0891B2", items:[
+      { name:"TEST: maximale hold", steps:[
+        "Uitgerust, als eerste oefening. Span maximaal aan en houd zo lang mogelijk vast.",
+        "Noteer de seconden en vergelijk met je score van week 8.",
+        "Doel: 20 seconden of meer.",
+      ], goal:"Doel: 20 seconden — noteer je score" },
+      { name:"TEST: snelle knijpen", steps:[
+        "Zoveel mogelijk snelle knijpen op rij, volledige spanning en ontspanning.",
+        "Noteer het aantal en vergelijk met week 8.",
+        "Doel: 30 herhalingen of meer.",
+      ], goal:"Doel: 30 snelle knijpen — noteer je score" },
+      { name:"Onderhoudsplan", steps:[
+        "Vanaf nu is 3× per week genoeg om je resultaat vast te houden.",
+        "Eén ronde: 10 snelle knijpen + 3 liften + 3 holds van 15 seconden.",
+        "Noteer je eindscores — dit is het startpunt van cyclus 2.",
+      ], goal:"Onderhoudsschema vastgesteld" },
     ]},
   },
 };
@@ -369,13 +369,13 @@ const DAYS       = ["ma","di","wo","do","vr","za","zo"];
 const SKILL_DAYS = ["ma","di","wo","do","vr","za"]; // no sunday for skill planning
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
-const SKILL_KEYS = ["handstand"];
+const SKILL_KEYS = ["handstand","pelvis"];
 const RATINGS    = ["Te makkelijk","Goed","Zwaar","Niet gelukt"];
 const RATING_COLORS = ["#059669","#7C3AED","#D97706","#DC2626"];
 const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Testweek","Verdieping","Finale"];
 
-const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"] };
-const DEFAULT_SKILL_LEVEL    = { handstand:1 };
+const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"], pelvis:["di","do","za"] };
+const DEFAULT_SKILL_LEVEL    = { handstand:1, pelvis:1 };
 
 function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
   const schedule = {}, level = {}, reasons = {};
@@ -489,7 +489,9 @@ const mkDay = () => ({
   morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"",
   morningRoutineId:null, morningRoutineSync:false, showMorningDbModal:false, showMorningRoutineModal:false,
   type:null, exercises:[], routineName:"", routineUrl:"",
-  routineId:null, routineSync:false, note:"", mood:null, showDbModal:false, showRoutineModal:false,
+  routineId:null, routineSync:false, note:"", mood:null,
+  morningDone:false, eveningDone:false,
+  showDbModal:false, showRoutineModal:false,
 });
 const mkWeek = (n, skillSchedule=DEFAULT_SKILL_SCHEDULE, skillLevel=DEFAULT_SKILL_LEVEL, adaptReason=null) => ({
   weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])),
@@ -530,8 +532,10 @@ const DEFAULT_DB = {
 function migrateWeeks(data){
   return data.map(week=>({
     ...week,
-    skillSchedule: week.skillSchedule || DEFAULT_SKILL_SCHEDULE,
-    skillLevel:    week.skillLevel    || DEFAULT_SKILL_LEVEL,
+    // Merge defaults in per skill, zodat een nieuw toegevoegde skill
+    // ook in bestaande opgeslagen weken dagen en een niveau krijgt.
+    skillSchedule: {...DEFAULT_SKILL_SCHEDULE, ...(week.skillSchedule||{})},
+    skillLevel:    {...DEFAULT_SKILL_LEVEL,    ...(week.skillLevel||{})},
     adaptReason:   week.adaptReason   || null,
     days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
       ...day,
@@ -544,6 +548,8 @@ function migrateWeeks(data){
       routineId: day.routineId||null,
       routineSync: day.routineSync||false,
       mood: day.mood||null,
+      morningDone: day.morningDone||false,
+      eveningDone: day.eveningDone||false,
     }]))
   }));
 }
@@ -575,6 +581,20 @@ const inp = (extra={}) => ({ fontFamily:font, fontSize:15, color:C.text, backgro
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
 const Tag = ({color,bg,children}) => (
   <span style={{display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:500,background:bg,color,whiteSpace:"nowrap"}}>{children}</span>
+);
+
+const DoneToggle = ({done,color,bg,onClick}) => (
+  <button onClick={onClick} style={{
+    display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,
+    border:`1.5px solid ${done?color:C.border}`,
+    background:done?bg:"transparent",
+    color:done?color:C.textMuted,
+    fontFamily:font,fontSize:11,fontWeight:done?700:500,
+    cursor:"pointer",transition:"all .15s",flexShrink:0,
+  }}>
+    <span style={{fontSize:12,lineHeight:1}}>{done?"✓":"○"}</span>
+    {done?"Gedaan":"Afvinken"}
+  </button>
 );
 
 const Seg = ({active,color,bg,onClick,children}) => (
@@ -688,6 +708,29 @@ function ExItem({ex,onSelect}) {
 }
 
 // ─── ROUTINE PICKER MODAL ─────────────────────────────────────────────────────
+function RoutineInfo({routine}) {
+  const notes = (routine.notes||"").trim();
+  const links = (routine.links||[]).filter(l=>l.url&&l.url.trim());
+  if(!notes&&links.length===0) return null;
+  return (
+    <div style={{background:C.surfaceAlt,borderRadius:10,padding:"10px 12px"}}>
+      {notes&&(
+        <div style={{fontSize:13,color:C.textSub,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{notes}</div>
+      )}
+      {links.length>0&&(
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:notes?8:0}}>
+          {links.map((l,i)=>(
+            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{
+              fontSize:12,color:C.green,background:C.greenLight,textDecoration:"none",
+              padding:"4px 10px",borderRadius:20,fontWeight:500,
+            }}>↗ {l.label||"Link"}</a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RoutinePickerModal({routines,onSelect,onClose,context}) {
   // sort: matching type first, then "beide", then other
   const sorted = [...routines].sort((a,b)=>{
@@ -1320,7 +1363,7 @@ function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,ge
 // ─── SKILL PLANNER ────────────────────────────────────────────────────────────
 const SKILL_INFO = {
   handstand:{label:"Handstand",color:"#7C3AED",bg:"#EDE9FD",emoji:"🤸"},
-  pullup:{label:"Pull-ups",color:"#059669",bg:"#D1FAE5",emoji:"💪"},
+  pelvis:{label:"Bekkenbodem",color:"#0891B2",bg:"#CFFAFE",emoji:"🧘"},
 };
 
 function SkillPlanner({week, onChangeSchedule}) {
@@ -1464,8 +1507,8 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
           <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,flexWrap:"wrap"}}>
             {skill&&<span style={{fontSize:12,color:skill.color,fontWeight:500}}>{skillDot}{skill.label}</span>}
             {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
-            {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4}}>☀️ {morningChipLabel}</span>}
-            {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4}}>{day.type==="gym"?"🏋️":"📋"} {eveningChipLabel}</span>}
+            {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4,fontWeight:day.morningDone?700:400}}>{day.morningDone?"✓":"☀️"} {morningChipLabel}</span>}
+            {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4,fontWeight:day.eveningDone?700:400}}>{day.eveningDone?"✓":(day.type==="gym"?"🏋️":"📋")} {eveningChipLabel}</span>}
             {day.mood==="goed"  &&<span style={{fontSize:13}}>💪</span>}
             {day.mood==="oke"   &&<span style={{fontSize:13}}>😐</span>}
             {day.mood==="slecht"&&<span style={{fontSize:13}}>😴</span>}
@@ -1484,6 +1527,9 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
               <span style={{fontSize:13}}>☀️</span>
               <span style={{fontSize:12,fontWeight:700,color:C.amber,textTransform:"uppercase",letterSpacing:0.5}}>Ochtend · Mobiliteit</span>
+              <div style={{flex:1}} />
+              <DoneToggle done={!!day.morningDone} color={C.amber} bg={C.amberLight}
+                onClick={()=>upd({morningDone:!day.morningDone})} />
             </div>
             {/* Segmented control: 4 options */}
             <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
@@ -1523,6 +1569,7 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
 
                 {selectedMorningRoutine&&(
                   <>
+                    <RoutineInfo routine={selectedMorningRoutine} />
                     {/* Sync checkbox */}
                     <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
                       <input type="checkbox" checked={!!day.morningRoutineSync}
@@ -1563,6 +1610,9 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
                 <span style={{fontSize:13}}>🌙</span>
                 <span style={{fontSize:12,fontWeight:700,color:C.textSub,textTransform:"uppercase",letterSpacing:0.5}}>Avond · Training</span>
+                <div style={{flex:1}} />
+                <DoneToggle done={!!day.eveningDone} color={C.purple} bg={C.purpleLight}
+                  onClick={()=>upd({eveningDone:!day.eveningDone})} />
               </div>
               <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
                 <Seg active={day.type==="gym"}     color={C.purple}  bg={C.purpleLight}    onClick={()=>upd({type:"gym"})}>Gym</Seg>
@@ -1600,6 +1650,7 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
 
                   {selectedEveningRoutine&&(
                     <>
+                      <RoutineInfo routine={selectedEveningRoutine} />
                       {/* Sync checkbox */}
                       <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
                         <input type="checkbox" checked={!!day.routineSync}
@@ -1788,13 +1839,18 @@ function WeekEval({week,onSave}) {
 }
 
 // ─── ROUTINES TAB ─────────────────────────────────────────────────────────────
-function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onDelete,db}) {
+function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChangeNotes,onChangeLinks,onDelete,db}) {
   const [open,setOpen]           = useState(true);
   const [showDbModal,setShowDbModal] = useState(false);
 
   const addEx = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
   const updEx = (i,v) => { const e=[...routine.exercises]; e[i]=v; onChangeExercises(e); };
   const delEx = i => onChangeExercises(routine.exercises.filter((_,j)=>j!==i));
+
+  const links = routine.links||[];
+  const addLink = () => onChangeLinks([...links,{label:"",url:""}]);
+  const updLink = (i,v) => { const l=[...links]; l[i]=v; onChangeLinks(l); };
+  const delLink = i => onChangeLinks(links.filter((_,j)=>j!==i));
 
   const typeIcon  = routine.type==="ochtend"?"☀️":routine.type==="avond"?"🌙":"·";
 
@@ -1832,6 +1888,49 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onDele
             <Btn onClick={addEx} variant="green" size="sm">+ Nieuw</Btn>
             {db&&<Btn onClick={()=>setShowDbModal(true)} variant="subtle" size="sm">⊕ Uit database</Btn>}
           </div>
+
+          {/* Notities */}
+          <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:7}}>
+              📝 Notities
+            </div>
+            <textarea value={routine.notes||""} onChange={e=>onChangeNotes(e.target.value)}
+              placeholder="Aandachtspunten, cues, blessures om rekening mee te houden…"
+              rows={3} style={inp({resize:"vertical",lineHeight:1.5,fontSize:13,color:C.textSub})} />
+          </div>
+
+          {/* Links */}
+          <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:7}}>
+              🔗 Links
+            </div>
+            {links.length===0&&(
+              <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",marginBottom:8}}>Nog geen links</div>
+            )}
+            {links.map((l,i)=>(
+              <div key={i} style={{marginBottom:8}}>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input value={l.label} onChange={e=>updLink(i,{...l,label:e.target.value})}
+                    placeholder="Naam" style={inp({flex:1,fontSize:13,padding:"8px 10px",minWidth:0})} />
+                  {l.url&&(
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" style={{
+                      width:34,height:34,borderRadius:8,flexShrink:0,textDecoration:"none",
+                      background:C.greenLight,border:`1px solid ${C.green}`,color:C.green,fontSize:14,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                    }}>↗</a>
+                  )}
+                  <button onClick={()=>delLink(i)} style={{
+                    width:34,height:34,borderRadius:8,flexShrink:0,background:"transparent",
+                    border:`1px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontSize:17,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>×</button>
+                </div>
+                <input value={l.url} onChange={e=>updLink(i,{...l,url:e.target.value})}
+                  placeholder="https://…" style={inp({width:"100%",fontSize:12,padding:"7px 10px",marginTop:5,color:C.textSub})} />
+              </div>
+            ))}
+            <Btn onClick={addLink} variant="subtle" size="sm">+ Link</Btn>
+          </div>
         </div>
       )}
       {showDbModal&&db&&(
@@ -1845,7 +1944,7 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onDele
 }
 
 function RoutinesTab({routines,onChange,db}) {
-  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",type:null,exercises:[]}]);
+  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",type:null,exercises:[],notes:"",links:[]}]);
   const removeRoutine = (id) => onChange(routines.filter(r=>r.id!==id));
   const updateRoutine = (id,patch) => onChange(routines.map(r=>r.id===id?{...r,...patch}:r));
 
@@ -1870,6 +1969,8 @@ function RoutinesTab({routines,onChange,db}) {
           onChangeName={name=>updateRoutine(r.id,{name})}
           onChangeExercises={exs=>updateRoutine(r.id,{exercises:exs})}
           onChangeType={type=>updateRoutine(r.id,{type})}
+          onChangeNotes={notes=>updateRoutine(r.id,{notes})}
+          onChangeLinks={links=>updateRoutine(r.id,{links})}
           onDelete={()=>removeRoutine(r.id)}
           db={db} />
       ))}
