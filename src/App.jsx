@@ -379,7 +379,6 @@ const DEFAULT_SKILL_LEVEL    = { handstand:1, pelvis:1 };
 
 function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
   const schedule = {}, level = {}, reasons = {};
-  const usedSoFar = new Set();
   for (const skill of SKILL_KEYS) {
     const curDays  = (prevSchedule||DEFAULT_SKILL_SCHEDULE)[skill] || [];
     const curLevel = (prevLevel||DEFAULT_SKILL_LEVEL)[skill] || 1;
@@ -388,7 +387,8 @@ function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
     if (ri === 0) { // Te makkelijk → niveau omhoog + dag erbij
       newLevel = Math.min(10, curLevel + 1);
       if (newDays.length < 5) {
-        const extra = SKILL_DAYS.find(d => !newDays.includes(d) && !usedSoFar.has(d));
+        // Skills mogen dezelfde dag delen, dus alleen de eigen dagen uitsluiten.
+        const extra = SKILL_DAYS.find(d => !newDays.includes(d));
         if (extra) newDays = [...newDays, extra].sort((a,b)=>SKILL_DAYS.indexOf(a)-SKILL_DAYS.indexOf(b));
       }
       reason = "te makkelijk → niveau omhoog, +1 dag";
@@ -403,7 +403,6 @@ function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
     } else {
       reason = "geen beoordeling, zelfde schema";
     }
-    newDays.forEach(d => usedSoFar.add(d));
     schedule[skill] = newDays;
     level[skill]    = newLevel;
     reasons[skill]  = reason;
@@ -433,7 +432,15 @@ const MOBILITY_TEMPLATES = [
 const STORAGE_KEY    = "training_v5";
 const DB_KEY         = "training_db_v1";
 const ROUTINES_KEY   = "training_routines_v1";
+const REST_KEY       = "training_rest_v1";
 const SYNC_KEY_LOCAL = "training_sync_key";
+
+const DEFAULT_REST = { side:30, set:60, ex:90 };
+function loadRest(){
+  try{ const r=localStorage.getItem(REST_KEY); return r?{...DEFAULT_REST,...JSON.parse(r)}:DEFAULT_REST; }
+  catch{ return DEFAULT_REST; }
+}
+function saveRest(d){ try{ localStorage.setItem(REST_KEY,JSON.stringify(d)); }catch{} }
 
 function getSyncKey(){
   let k = localStorage.getItem(SYNC_KEY_LOCAL);
@@ -708,6 +715,32 @@ function ExItem({ex,onSelect}) {
 }
 
 // ─── ROUTINE PICKER MODAL ─────────────────────────────────────────────────────
+// Gedeelde bottom-sheet: één plek voor alle modals in de app.
+function Sheet({title,accent,onClose,children}) {
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.surface, width:"100%", maxWidth:560, maxHeight:"88vh",
+        borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
+        boxShadow:C.shadowLg, overflow:"hidden",
+      }}>
+        <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
+        </div>
+        <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:16,fontWeight:700,color:accent||C.text}}>{title}</span>
+            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+        </div>
+        <div style={{overflowY:"auto",padding:"14px 16px 24px",WebkitOverflowScrolling:"touch"}}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RoutineInfo({routine}) {
   const notes = (routine.notes||"").trim();
   const links = (routine.links||[]).filter(l=>l.url&&l.url.trim());
@@ -890,6 +923,7 @@ function SyncModal({syncKey,onSwitch,onClose}) {
 
 // ─── EXERCISE ROW ─────────────────────────────────────────────────────────────
 function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5",setsEditor=false}) {
+  const [showSets,setShowSets] = useState(false);
   const [showSave,setShowSave] = useState(false);
   const [saveSection,setSaveSection] = useState("gym");
   const [savePartId,setSavePartId] = useState("");
@@ -906,13 +940,22 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5",setsEd
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <input value={ex.name} onChange={e=>onUpdate({...ex,name:e.target.value})}
           placeholder="Oefening" style={inp({flex:1,fontSize:14,padding:"9px 10px",minWidth:0})} />
-        {!setsEditor&&ex.sets&&(
+        {setsEditor?(
+          <button onClick={()=>setShowSets(p=>!p)} style={{
+            flexShrink:0,minWidth:52,height:36,padding:"0 9px",borderRadius:8,cursor:"pointer",
+            fontFamily:mono,fontSize:13,fontWeight:ex.sets?700:400,whiteSpace:"nowrap",
+            border:`1px solid ${showSets?C.purple:(ex.sets?C.borderMid:C.border)}`,
+            background:showSets?C.purpleLight:C.surfaceAlt,
+            color:showSets?C.purple:(ex.sets?C.text:C.textMuted),
+            transition:"all .15s",
+          }}>{ex.sets||setsPlaceholder}</button>
+        ):ex.sets?(
           <span style={{fontSize:12,color:C.textSub,flexShrink:0,fontFamily:mono,
             background:C.surfaceAlt,border:`1px solid ${C.border}`,
             borderRadius:5,padding:"3px 7px",whiteSpace:"nowrap"}}>
             {ex.sets}
           </span>
-        )}
+        ):null}
         {ex.name.trim()&&db&&(
           <button onClick={()=>setShowSave(p=>!p)} style={{
             width:36,height:36,borderRadius:8,flexShrink:0,
@@ -924,7 +967,11 @@ function ExRow({ex,onUpdate,onDelete,db,onSaveToDb,setsPlaceholder="3×5",setsEd
         )}
         <button onClick={onDelete} style={{width:36,height:36,borderRadius:8,flexShrink:0,background:"transparent",border:`1px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
-      {setsEditor&&<SetsEditor value={ex.sets} onChange={v=>onUpdate({...ex,sets:v})} />}
+      {setsEditor&&showSets&&(
+        <div style={{marginTop:6,padding:"10px 12px",background:C.purpleLight,borderRadius:10}}>
+          <SetsEditor value={ex.sets} onChange={v=>onUpdate({...ex,sets:v})} />
+        </div>
+      )}
       {showSave&&db&&(
         <div style={{marginTop:6,padding:"10px 12px",background:C.purpleLight,borderRadius:10,display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:12,fontWeight:600,color:C.purple}}>Opslaan in database</div>
@@ -1020,7 +1067,54 @@ function SetsEditor({value,onChange}) {
 }
 
 // ─── WORKOUT MODE ─────────────────────────────────────────────────────────────
-function WorkoutMode({exercises, onClose}) {
+// Rusttijden instellen vóór de workout begint.
+function WorkoutStartModal({exercises,onStart,onClose}) {
+  const [rest,setRest] = useState(loadRest);
+  const valid = exercises.filter(e=>e.name&&e.name.trim());
+  const anyPerSide = valid.some(e=>parseSets(e.sets).perSide);
+
+  const rows = [
+    {key:"set",  label:"Tussen sets",        hint:"Rust na elke set van dezelfde oefening"},
+    {key:"ex",   label:"Tussen oefeningen",  hint:"Rust voor je aan de volgende oefening begint"},
+    ...(anyPerSide?[{key:"side", label:"Kant-wissel", hint:"Korte rust bij oefeningen per kant (e/s)"}]:[]),
+  ];
+
+  const go = () => { saveRest(rest); onStart(rest); };
+
+  return (
+    <Sheet title="Workout starten" accent={C.purple} onClose={onClose}>
+      <div style={{fontSize:13,color:C.textMuted,marginBottom:16}}>
+        {valid.length} {valid.length===1?"oefening":"oefeningen"} · rusttijden worden onthouden
+      </div>
+      {rows.map(({key,label,hint})=>(
+        <div key={key} style={{marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+            <span style={{fontSize:14,fontWeight:600,color:C.text}}>{label}</span>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <button onClick={()=>setRest(r=>({...r,[key]:Math.max(0,r[key]-15)}))} style={{
+                width:34,height:34,borderRadius:9,border:`1px solid ${C.border}`,background:C.surfaceAlt,
+                color:C.text,cursor:"pointer",fontSize:17,fontFamily:font,fontWeight:700,
+                display:"flex",alignItems:"center",justifyContent:"center",
+              }}>−</button>
+              <span style={{fontSize:16,fontWeight:700,color:C.text,minWidth:48,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{rest[key]}s</span>
+              <button onClick={()=>setRest(r=>({...r,[key]:r[key]+15}))} style={{
+                width:34,height:34,borderRadius:9,border:`1px solid ${C.border}`,background:C.surfaceAlt,
+                color:C.text,cursor:"pointer",fontSize:17,fontFamily:font,fontWeight:700,
+                display:"flex",alignItems:"center",justifyContent:"center",
+              }}>+</button>
+            </div>
+          </div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:3}}>{hint}</div>
+        </div>
+      ))}
+      <div style={{marginTop:20}}>
+        <Btn onClick={go} variant="primary" full size="lg">▶ Start workout</Btn>
+      </div>
+    </Sheet>
+  );
+}
+
+function WorkoutMode({exercises, onClose, initialRest}) {
   const validExs = exercises.filter(e=>e.name&&e.name.trim());
 
   const buildStep = (eIdx, sIdx, siIdx) => {
@@ -1034,12 +1128,12 @@ function WorkoutMode({exercises, onClose}) {
   const [restSec,  setRestSec]  = useState(60);
   const [speechOn, setSpeechOn] = useState(true);
   const [showRestCfg, setShowRestCfg] = useState(false);
-  const [restDef,  setRestDef]  = useState({side:30, set:60, ex:90});
+  const [restDef,  setRestDef]  = useState(()=>initialRest||loadRest());
 
   const nextRef     = useRef(null);
   const speechOnRef = useRef(true);
   const restDefRef  = useRef(restDef);
-  useEffect(() => { restDefRef.current = restDef; }, [restDef]);
+  useEffect(() => { restDefRef.current = restDef; saveRest(restDef); }, [restDef]);
   const sides        = ['Links','Rechts'];
   const ex           = validExs[cur.eIdx];
   const sideLabel    = cur.p.perSide ? sides[cur.siIdx] : null;
@@ -1326,7 +1420,7 @@ function WorkoutMode({exercises, onClose}) {
 }
 
 // ─── SECTION BLOCK (reusable for morning + evening exercises) ─────────────────
-function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,genLabel,onGenerate,setsPlaceholder,onOpenDbModal,onStartWorkout}) {
+function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,genLabel,onGenerate,setsPlaceholder,onOpenDbModal,onStartWorkout,setsEditor=false}) {
   const updEx = (i,v) => { const e=[...exercises]; e[i]=v; onChange(e); };
   const delEx = i => onChange(exercises.filter((_,j)=>j!==i));
   const addEx = () => onChange([...exercises,{name:"",sets:""}]);
@@ -1342,18 +1436,13 @@ function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,ge
           <Btn onClick={()=>onStartWorkout(exercises)} variant="primary" size="sm">▶ Start</Btn>
         )}
       </div>
-      {exercises.length>0&&(
-        <div style={{fontSize:11,color:C.textMuted,marginBottom:10,fontFamily:mono}}>
-          <span style={{color:C.textMuted,fontFamily:font,fontStyle:"italic"}}>Sets: </span>
-          3×10 herh. · 3×30s tijd · e/s per zijde
-        </div>
-      )}
       {exercises.length===0?(
         <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"6px 0"}}>Nog geen oefeningen toegevoegd</div>
       ):(
         exercises.map((ex,i)=>(
           <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)}
-            db={db} onSaveToDb={onSaveToDb} setsPlaceholder={setsPlaceholder||"3×5"} />
+            db={db} onSaveToDb={onSaveToDb} setsPlaceholder={setsPlaceholder||"3×5"}
+            setsEditor={setsEditor} />
         ))
       )}
     </div>
@@ -1417,18 +1506,58 @@ function SkillPlanner({week, onChangeSchedule}) {
   );
 }
 
+// Compacte samenvatting van een dagblok; bewerken opent een sheet.
+function BlockSummary({icon,label,color,bg,detail,done,onToggleDone,onEdit,onStart}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px"}}>
+      <button onClick={onEdit} style={{
+        display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0,
+        background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:font,textAlign:"left",
+      }}>
+        <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
+        <span style={{flex:1,minWidth:0}}>
+          <span style={{display:"block",fontSize:11,fontWeight:700,color,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span>
+          <span style={{display:"block",fontSize:13,color:detail?C.text:C.textMuted,marginTop:2,
+            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontStyle:detail?"normal":"italic"}}>
+            {detail||"Niets ingepland"}
+          </span>
+        </span>
+        <span style={{fontSize:15,color:C.textMuted,flexShrink:0}}>›</span>
+      </button>
+      {onStart&&(
+        <button onClick={onStart} title="Start workout" style={{
+          width:34,height:34,borderRadius:9,flexShrink:0,cursor:"pointer",
+          background:bg,border:`1px solid ${color}44`,color,fontSize:13,
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }}>▶</button>
+      )}
+      <DoneToggle done={done} color={color} bg={bg} onClick={onToggleDone} />
+    </div>
+  );
+}
+
 // ─── DAY CARD ─────────────────────────────────────────────────────────────────
-function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSaveToDb,routines,onUpdateRoutine}) {
+function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSaveToDb,routines,onUpdateRoutine,onOpenSkills}) {
   const [open,setOpen] = useState(false);
-  const [workoutExs,setWorkoutExs] = useState(null);
+  const [sheet,setSheet] = useState(null);           // "morning" | "evening"
+  const [pendingExs,setPendingExs] = useState(null); // wacht op rusttijd-instelling
+  const [workout,setWorkout] = useState(null);       // {exercises, rest}
   const sched    = skillSchedule || DEFAULT_SKILL_SCHEDULE;
   const lvls     = skillLevel    || DEFAULT_SKILL_LEVEL;
-  const skillKey = SKILL_KEYS.find(sk=>(sched[sk]||[]).includes(dayKey)) || null;
-  const skillLvl = skillKey ? Math.min(lvls[skillKey]||weekNum, 10) : weekNum;
-  const skill    = skillKey ? (SKILL_WEEKS[skillLvl]?.[skillKey]||null) : null;
+  // Meerdere skills op dezelfde dag zijn toegestaan.
+  const skills   = SKILL_KEYS
+    .filter(sk=>(sched[sk]||[]).includes(dayKey))
+    .map(sk=>{
+      const lvl = Math.min(lvls[sk]||weekNum, 10);
+      return {key:sk, lvl, info:SKILL_INFO[sk], data:SKILL_WEEKS[lvl]?.[sk]||null};
+    });
+  const primary  = skills[0]||null;
   const isRest   = dayKey==="zo";
 
   const upd = (patch) => onChange({...day,...patch});
+
+  // Sheet sluiten bij het starten, anders ligt hij over de rusttijd-modal heen.
+  const startWorkout = (exs) => { setSheet(null); setPendingExs(exs); };
 
   const updMEx = (exs) => {
     if(day.morningRoutineSync && day.morningRoutineId) onUpdateRoutine(day.morningRoutineId, exs);
@@ -1485,27 +1614,52 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
     ? (selectedEveningRoutine?.name||"Routine")
     : (day.routineName||"Video");
 
-  const skillDot = skill?(
-    <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:skill.color,marginRight:4}} />
-  ):null;
+  // Samenvattingsregels voor de ingeklapte blokken
+  const mCount = (day.morningExercises||[]).filter(e=>e.name&&e.name.trim()).length;
+  const eCount = (day.exercises||[]).filter(e=>e.name&&e.name.trim()).length;
+  const morningDetail =
+      day.morningType==="exercises" ? `${mCount} ${mCount===1?"oefening":"oefeningen"}`
+    : day.morningType==="routine"   ? `${selectedMorningRoutine?.name||"Geen routine"} · ${mCount} oef.`
+    : day.morningType==="video"     ? (day.morningRoutineName||"Video")
+    : null;
+  const eveningDetail =
+      day.type==="gym"      ? `Gym · ${eCount} ${eCount===1?"oefening":"oefeningen"}`
+    : day.type==="routine"  ? `${selectedEveningRoutine?.name||"Geen routine"} · ${eCount} oef.`
+    : day.type==="video"    ? (day.routineName||"Video")
+    : null;
+  const morningStartExs = (day.morningType==="exercises"||day.morningType==="routine")&&mCount>0 ? day.morningExercises : [];
+  const eveningStartExs = (day.type==="gym"||day.type==="routine")&&eCount>0 ? day.exercises : [];
 
   return (
     <>
-    {workoutExs&&<WorkoutMode exercises={workoutExs} onClose={()=>setWorkoutExs(null)} />}
+    {pendingExs&&(
+      <WorkoutStartModal exercises={pendingExs}
+        onClose={()=>setPendingExs(null)}
+        onStart={rest=>{ setWorkout({exercises:pendingExs,rest}); setPendingExs(null); }} />
+    )}
+    {workout&&(
+      <WorkoutMode exercises={workout.exercises} initialRest={workout.rest}
+        onClose={()=>setWorkout(null)} />
+    )}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
       {/* ── Collapsed header */}
       <button onClick={()=>setOpen(p=>!p)} style={{
         display:"flex",alignItems:"center",gap:12,padding:"13px 14px",
         width:"100%",background:"none",border:"none",cursor:"pointer",fontFamily:font,textAlign:"left",
-        borderLeft:`3px solid ${skill?skill.color:C.border}`,
+        borderLeft:`3px solid ${primary?primary.info.color:C.border}`,
       }}>
-        <div style={{width:40,height:40,borderRadius:10,background:skill?skill.color+"14":C.surfaceAlt,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontSize:11,fontWeight:700,color:skill?skill.color:C.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>{DAY_SHORT[dayKey]}</span>
+        <div style={{width:40,height:40,borderRadius:10,background:primary?primary.info.color+"14":C.surfaceAlt,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{fontSize:11,fontWeight:700,color:primary?primary.info.color:C.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>{DAY_SHORT[dayKey]}</span>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:15,fontWeight:600,color:C.text}}>{DAY_LABELS[dayKey]}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,flexWrap:"wrap"}}>
-            {skill&&<span style={{fontSize:12,color:skill.color,fontWeight:500}}>{skillDot}{skill.label}</span>}
+            {skills.map(s=>(
+              <span key={s.key} style={{fontSize:12,color:s.info.color,fontWeight:500}}>
+                <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:s.info.color,marginRight:4}} />
+                {s.info.label}
+              </span>
+            ))}
             {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
             {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4,fontWeight:day.morningDone?700:400}}>{day.morningDone?"✓":"☀️"} {morningChipLabel}</span>}
             {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4,fontWeight:day.eveningDone?700:400}}>{day.eveningDone?"✓":(day.type==="gym"?"🏋️":"📋")} {eveningChipLabel}</span>}
@@ -1522,188 +1676,42 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
       {open&&(
         <div style={{borderTop:`1px solid ${C.border}`}}>
 
-          {/* MORNING */}
-          <div style={{padding:"14px 14px 0",background:"rgba(217,119,6,0.04)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
-              <span style={{fontSize:13}}>☀️</span>
-              <span style={{fontSize:12,fontWeight:700,color:C.amber,textTransform:"uppercase",letterSpacing:0.5}}>Ochtend · Mobiliteit</span>
-              <div style={{flex:1}} />
-              <DoneToggle done={!!day.morningDone} color={C.amber} bg={C.amberLight}
-                onClick={()=>upd({morningDone:!day.morningDone})} />
-            </div>
-            {/* Segmented control: 4 options */}
-            <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-              <Seg active={day.morningType==="exercises"} color={C.amber}  bg={C.amberLight} onClick={()=>upd({morningType:"exercises"})}>Oefeningen</Seg>
-              <Seg active={day.morningType==="routine"}   color={C.green}  bg={C.greenLight}  onClick={()=>upd({morningType:"routine"})}>Routine</Seg>
-              <Seg active={day.morningType==="video"}     color={C.textSub} bg={C.surfaceHover} onClick={()=>upd({morningType:"video"})}>Video</Seg>
-              <Seg active={day.morningType===null}                                              onClick={()=>upd({morningType:null})}>—</Seg>
-            </div>
-
-            {day.morningType==="exercises"&&(
-              <div style={{paddingBottom:14}}>
-                <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
-                  db={db} onSaveToDb={onSaveToDb}
-                  accentColor={C.amber} accentBg={C.amberLight}
-                  genLabel="Stel voor" onGenerate={genMobility}
-                  setsPlaceholder="60s"
-                  onOpenDbModal={()=>upd({showMorningDbModal:true})}
-                  onStartWorkout={setWorkoutExs} />
-              </div>
-            )}
-
-            {day.morningType==="routine"&&(
-              <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
-                {/* Picker */}
-                <button onClick={()=>upd({showMorningRoutineModal:true})} style={{
-                  display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-                  background:selectedMorningRoutine?C.greenLight:C.surfaceAlt,
-                  border:`1px solid ${selectedMorningRoutine?C.green:C.border}`,
-                  borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
-                }}>
-                  <div style={{width:8,height:8,borderRadius:"50%",background:selectedMorningRoutine?C.green:C.borderMid,flexShrink:0}} />
-                  <span style={{fontSize:14,fontWeight:selectedMorningRoutine?600:400,color:selectedMorningRoutine?C.green:C.textMuted,flex:1}}>
-                    {selectedMorningRoutine?.name||"Kies routine…"}
-                  </span>
-                  <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
-                </button>
-
-                {selectedMorningRoutine&&(
-                  <>
-                    <RoutineInfo routine={selectedMorningRoutine} />
-                    {/* Sync checkbox */}
-                    <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                      <input type="checkbox" checked={!!day.morningRoutineSync}
-                        onChange={e=>upd({morningRoutineSync:e.target.checked})}
-                        style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                      <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                    </label>
-                    {/* Exercise list */}
-                    <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
-                      accentColor={C.green} accentBg={C.greenLight}
-                      setsPlaceholder="60s"
-                      onStartWorkout={setWorkoutExs} />
-                  </>
-                )}
-              </div>
-            )}
-
-            {day.morningType==="video"&&(
-              <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
-                <input value={day.morningRoutineName} onChange={e=>upd({morningRoutineName:e.target.value})}
-                  placeholder="Naam (bijv. Strength Side follow-along)" style={inp({fontSize:14})} />
-                <input value={day.morningRoutineUrl} onChange={e=>upd({morningRoutineUrl:e.target.value})}
-                  placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
-                {day.morningRoutineUrl&&(
-                  <a href={day.morningRoutineUrl} target="_blank" rel="noopener noreferrer"
-                    style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
-                )}
-              </div>
-            )}
+          {/* Blok-samenvattingen — bewerken gebeurt in een sheet */}
+          <div style={{background:"rgba(217,119,6,0.04)"}}>
+            <BlockSummary
+              icon="☀️" label="Ochtend · Mobiliteit" color={C.amber} bg={C.amberLight}
+              detail={morningDetail} done={!!day.morningDone}
+              onToggleDone={()=>upd({morningDone:!day.morningDone})}
+              onEdit={()=>setSheet("morning")}
+              onStart={morningStartExs.length>0?()=>setPendingExs(morningStartExs):null} />
           </div>
 
-          {/* DIVIDER */}
-          <div style={{height:1,background:C.border,margin:"0 14px"}} />
-
-          {/* EVENING */}
           {!isRest&&(
-            <div style={{padding:"14px 14px 0"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
-                <span style={{fontSize:13}}>🌙</span>
-                <span style={{fontSize:12,fontWeight:700,color:C.textSub,textTransform:"uppercase",letterSpacing:0.5}}>Avond · Training</span>
-                <div style={{flex:1}} />
-                <DoneToggle done={!!day.eveningDone} color={C.purple} bg={C.purpleLight}
-                  onClick={()=>upd({eveningDone:!day.eveningDone})} />
-              </div>
-              <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-                <Seg active={day.type==="gym"}     color={C.purple}  bg={C.purpleLight}    onClick={()=>upd({type:"gym"})}>Gym</Seg>
-                <Seg active={day.type==="routine"} color={C.green}   bg={C.greenLight}     onClick={()=>upd({type:"routine"})}>Routine</Seg>
-                <Seg active={day.type==="video"}   color={C.textSub} bg={C.surfaceHover}   onClick={()=>upd({type:"video"})}>Video</Seg>
-                <Seg active={day.type===null}                                               onClick={()=>upd({type:null})}>—</Seg>
-              </div>
-
-              {day.type==="gym"&&(
-                <div style={{paddingBottom:14}}>
-                  <ExerciseBlock exercises={day.exercises} onChange={updEx}
-                    db={db} onSaveToDb={onSaveToDb}
-                    accentColor={C.purple} accentBg={C.purpleLight}
-                    genLabel="Stel voor" onGenerate={genGym}
-                    onOpenDbModal={()=>upd({showDbModal:true})}
-                    onStartWorkout={setWorkoutExs} />
-                </div>
-              )}
-
-              {day.type==="routine"&&(
-                <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
-                  {/* Picker */}
-                  <button onClick={()=>upd({showRoutineModal:true})} style={{
-                    display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-                    background:selectedEveningRoutine?C.greenLight:C.surfaceAlt,
-                    border:`1px solid ${selectedEveningRoutine?C.green:C.border}`,
-                    borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
-                  }}>
-                    <div style={{width:8,height:8,borderRadius:"50%",background:selectedEveningRoutine?C.green:C.borderMid,flexShrink:0}} />
-                    <span style={{fontSize:14,fontWeight:selectedEveningRoutine?600:400,color:selectedEveningRoutine?C.green:C.textMuted,flex:1}}>
-                      {selectedEveningRoutine?.name||"Kies routine…"}
-                    </span>
-                    <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
-                  </button>
-
-                  {selectedEveningRoutine&&(
-                    <>
-                      <RoutineInfo routine={selectedEveningRoutine} />
-                      {/* Sync checkbox */}
-                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                        <input type="checkbox" checked={!!day.routineSync}
-                          onChange={e=>upd({routineSync:e.target.checked})}
-                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                      </label>
-                      {/* Exercise list */}
-                      <ExerciseBlock exercises={day.exercises} onChange={updEx}
-                        accentColor={C.green} accentBg={C.greenLight}
-                        onStartWorkout={setWorkoutExs} />
-                    </>
-                  )}
-                </div>
-              )}
-
-              {day.type==="video"&&(
-                <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
-                  <input value={day.routineName} onChange={e=>upd({routineName:e.target.value})}
-                    placeholder="Naam (bijv. Strength Side Ground)" style={inp({fontSize:14})} />
-                  <input value={day.routineUrl} onChange={e=>upd({routineUrl:e.target.value})}
-                    placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
-                  {day.routineUrl&&(
-                    <a href={day.routineUrl} target="_blank" rel="noopener noreferrer"
-                      style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
-                  )}
-                </div>
-              )}
-            </div>
+            <>
+              <div style={{height:1,background:C.border,margin:"0 14px"}} />
+              <BlockSummary
+                icon="🌙" label="Avond · Training" color={C.purple} bg={C.purpleLight}
+                detail={eveningDetail} done={!!day.eveningDone}
+                onToggleDone={()=>upd({eveningDone:!day.eveningDone})}
+                onEdit={()=>setSheet("evening")}
+                onStart={eveningStartExs.length>0?()=>setPendingExs(eveningStartExs):null} />
+            </>
           )}
 
-          {/* SKILL */}
-          {skill&&(
-            <div style={{margin:"0 14px",padding:"12px 14px",background:skill.color+"08",borderRadius:10,marginBottom:14}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                <div style={{width:3,height:16,borderRadius:2,background:skill.color,flexShrink:0}} />
-                <span style={{fontSize:12,fontWeight:700,color:skill.color,textTransform:"uppercase",letterSpacing:0.5}}>Skill · {skill.label}</span>
-              </div>
-              {skill.items.map((item,i)=>(
-                <div key={i} style={{marginBottom: i<skill.items.length-1?12:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:skill.color,marginBottom:5}}>{item.name}</div>
-                  {item.steps.map((step,j)=>(
-                    <div key={j} style={{display:"flex",gap:7,fontSize:12,color:C.textSub,alignItems:"flex-start",marginBottom:3}}>
-                      <span style={{color:skill.color,fontWeight:700,flexShrink:0,minWidth:16,opacity:0.7}}>{j+1}.</span>
-                      <span style={{lineHeight:1.5}}>{step}</span>
-                    </div>
-                  ))}
-                  {item.goal&&(
-                    <div style={{fontSize:11,color:C.textMuted,marginTop:5,paddingLeft:23,fontStyle:"italic"}}>
-                      → {item.goal}
-                    </div>
-                  )}
-                </div>
+          {/* Skills — alleen een verwijzing; de uitleg staat in het Skills-tabblad */}
+          {skills.length>0&&(
+            <div style={{padding:"12px 14px 0",display:"flex",gap:6,flexWrap:"wrap"}}>
+              {skills.map(s=>(
+                <button key={s.key} onClick={()=>onOpenSkills&&onOpenSkills(s.key)} style={{
+                  display:"flex",alignItems:"center",gap:6,padding:"7px 12px",borderRadius:20,
+                  background:s.info.bg,border:`1px solid ${s.info.color}33`,color:s.info.color,
+                  fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
+                }}>
+                  <span style={{fontSize:13}}>{s.info.emoji}</span>
+                  {s.info.label}
+                  <span style={{opacity:0.7,fontWeight:500}}>niv.{s.lvl}</span>
+                  <span style={{opacity:0.5,fontSize:14}}>›</span>
+                </button>
               ))}
             </div>
           )}
@@ -1753,6 +1761,147 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
         <RoutinePickerModal routines={routines||[]} context="avond"
           onClose={()=>upd({showRoutineModal:false})}
           onSelect={loadRoutineIntoEvening} />
+      )}
+      {sheet==="morning"&&(
+        <Sheet title="☀️ Ochtend · Mobiliteit" accent={C.amber} onClose={()=>setSheet(null)}>
+          {/* Segmented control: 4 options */}
+          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
+            <Seg active={day.morningType==="exercises"} color={C.amber}  bg={C.amberLight} onClick={()=>upd({morningType:"exercises"})}>Oefeningen</Seg>
+            <Seg active={day.morningType==="routine"}   color={C.green}  bg={C.greenLight}  onClick={()=>upd({morningType:"routine"})}>Routine</Seg>
+            <Seg active={day.morningType==="video"}     color={C.textSub} bg={C.surfaceHover} onClick={()=>upd({morningType:"video"})}>Video</Seg>
+            <Seg active={day.morningType===null}                                              onClick={()=>upd({morningType:null})}>—</Seg>
+          </div>
+
+          {day.morningType==="exercises"&&(
+            <div style={{paddingBottom:14}}>
+              <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
+                db={db} onSaveToDb={onSaveToDb}
+                accentColor={C.amber} accentBg={C.amberLight}
+                genLabel="Stel voor" onGenerate={genMobility}
+                setsPlaceholder="60s"
+                onOpenDbModal={()=>upd({showMorningDbModal:true})}
+                onStartWorkout={startWorkout} setsEditor={true} />
+            </div>
+          )}
+
+          {day.morningType==="routine"&&(
+            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
+              {/* Picker */}
+              <button onClick={()=>upd({showMorningRoutineModal:true})} style={{
+                display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                background:selectedMorningRoutine?C.greenLight:C.surfaceAlt,
+                border:`1px solid ${selectedMorningRoutine?C.green:C.border}`,
+                borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
+              }}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:selectedMorningRoutine?C.green:C.borderMid,flexShrink:0}} />
+                <span style={{fontSize:14,fontWeight:selectedMorningRoutine?600:400,color:selectedMorningRoutine?C.green:C.textMuted,flex:1}}>
+                  {selectedMorningRoutine?.name||"Kies routine…"}
+                </span>
+                <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
+              </button>
+
+              {selectedMorningRoutine&&(
+                <>
+                  <RoutineInfo routine={selectedMorningRoutine} />
+                  {/* Sync checkbox */}
+                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                    <input type="checkbox" checked={!!day.morningRoutineSync}
+                      onChange={e=>upd({morningRoutineSync:e.target.checked})}
+                      style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                    <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                  </label>
+                  {/* Exercise list */}
+                  <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
+                    accentColor={C.green} accentBg={C.greenLight}
+                    setsPlaceholder="60s"
+                    onStartWorkout={startWorkout} setsEditor={true} />
+                </>
+              )}
+            </div>
+          )}
+
+          {day.morningType==="video"&&(
+            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
+              <input value={day.morningRoutineName} onChange={e=>upd({morningRoutineName:e.target.value})}
+                placeholder="Naam (bijv. Strength Side follow-along)" style={inp({fontSize:14})} />
+              <input value={day.morningRoutineUrl} onChange={e=>upd({morningRoutineUrl:e.target.value})}
+                placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
+              {day.morningRoutineUrl&&(
+                <a href={day.morningRoutineUrl} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
+              )}
+            </div>
+          )}
+        </Sheet>
+      )}
+      {sheet==="evening"&&(
+        <Sheet title="🌙 Avond · Training" accent={C.purple} onClose={()=>setSheet(null)}>
+          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
+            <Seg active={day.type==="gym"}     color={C.purple}  bg={C.purpleLight}    onClick={()=>upd({type:"gym"})}>Gym</Seg>
+            <Seg active={day.type==="routine"} color={C.green}   bg={C.greenLight}     onClick={()=>upd({type:"routine"})}>Routine</Seg>
+            <Seg active={day.type==="video"}   color={C.textSub} bg={C.surfaceHover}   onClick={()=>upd({type:"video"})}>Video</Seg>
+            <Seg active={day.type===null}                                               onClick={()=>upd({type:null})}>—</Seg>
+          </div>
+
+          {day.type==="gym"&&(
+            <div style={{paddingBottom:14}}>
+              <ExerciseBlock exercises={day.exercises} onChange={updEx}
+                db={db} onSaveToDb={onSaveToDb}
+                accentColor={C.purple} accentBg={C.purpleLight}
+                genLabel="Stel voor" onGenerate={genGym}
+                onOpenDbModal={()=>upd({showDbModal:true})}
+                onStartWorkout={startWorkout} setsEditor={true} />
+            </div>
+          )}
+
+          {day.type==="routine"&&(
+            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
+              {/* Picker */}
+              <button onClick={()=>upd({showRoutineModal:true})} style={{
+                display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                background:selectedEveningRoutine?C.greenLight:C.surfaceAlt,
+                border:`1px solid ${selectedEveningRoutine?C.green:C.border}`,
+                borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
+              }}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:selectedEveningRoutine?C.green:C.borderMid,flexShrink:0}} />
+                <span style={{fontSize:14,fontWeight:selectedEveningRoutine?600:400,color:selectedEveningRoutine?C.green:C.textMuted,flex:1}}>
+                  {selectedEveningRoutine?.name||"Kies routine…"}
+                </span>
+                <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
+              </button>
+
+              {selectedEveningRoutine&&(
+                <>
+                  <RoutineInfo routine={selectedEveningRoutine} />
+                  {/* Sync checkbox */}
+                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                    <input type="checkbox" checked={!!day.routineSync}
+                      onChange={e=>upd({routineSync:e.target.checked})}
+                      style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                    <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                  </label>
+                  {/* Exercise list */}
+                  <ExerciseBlock exercises={day.exercises} onChange={updEx}
+                    accentColor={C.green} accentBg={C.greenLight}
+                    onStartWorkout={startWorkout} setsEditor={true} />
+                </>
+              )}
+            </div>
+          )}
+
+          {day.type==="video"&&(
+            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
+              <input value={day.routineName} onChange={e=>upd({routineName:e.target.value})}
+                placeholder="Naam (bijv. Strength Side Ground)" style={inp({fontSize:14})} />
+              <input value={day.routineUrl} onChange={e=>upd({routineUrl:e.target.value})}
+                placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
+              {day.routineUrl&&(
+                <a href={day.routineUrl} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
+              )}
+            </div>
+          )}
+        </Sheet>
       )}
     </div>
     </>
@@ -1978,6 +2127,110 @@ function RoutinesTab({routines,onChange,db}) {
   );
 }
 
+// ─── SKILLS TAB ───────────────────────────────────────────────────────────────
+function SkillsTab({week,focusSkill}) {
+  const schedule = week.skillSchedule || DEFAULT_SKILL_SCHEDULE;
+  const levels   = week.skillLevel    || DEFAULT_SKILL_LEVEL;
+  const [sel,setSel] = useState(focusSkill&&SKILL_KEYS.includes(focusSkill)?focusSkill:SKILL_KEYS[0]);
+  const curLvl = Math.min(levels[sel]||week.weekNum,10);
+  const [lvl,setLvl] = useState(curLvl);
+
+  // Springen vanaf een dagkaart selecteert de skill én zijn huidige niveau.
+  useEffect(()=>{
+    if(focusSkill&&SKILL_KEYS.includes(focusSkill)){
+      setSel(focusSkill);
+      setLvl(Math.min((levels[focusSkill]||week.weekNum),10));
+    }
+  },[focusSkill]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const info = SKILL_INFO[sel];
+  const data = SKILL_WEEKS[lvl]?.[sel]||null;
+  const days = schedule[sel]||[];
+
+  return (
+    <div>
+      {/* Skill kiezen */}
+      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+        {SKILL_KEYS.map(k=>{
+          const i = SKILL_INFO[k], active = k===sel;
+          return (
+            <button key={k} onClick={()=>{setSel(k);setLvl(Math.min(levels[k]||week.weekNum,10));}} style={{
+              display:"flex",alignItems:"center",gap:7,padding:"10px 14px",borderRadius:11,cursor:"pointer",
+              border:`1.5px solid ${active?i.color:C.border}`,
+              background:active?i.bg:C.surface,
+              color:active?i.color:C.textMuted,
+              fontFamily:font,fontSize:14,fontWeight:active?700:500,transition:"all .15s",
+            }}>
+              <span style={{fontSize:16}}>{i.emoji}</span>{i.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Status deze week */}
+      <div style={{background:info.bg,borderRadius:11,padding:"12px 14px",marginBottom:14}}>
+        <div style={{fontSize:13,color:info.color,fontWeight:600}}>
+          Week {week.weekNum} · niveau {curLvl}
+        </div>
+        <div style={{fontSize:12,color:info.color,opacity:0.85,marginTop:3}}>
+          {days.length>0
+            ? `Ingepland op ${days.map(d=>DAY_SHORT[d]).join(", ")}`
+            : "Deze week niet ingepland — stel dagen in bij het Plan-tabblad"}
+        </div>
+      </div>
+
+      {/* Niveau kiezen */}
+      <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:7}}>
+        Niveau bekijken
+      </div>
+      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:16}}>
+        {Object.keys(SKILL_WEEKS).map(n=>+n).sort((a,b)=>a-b).map(n=>{
+          const active = n===lvl;
+          return (
+            <button key={n} onClick={()=>setLvl(n)} style={{
+              width:36,height:36,borderRadius:9,cursor:"pointer",fontFamily:font,
+              border:`1.5px solid ${active?info.color:C.border}`,
+              background:active?info.color:(n===curLvl?info.bg:C.surface),
+              color:active?"#fff":(n===curLvl?info.color:C.textMuted),
+              fontSize:13,fontWeight:active||n===curLvl?700:400,transition:"all .15s",
+            }}>{n}</button>
+          );
+        })}
+      </div>
+
+      {/* Oefeningen */}
+      {!data?(
+        <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>Geen oefeningen voor dit niveau.</div>
+      ):(
+        <>
+          <div style={{fontSize:16,fontWeight:700,color:info.color,marginBottom:2}}>{data.label}</div>
+          <div style={{fontSize:12,color:C.textMuted,marginBottom:14}}>
+            {PHASE_LABELS[Math.min(lvl-1,9)]}{lvl===curLvl&&" · jouw huidige niveau"}
+          </div>
+          {data.items.map((item,i)=>(
+            <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,
+              padding:"14px 16px",marginBottom:10,boxShadow:C.shadow}}>
+              <div style={{fontSize:14,fontWeight:700,color:info.color,marginBottom:9}}>{item.name}</div>
+              {item.steps.map((step,j)=>(
+                <div key={j} style={{display:"flex",gap:9,fontSize:13,color:C.textSub,alignItems:"flex-start",marginBottom:6}}>
+                  <span style={{color:info.color,fontWeight:700,flexShrink:0,minWidth:16,opacity:0.7}}>{j+1}.</span>
+                  <span style={{lineHeight:1.55}}>{step}</span>
+                </div>
+              ))}
+              {item.goal&&(
+                <div style={{fontSize:12,color:info.color,marginTop:10,padding:"8px 11px",
+                  background:info.bg,borderRadius:8,fontWeight:500}}>
+                  → {item.goal}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── DATABASE TAB ─────────────────────────────────────────────────────────────
 function DatabaseTab({db,onChange}) {
   const [expanded,setExpanded]     = useState({});
@@ -2170,6 +2423,8 @@ export default function App() {
   const [weeks,setWeeks]         = useState(null);
   const [activeIdx,setActiveIdx] = useState(0);
   const [tab,setTab]             = useState("plan");
+  const [skillFocus,setSkillFocus] = useState(null);
+  const openSkills = useCallback((key)=>{ setSkillFocus(key); setTab("skills"); },[]);
   const [db,setDb]               = useState(null);
   const [routines,setRoutines]   = useState(null);
   const [syncKey,setSyncKey]     = useState("");
@@ -2265,7 +2520,7 @@ export default function App() {
   const aw     = weeks[activeIdx];
   const skills = SKILL_WEEKS[Math.min(aw.weekNum,10)];
 
-  const TABS = [["plan","Plan"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
+  const TABS = [["plan","Plan"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
   return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text}}>
@@ -2276,7 +2531,7 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 0"}}>
             <div>
               <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Trainingsplan</h1>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Pull-ups · 10 weken</div>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Bekkenbodem · 10 weken</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button onClick={()=>setShowSync(true)} title="Sync code" style={{
@@ -2355,6 +2610,7 @@ export default function App() {
                 skillSchedule={aw.skillSchedule} skillLevel={aw.skillLevel}
                 onChange={v=>updateDay(activeIdx,d,v)} db={db}
                 routines={routines} onUpdateRoutine={updateRoutineExercises}
+                onOpenSkills={openSkills}
                 onSaveToDb={(section,partId,name)=>{
                   const newEx={id:mkId(),name,uitleg:"",video:""};
                   persistDb({...db,[section]:db[section].map(p=>p.id===partId?{...p,exercises:[...p.exercises,newEx]}:p)});
@@ -2383,6 +2639,8 @@ export default function App() {
         )}
 
         {/* ROUTINES */}
+        {tab==="skills"&&<SkillsTab week={aw} focusSkill={skillFocus} />}
+
         {tab==="routines"&&<RoutinesTab routines={routines} onChange={persistRoutines} db={db} />}
 
         {/* HISTORY */}
