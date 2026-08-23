@@ -650,24 +650,12 @@ function DbModal({db,onSelect,onClose,filterSection}) {
   const results = query.trim() ? allEx.filter(e=>e.name.toLowerCase().includes(query.toLowerCase())||e.partName.toLowerCase().includes(query.toLowerCase())) : null;
 
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
-      <div onClick={e=>e.stopPropagation()} style={{
-        background:C.surface, width:"100%", maxWidth:560, maxHeight:"80vh",
-        borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
-        boxShadow:C.shadowLg, overflow:"hidden",
-      }}>
-        <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
-          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
-        </div>
-        <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <span style={{fontSize:16,fontWeight:700,color:C.text}}>Kies oefening</span>
-            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-          </div>
-          <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Zoeken…" autoFocus
-            style={inp({fontSize:14,padding:"9px 12px"})} />
-        </div>
-        <div style={{overflowY:"auto",padding:"12px 16px",WebkitOverflowScrolling:"touch"}}>
+    <Sheet title="Kies oefening" onClose={onClose} zIndex={Z_PICKER}
+      headerExtra={
+        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Zoeken…" autoFocus
+          style={inp({fontSize:14,padding:"9px 12px"})} />
+      }>
+      <>
           {results ? (
             results.length===0 ? (
               <div style={{textAlign:"center",padding:"32px 0",color:C.textMuted,fontSize:14}}>Geen resultaten voor "{query}"</div>
@@ -690,10 +678,8 @@ function DbModal({db,onSelect,onClose,filterSection}) {
               </div>
             ))
           )}
-          <div style={{height:24}} />
-        </div>
-      </div>
-    </div>
+      </>
+    </Sheet>
   );
 }
 
@@ -715,25 +701,29 @@ function ExItem({ex,onSelect}) {
 }
 
 // ─── ROUTINE PICKER MODAL ─────────────────────────────────────────────────────
-// Gedeelde bottom-sheet: één plek voor alle modals in de app.
-function Sheet({title,accent,onClose,children}) {
+// Gecentreerde modal — één plek voor alle dialogen in de app.
+// `zIndex` stapelt: een modal die vanuit een andere wordt geopend moet hoger.
+const Z_SHEET = 1000, Z_PICKER = 1200;
+
+function Sheet({title,accent,onClose,children,zIndex=Z_SHEET,headerExtra}) {
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+    <div onClick={onClose} style={{
+      position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:16,
+    }}>
       <div onClick={e=>e.stopPropagation()} style={{
-        background:C.surface, width:"100%", maxWidth:560, maxHeight:"88vh",
-        borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
+        background:C.surface, width:"100%", maxWidth:560, maxHeight:"85vh",
+        borderRadius:16, display:"flex", flexDirection:"column",
         boxShadow:C.shadowLg, overflow:"hidden",
       }}>
-        <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
-          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
-        </div>
-        <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
             <span style={{fontSize:16,fontWeight:700,color:accent||C.text}}>{title}</span>
-            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
           </div>
+          {headerExtra&&<div style={{marginTop:10}}>{headerExtra}</div>}
         </div>
-        <div style={{overflowY:"auto",padding:"14px 16px 24px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{overflowY:"auto",padding:"14px 16px 18px",WebkitOverflowScrolling:"touch"}}>
           {children}
         </div>
       </div>
@@ -772,22 +762,8 @@ function RoutinePickerModal({routines,onSelect,onClose,context}) {
     return bMatch-aMatch;
   });
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
-      <div onClick={e=>e.stopPropagation()} style={{
-        background:C.surface, width:"100%", maxWidth:560, maxHeight:"70vh",
-        borderRadius:"16px 16px 0 0", display:"flex", flexDirection:"column",
-        boxShadow:C.shadowLg, overflow:"hidden",
-      }}>
-        <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
-          <div style={{width:36,height:4,borderRadius:2,background:C.borderMid}} />
-        </div>
-        <div style={{padding:"8px 16px 12px",borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span style={{fontSize:16,fontWeight:700,color:C.text}}>Kies routine</span>
-            <button onClick={onClose} style={{background:C.surfaceAlt,border:"none",borderRadius:20,width:28,height:28,cursor:"pointer",fontSize:16,color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-          </div>
-        </div>
-        <div style={{overflowY:"auto",padding:"12px 16px",WebkitOverflowScrolling:"touch"}}>
+    <Sheet title="Kies routine" onClose={onClose} zIndex={Z_PICKER}>
+      <>
           {sorted.length===0 ? (
             <div style={{textAlign:"center",padding:"32px 0",color:C.textMuted,fontSize:14}}>
               Nog geen routines aangemaakt.<br/>
@@ -816,10 +792,8 @@ function RoutinePickerModal({routines,onSelect,onClose,context}) {
               </button>
             );
           })}
-          <div style={{height:24}} />
-        </div>
-      </div>
-    </div>
+      </>
+    </Sheet>
   );
 }
 
@@ -1481,7 +1455,7 @@ function SkillPlanner({week, onChangeSchedule}) {
         const lvl  = level[skill]||1;
         return (
           <div key={skill} style={{display:"flex",alignItems:"center",gap:8,marginBottom:si<SKILL_KEYS.length-1?8:0}}>
-            <div style={{minWidth:88,fontSize:12,fontWeight:600,color:info.color}}>
+            <div style={{width:100,flexShrink:0,fontSize:12,fontWeight:600,color:info.color,whiteSpace:"nowrap"}}>
               {info.emoji} {info.label}
             </div>
             <div style={{display:"flex",gap:3,flex:1}}>
@@ -1489,7 +1463,7 @@ function SkillPlanner({week, onChangeSchedule}) {
                 const active=days.includes(d);
                 return (
                   <button key={d} onClick={()=>!week.done&&toggleDay(skill,d)} style={{
-                    width:34,height:28,borderRadius:6,border:"none",fontFamily:font,
+                    flex:1,minWidth:0,height:28,borderRadius:6,border:"none",fontFamily:font,
                     background:active?info.color:C.surfaceAlt,
                     color:active?"#fff":C.textMuted,
                     fontSize:11,fontWeight:600,cursor:week.done?"default":"pointer",
@@ -1700,7 +1674,7 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
 
           {/* Skills — alleen een verwijzing; de uitleg staat in het Skills-tabblad */}
           {skills.length>0&&(
-            <div style={{padding:"12px 14px 0",display:"flex",gap:6,flexWrap:"wrap"}}>
+            <div style={{padding:"12px 14px 0",display:"flex",gap:6,flexWrap:"wrap",borderTop:`1px solid ${C.border}`,marginTop:2}}>
               {skills.map(s=>(
                 <button key={s.key} onClick={()=>onOpenSkills&&onOpenSkills(s.key)} style={{
                   display:"flex",alignItems:"center",gap:6,padding:"7px 12px",borderRadius:20,
@@ -1717,8 +1691,8 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
           )}
 
           {/* NOTE + MOOD */}
-          <div style={{padding:"0 14px 14px"}}>
-            <div style={{display:"flex",gap:6,marginBottom:8}}>
+          <div style={{padding:"14px 14px 16px"}}>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
               {[
                 {key:"goed",  label:"💪 Goed",   color:"#059669", bg:"#D1FAE5"},
                 {key:"oke",   label:"😐 Oké",    color:"#D97706", bg:"#FEF3C7"},
@@ -1736,7 +1710,7 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
             </div>
             <textarea value={day.note||""} onChange={e=>upd({note:e.target.value})}
               placeholder="📝 Optionele notitie…"
-              rows={2} style={inp({resize:"vertical",lineHeight:1.5,fontSize:13,color:C.textSub})} />
+              rows={3} style={inp({resize:"vertical",lineHeight:1.5,fontSize:13,color:C.textSub})} />
           </div>
         </div>
       )}
