@@ -497,7 +497,7 @@ const mkDay = () => ({
   morningRoutineId:null, morningRoutineSync:false, showMorningDbModal:false, showMorningRoutineModal:false,
   type:null, exercises:[], routineName:"", routineUrl:"",
   routineId:null, routineSync:false, note:"", mood:null,
-  morningDone:false, eveningDone:false,
+  morningDone:false, eveningDone:false, skillsDone:{},
   showDbModal:false, showRoutineModal:false,
 });
 const mkWeek = (n, skillSchedule=DEFAULT_SKILL_SCHEDULE, skillLevel=DEFAULT_SKILL_LEVEL, adaptReason=null) => ({
@@ -557,6 +557,7 @@ function migrateWeeks(data){
       mood: day.mood||null,
       morningDone: day.morningDone||false,
       eveningDone: day.eveningDone||false,
+      skillsDone:  day.skillsDone ||{},
     }]))
   }));
 }
@@ -1628,12 +1629,17 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:15,fontWeight:600,color:C.text}}>{DAY_LABELS[dayKey]}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,flexWrap:"wrap"}}>
-            {skills.map(s=>(
-              <span key={s.key} style={{fontSize:12,color:s.info.color,fontWeight:500}}>
-                <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:s.info.color,marginRight:4}} />
-                {s.info.label}
-              </span>
-            ))}
+            {skills.map(s=>{
+              const done = !!(day.skillsDone||{})[s.key];
+              return (
+                <span key={s.key} style={{fontSize:12,color:s.info.color,fontWeight:done?700:500}}>
+                  {done
+                    ? <span style={{marginRight:3}}>✓</span>
+                    : <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:s.info.color,marginRight:4}} />}
+                  {s.info.label}
+                </span>
+              );
+            })}
             {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
             {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4,fontWeight:day.morningDone?700:400}}>{day.morningDone?"✓":"☀️"} {morningChipLabel}</span>}
             {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4,fontWeight:day.eveningDone?700:400}}>{day.eveningDone?"✓":(day.type==="gym"?"🏋️":"📋")} {eveningChipLabel}</span>}
@@ -1675,18 +1681,33 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
           {/* Skills — alleen een verwijzing; de uitleg staat in het Skills-tabblad */}
           {skills.length>0&&(
             <div style={{padding:"12px 14px 0",display:"flex",gap:6,flexWrap:"wrap",borderTop:`1px solid ${C.border}`,marginTop:2}}>
-              {skills.map(s=>(
-                <button key={s.key} onClick={()=>onOpenSkills&&onOpenSkills(s.key)} style={{
-                  display:"flex",alignItems:"center",gap:6,padding:"7px 12px",borderRadius:20,
-                  background:s.info.bg,border:`1px solid ${s.info.color}33`,color:s.info.color,
-                  fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
-                }}>
-                  <span style={{fontSize:13}}>{s.info.emoji}</span>
-                  {s.info.label}
-                  <span style={{opacity:0.7,fontWeight:500}}>niv.{s.lvl}</span>
-                  <span style={{opacity:0.5,fontSize:14}}>›</span>
-                </button>
-              ))}
+              {skills.map(s=>{
+                const done = !!(day.skillsDone||{})[s.key];
+                return (
+                  <div key={s.key} style={{
+                    display:"flex",alignItems:"stretch",borderRadius:20,overflow:"hidden",
+                    background:done?s.info.color:s.info.bg,
+                    border:`1px solid ${done?s.info.color:s.info.color+"33"}`,
+                  }}>
+                    <button onClick={()=>upd({skillsDone:{...(day.skillsDone||{}),[s.key]:!done}})}
+                      title={done?"Afvinken ongedaan maken":"Afvinken"} style={{
+                        display:"flex",alignItems:"center",padding:"7px 8px 7px 11px",
+                        background:"none",border:"none",cursor:"pointer",fontFamily:font,
+                        fontSize:13,lineHeight:1,color:done?"#fff":s.info.color,
+                      }}>{done?"✓":"○"}</button>
+                    <button onClick={()=>onOpenSkills&&onOpenSkills(s.key)} style={{
+                      display:"flex",alignItems:"center",gap:6,padding:"7px 12px 7px 4px",
+                      background:"none",border:"none",cursor:"pointer",fontFamily:font,
+                      fontSize:12,fontWeight:600,color:done?"#fff":s.info.color,
+                    }}>
+                      <span style={{fontSize:13}}>{s.info.emoji}</span>
+                      {s.info.label}
+                      <span style={{opacity:0.75,fontWeight:500}}>niv.{s.lvl}</span>
+                      <span style={{opacity:0.6,fontSize:14}}>›</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
