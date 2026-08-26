@@ -1065,13 +1065,13 @@ function WorkoutStartModal({exercises,onStart,onClose}) {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
             <span style={{fontSize:14,fontWeight:600,color:C.text}}>{label}</span>
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-              <button onClick={()=>setRest(r=>({...r,[key]:Math.max(0,r[key]-15)}))} style={{
+              <button onClick={()=>setRest(r=>({...r,[key]:Math.max(0,r[key]-5)}))} style={{
                 width:34,height:34,borderRadius:9,border:`1px solid ${C.border}`,background:C.surfaceAlt,
                 color:C.text,cursor:"pointer",fontSize:17,fontFamily:font,fontWeight:700,
                 display:"flex",alignItems:"center",justifyContent:"center",
               }}>−</button>
               <span style={{fontSize:16,fontWeight:700,color:C.text,minWidth:48,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{rest[key]}s</span>
-              <button onClick={()=>setRest(r=>({...r,[key]:r[key]+15}))} style={{
+              <button onClick={()=>setRest(r=>({...r,[key]:r[key]+5}))} style={{
                 width:34,height:34,borderRadius:9,border:`1px solid ${C.border}`,background:C.surfaceAlt,
                 color:C.text,cursor:"pointer",fontSize:17,fontFamily:font,fontWeight:700,
                 display:"flex",alignItems:"center",justifyContent:"center",
