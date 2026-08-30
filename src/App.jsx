@@ -5,34 +5,34 @@ import { supabase } from './supabase.js';
 const SKILL_WEEKS = {
   1: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Polsopwarming", steps:[
+      { type:"oefening", name:"Polsopwarming", steps:[
         "Wrist circles: handen plat op grond, maak cirkels met je gewicht. 10 per richting.",
         "Vingers naar achteren: handen plat, vingers richting lichaam, licht druk. 30 sec.",
         "Doe dit vóór elke handstand-sessie — beschermt je polsen op lange termijn.",
       ], goal:"Vaste routine vóór elke sessie" },
-      { name:"Chest-to-wall handstand", steps:[
+      { type:"oefening", name:"Chest-to-wall handstand", steps:[
         "Zet handen ±10 cm van de muur. Loop je voeten langs de muur omhoog.",
         "Borst raakt de muur — dit is de startpositie.",
         "Duw de grond actief van je af: schouders naar oren, armen volledig gestrekt. Core en billen aanspannen.",
       ], goal:"3 sets van 30 seconden — dit is de belangrijkste oefening van het hele programma" },
-      { name:"Actieve schouderhouding", steps:[
+      { type:"techniek", name:"Actieve schouderhouding", steps:[
         "Sta in chest-to-wall positie.",
         "Duw je schouders actief naar je oren — alsof je de grond van je af wil duwen.",
         "Houd dit actief door de hele hold. Inzakken = terug naar begin.",
       ], goal:"Schouders actief = kracht. Inzakken = hangen. Voel het verschil." },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Spieren vinden", steps:[
+      { type:"oefening", name:"Spieren vinden", steps:[
         "Ga liggen met gebogen knieën. Adem rustig door.",
         "Span aan alsof je plas ophoudt én een wind tegenhoudt — naar binnen en omhoog.",
         "Billen, buik en dijen blijven ontspannen. Alleen de bekkenbodem beweegt.",
       ], goal:"Dagelijks 1 minuut — leer de juiste spier isoleren" },
-      { name:"Snelle knijpen", steps:[
+      { type:"oefening", name:"Snelle knijpen", steps:[
         "Span 1 seconde maximaal aan, laat 1 seconde volledig los.",
         "Blijf doorademen — houd je adem niet in.",
         "Volledig loslaten is net zo belangrijk als aanspannen.",
       ], goal:"3 sets van 10 snelle knijpen" },
-      { name:"Korte holds", steps:[
+      { type:"oefening", name:"Korte holds", steps:[
         "Span aan en houd 3 seconden vast.",
         "Laat 5 seconden volledig los voor je opnieuw aanspant.",
         "Voel of de kracht gelijk blijft — zakt hij weg, dan stop je de set.",
@@ -41,34 +41,34 @@ const SKILL_WEEKS = {
   },
   2: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Chest-to-wall handstand (opbouwen)", steps:[
+      { type:"oefening", name:"Chest-to-wall handstand (opbouwen)", steps:[
         "Polsopwarming eerst. Dan chest-to-wall positie: borst aan de muur.",
         "Duw de grond actief van je af, schouders naar oren, core strak.",
         "Probeer elke set iets langer vast te houden dan vorige week.",
       ], goal:"3 sets van 45 seconden" },
-      { name:"Kickup niveau 1: split-leg hold", steps:[
+      { type:"oefening", name:"Kickup niveau 1: split-leg hold", steps:[
         "Ga in pikestand, één been iets voor het andere.",
         "Gooi het achterste been omhoog — stop halverwege in split-leg positie.",
         "Houd de split-leg positie zo lang als je kunt. Terugzetten, herhaal.",
       ], goal:"8-10 pogingen per sessie — focus op stabiele split-leg, niet op volledig omhoog" },
-      { name:"Schouders verbinden", steps:[
+      { type:"techniek", name:"Schouders verbinden", steps:[
         "Ga in chest-to-wall. Trek je schouderbladen licht samen vóórdat je de hold begint.",
         "Dan duw je ze omhoog naar oren — dit is de 'vergrendelde' positie.",
         "Houd dit gevoel door de hele set. Schouders = de ruggengraat van je handstand.",
       ], goal:"Voel het verschil tussen los en vergrendeld — zorg voor vergrendeld bij elke hold" },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Holds naar 5 seconden", steps:[
+      { type:"oefening", name:"Holds naar 5 seconden", steps:[
         "Liggend: span aan en houd 5 seconden vast.",
         "Laat 5 seconden volledig los — tel de rust echt uit.",
         "Kwaliteit boven kwantiteit: een slappe hold telt niet mee.",
       ], goal:"3 sets van 8 herhalingen van 5 seconden" },
-      { name:"Snelle knijpen uitbreiden", steps:[
+      { type:"oefening", name:"Snelle knijpen uitbreiden", steps:[
         "1 seconde aan, 1 seconde uit — maximaal tempo, volledige ontspanning.",
         "Doe de set in één keer af zonder tussenpauze.",
         "Merk je dat je niet meer volledig aanspant? Dan is de set klaar.",
       ], goal:"3 sets van 15 snelle knijpen" },
-      { name:"Ademcoördinatie", steps:[
+      { type:"oefening", name:"Ademcoördinatie", steps:[
         "Adem in door je neus en laat je buik zachtjes uitzetten.",
         "Span de bekkenbodem aan tijdens de uitademing.",
         "Ontspan volledig tijdens de volgende inademing.",
@@ -77,34 +77,34 @@ const SKILL_WEEKS = {
   },
   3: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Chest-to-wall handstand (60 sec doel)", steps:[
+      { type:"oefening", name:"Chest-to-wall handstand (60 sec doel)", steps:[
         "Polsopwarming eerst. Dan chest-to-wall: borst aan de muur.",
         "Actieve schouders, strakke core, billen aanspannen — rechte lijn van hielen tot pols.",
         "Bouw naar 60 seconden toe — doe 2 sets als 60 sec te lang is.",
       ], goal:"3 sets van 45-60 seconden" },
-      { name:"Kickup niveau 2: split → langzaam volledig", steps:[
+      { type:"oefening", name:"Kickup niveau 2: split → langzaam volledig", steps:[
         "Gooi het achterste been omhoog naar split-leg positie.",
         "Breng het voorste been langzaam omhoog tot naast het andere — zo langzaam als je kunt.",
         "Houd de volledige handstand zo lang mogelijk. Val gecontroleerd terug.",
       ], goal:"8-10 pogingen — focus op beheersing van de overgang, niet de tijd boven" },
-      { name:"Split-leg muur drill", steps:[
+      { type:"oefening", name:"Split-leg muur drill", steps:[
         "Zet handen ±15-20 cm van de muur. Kickup naar split-leg positie.",
         "Tik je achterste teen even van de muur — dan zweven. Zet hem terug.",
         "Volgende poging: laat die voet een seconde hangen zonder muur. Dan steeds langer.",
       ], goal:"10 pogingen per sessie — brug tussen muur en vrije handstand" },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Holds naar 8 seconden", steps:[
+      { type:"oefening", name:"Holds naar 8 seconden", steps:[
         "Span aan en houd 8 seconden vast zonder je adem in te houden.",
         "Rust 8 seconden tussen de herhalingen.",
         "Zakt de spanning halverwege weg? Kort de hold in tot wat je wél volhoudt.",
       ], goal:"3 sets van 8 herhalingen van 8 seconden" },
-      { name:"Zittend trainen", steps:[
+      { type:"oefening", name:"Zittend trainen", steps:[
         "Zit rechtop op een stevige stoel, voeten plat op de grond.",
         "Zittend is zwaarder dan liggend — de zwaartekracht werkt nu tegen je.",
         "Doe de eerste set liggend als opwarming, daarna twee sets zittend.",
       ], goal:"1 set liggend + 2 sets zittend van 8 herhalingen" },
-      { name:"Lift-oefening", steps:[
+      { type:"oefening", name:"Lift-oefening", steps:[
         "Span aan in 3 stappen omhoog: een derde, twee derde, maximaal.",
         "Houd elke verdieping 2 seconden vast voor je verder omhoog gaat.",
         "Zak daarna in dezelfde 3 stappen gecontroleerd terug.",
@@ -113,34 +113,34 @@ const SKILL_WEEKS = {
   },
   4: {
     handstand: { label:"Handstand – Deload", color:"#7C3AED", items:[
-      { name:"Lichte chest-to-wall (herstel)", steps:[
+      { type:"oefening", name:"Lichte chest-to-wall (herstel)", steps:[
         "Chest-to-wall: borst aan de muur, actieve schouders, core strak.",
         "Geen nieuwe doelen — houd de vorm die je hebt opgebouwd.",
         "Stop als iets pijnlijk voelt. Herstel staat centraal.",
       ], goal:"2 sets van 30 seconden" },
-      { name:"Polsmobiliteit", steps:[
+      { type:"oefening", name:"Polsmobiliteit", steps:[
         "Wrist circles: handen plat op de grond, maak cirkels met je gewicht. 10 per richting.",
         "Vingers naar achteren: handen plat, vingers richting lichaam, licht druk zetten. 30 sec.",
         "Knokkel-steun: steun op gebalde vuisten, zet gewicht erop. 30 sec.",
       ], goal:"2 sets per oefening" },
-      { name:"Schoudermobiliteit", steps:[
+      { type:"oefening", name:"Schoudermobiliteit", steps:[
         "Arm circles: grote cirkels met gestrekte armen, 10 per richting.",
         "Doorway stretch: ellebogen op deurpost schouderhoogte, leun er doorheen. 30 sec.",
         "Overhead reach: armen omhoog gestrekt, leun zijwaarts. 20 sec per kant.",
       ], goal:"2 sets per oefening" },
     ]},
     pelvis: { label:"Bekkenbodem – Deload", color:"#0891B2", items:[
-      { name:"Rustige holds", steps:[
+      { type:"oefening", name:"Rustige holds", steps:[
         "Liggend: span aan en houd 5 seconden vast.",
         "Geen nieuwe doelen deze week — houd vast wat je hebt opgebouwd.",
         "Rust ruim tussen de herhalingen.",
       ], goal:"2 sets van 6 herhalingen van 5 seconden" },
-      { name:"Snelle knijpen (licht)", steps:[
+      { type:"oefening", name:"Snelle knijpen (licht)", steps:[
         "1 seconde aan, 1 seconde uit.",
         "Halve dosis vergeleken met vorige week.",
         "Focus op zuivere techniek, niet op aantal.",
       ], goal:"2 sets van 10 snelle knijpen" },
-      { name:"Volledig ontspannen", steps:[
+      { type:"oefening", name:"Volledig ontspannen", steps:[
         "Span 3 seconden aan en laat daarna 10 seconden volledig los.",
         "Voel of je écht helemaal loslaat — een spier die nooit ontspant wordt niet sterker.",
         "Een overactieve bekkenbodem geeft dezelfde klachten als een zwakke.",
@@ -149,34 +149,34 @@ const SKILL_WEEKS = {
   },
   5: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Chest-to-wall: minimaal muurcontact", steps:[
+      { type:"oefening", name:"Chest-to-wall: minimaal muurcontact", steps:[
         "Begin in chest-to-wall. Duw schouders actief naar oren.",
         "Probeer je borst 1-2 cm van de muur te halen — gebruik de muur alleen als vangnet.",
         "Dit bouwt het gevoel voor vrije balans zonder volledig los te zijn.",
       ], goal:"3 sets van 45 seconden" },
-      { name:"Kickup niveau 3: efficiënte kick-up", steps:[
+      { type:"oefening", name:"Kickup niveau 3: efficiënte kick-up", steps:[
         "Gooi het achterste been omhoog — ander been volgt direct en snel.",
         "Benen sluiten in één vloeiende beweging: niet split vasthouden, maar snel sluiten.",
         "Herhaalbaar en consistent maken — dit is de kick-up die je overal gebruikt.",
       ], goal:"10-12 pogingen per sessie" },
-      { name:"Heel pull drill (overbalance correctie)", steps:[
+      { type:"oefening", name:"Heel pull drill (overbalance correctie)", steps:[
         "Kom in handstand (muur of vrij). Ga bewust iets te ver — overbalance.",
         "Grijp de grond met je vingertoppen en druk je voorste knokkels neer.",
         "Voel hoe de druk je terugtrekt. Dit is je reddingslijn bij overbalance.",
       ], goal:"8-10 pogingen — overbalance leren corrigeren via hand/vingerkracht" },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Holds naar 10 seconden", steps:[
+      { type:"oefening", name:"Holds naar 10 seconden", steps:[
         "Span aan en houd 10 seconden vast, rustig doorademen.",
         "Rust 10 seconden tussen de herhalingen.",
         "De laatste 2 seconden zijn het zwaarst — daar zit de winst.",
       ], goal:"3 sets van 8 herhalingen van 10 seconden" },
-      { name:"Staand trainen", steps:[
+      { type:"oefening", name:"Staand trainen", steps:[
         "Sta rechtop, voeten op heupbreedte, knieën licht ontspannen.",
         "Staand is de zwaarste positie — hier vertaalt kracht zich naar het dagelijks leven.",
         "Doe twee sets staand en één set zittend als je moe wordt.",
       ], goal:"2 sets staand + 1 set zittend van 8 herhalingen" },
-      { name:"Lift met 4 verdiepingen", steps:[
+      { type:"oefening", name:"Lift met 4 verdiepingen", steps:[
         "Span aan in 4 stappen omhoog, elke verdieping 2 seconden vasthouden.",
         "Zak in 4 gecontroleerde stappen terug — niet in één keer laten vallen.",
         "De gecontroleerde afdaling is het moeilijkste deel.",
@@ -185,34 +185,34 @@ const SKILL_WEEKS = {
   },
   6: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Overbalance drill", steps:[
+      { type:"oefening", name:"Overbalance drill", steps:[
         "Kom in handstand (vrij of muur dichtbij). Ga bewust te ver — overbalance.",
         "Grijp de grond met je vingertips en druk knokkels neer om terug te sturen.",
         "Doel: overbalance herkennen én corrigeren voordat je valt.",
       ], goal:"8-10 pogingen — bewust oefenen is sneller leren dan per ongeluk vallen" },
-      { name:"Underbalance strategie 1: schouders", steps:[
+      { type:"oefening", name:"Underbalance strategie 1: schouders", steps:[
         "Kom in handstand. Laat je bewust te veel terugkantelen — underbalance.",
         "Herstel: plant je schouders neer (borst sluiten) om voorwaarts gewicht te pakken.",
         "Dit is de snelste correctie voor kleine underbalance — leer het als reflex.",
       ], goal:"6-8 pogingen per sessie" },
-      { name:"Underbalance strategie 2: heup/onderrug", steps:[
+      { type:"oefening", name:"Underbalance strategie 2: heup/onderrug", steps:[
         "Kom in handstand. Laat je opnieuw te ver terug kantelen.",
         "Herstel: activeer je onderrug en heupen om je lichaam terug te buigen.",
         "Verschilt van schouderstrategie — grotere correctie, meer tijd. Combineer beide.",
       ], goal:"6-8 pogingen per sessie" },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Holds naar 12 seconden", steps:[
+      { type:"oefening", name:"Holds naar 12 seconden", steps:[
         "Staand of zittend: span aan en houd 12 seconden vast.",
         "Rust 12 seconden tussen de herhalingen.",
         "Blijf normaal doorademen — dat is nu de grootste uitdaging.",
       ], goal:"3 sets van 6 herhalingen van 12 seconden" },
-      { name:"Snelle knijpen staand", steps:[
+      { type:"oefening", name:"Snelle knijpen staand", steps:[
         "Sta rechtop. 1 seconde maximaal aan, 1 seconde volledig los.",
         "Staand is zwaarder — verwacht dat je minder herhalingen haalt.",
         "Stop de set zodra je niet meer volledig kunt aanspannen.",
       ], goal:"3 sets van 15 snelle knijpen staand" },
-      { name:"Combinatieset", steps:[
+      { type:"oefening", name:"Combinatieset", steps:[
         "Houd eerst 10 seconden maximaal vast.",
         "Ga direct door met 10 snelle knijpen zonder rust.",
         "Rust daarna 60 seconden voor de volgende set.",
@@ -221,34 +221,34 @@ const SKILL_WEEKS = {
   },
   7: {
     handstand: { label:"Handstand", color:"#7C3AED", items:[
-      { name:"Vrije handstand (volume)", steps:[
+      { type:"oefening", name:"Vrije handstand (volume)", steps:[
         "Kick-up (niveau 3) → benen sluiten → balanceer zo lang je kunt.",
         "Stuur bij met vingertips (overbalance) of schouders/heupen (underbalance).",
         "Rust 60 sec tussen pogingen. Film jezelf als je kunt — check je lijn van opzij.",
       ], goal:"8-10 pogingen per sessie, doel: 3-5 seconden aaneengesloten" },
-      { name:"Kick-up als één vloeiende beweging", steps:[
+      { type:"oefening", name:"Kick-up als één vloeiende beweging", steps:[
         "Niet drie losse stappen. Been omhoog → ander been volgt direct → sluiten: één flow.",
         "Gooi bewust iets te ver om te zoeken naar de 'sweet spot' van equilibrium.",
         "Herhaalbaar en consistent maken — dit is jouw standaard kick-up.",
       ], goal:"10+ pogingen — focus op herhaling en consistentie" },
-      { name:"Chest-to-wall onderhoud", steps:[
+      { type:"oefening", name:"Chest-to-wall onderhoud", steps:[
         "Chest-to-wall: borst aan de muur, actieve schouders, strakke lijn.",
         "Minimaal muurcontact — gebruik hem alleen als vangnet.",
         "Dit houdt je basissterkte en lichaamsgevoel scherp.",
       ], goal:"2 sets van 45 seconden" },
     ]},
     pelvis: { label:"Bekkenbodem", color:"#0891B2", items:[
-      { name:"Uithoudingsvermogen: 15 seconden", steps:[
+      { type:"oefening", name:"Uithoudingsvermogen: 15 seconden", steps:[
         "Span aan op ongeveer 70% van je maximum en houd 15 seconden vast.",
         "Submaximaal aanspannen kun je langer volhouden dan maximaal.",
         "Rust 15 seconden tussen de herhalingen.",
       ], goal:"3 sets van 6 herhalingen van 15 seconden" },
-      { name:"Aanspannen tijdens beweging", steps:[
+      { type:"oefening", name:"Aanspannen tijdens beweging", steps:[
         "Span aan en houd vast tijdens 10 langzame squats.",
         "Daarna: aanspannen en vasthouden tijdens 30 seconden rustig lopen.",
         "De spier moet werken terwijl de rest van je lichaam beweegt.",
       ], goal:"2 rondes squats + lopen" },
-      { name:"The knack: dagelijkse reflex", steps:[
+      { type:"oefening", name:"The knack: dagelijkse reflex", steps:[
         "Span kort en scherp aan vlak vóór je hoest, niest of iets zwaars tilt.",
         "Oefen dit bewust 10 keer met een nep-hoest.",
         "Doel is dat dit vanzelf gaat — daar is de hele training voor bedoeld.",
@@ -257,34 +257,34 @@ const SKILL_WEEKS = {
   },
   8: {
     handstand: { label:"Handstand – Testweek", color:"#7C3AED", items:[
-      { name:"TEST: vrije handstand", steps:[
+      { type:"test", name:"TEST: vrije handstand", steps:[
         "Warm op: polsopwarming + 5 chest-to-wall (30 sec).",
         "Doe je beste kick-up en balanceer zo lang als je kunt.",
         "Noteer de seconden van je beste poging. Rust 2-3 minuten. 3 pogingen totaal.",
       ], goal:"Noteer je beste poging — eerlijk meten, geen hulp van muur" },
-      { name:"TEST: kick-up efficiëntie", steps:[
+      { type:"test", name:"TEST: kick-up efficiëntie", steps:[
         "Doe 5 kick-ups zo consistent en efficiënt mogelijk.",
         "Noteer: hoe snel sluiten je benen? Kom je direct in evenwicht of moet je veel bijsturen?",
         "Dit laat zien of de kick-up je sterke of zwakke schakel is.",
       ], goal:"Reflecteer op je kick-up kwaliteit — schrijf het op in de notitie" },
-      { name:"Reflecteer op de cyclus", steps:[
+      { type:"reflectie", name:"Reflecteer op de cyclus", steps:[
         "Wat was de limiterende factor: kracht, balans, angst of techniek?",
         "Overbalance of underbalance — welke kant val je vaker op?",
         "Dit bepaalt de focus van week 9-10.",
       ], goal:"Inzicht voor de eindsprint" },
     ]},
     pelvis: { label:"Bekkenbodem – Testweek", color:"#0891B2", items:[
-      { name:"TEST: maximale hold", steps:[
+      { type:"test", name:"TEST: maximale hold", steps:[
         "Doe de test uitgerust, als eerste oefening van de sessie.",
         "Span maximaal aan en houd zo lang mogelijk vast — stop zodra de kracht wegzakt.",
         "Noteer het aantal seconden in de notitie.",
       ], goal:"Noteer je maximale hold in seconden" },
-      { name:"TEST: snelle knijpen", steps:[
+      { type:"test", name:"TEST: snelle knijpen", steps:[
         "Doe zoveel mogelijk snelle knijpen (1 sec aan, 1 sec uit) op rij.",
         "Stop zodra je niet meer volledig kunt aanspannen of ontspannen.",
         "Noteer het aantal.",
       ], goal:"Noteer je aantal snelle knijpen" },
-      { name:"Reflecteer op de cyclus", steps:[
+      { type:"reflectie", name:"Reflecteer op de cyclus", steps:[
         "Merk je verschil in het dagelijks leven — bij tillen, sporten of aandrang?",
         "Wat is zwakker: de lange hold (uithouding) of de snelle knijp (kracht)?",
         "Dit bepaalt de focus voor week 9-10.",
@@ -293,34 +293,34 @@ const SKILL_WEEKS = {
   },
   9: {
     handstand: { label:"Handstand – Verdieping", color:"#7C3AED", items:[
-      { name:"Vrije handstand (hoog volume)", steps:[
+      { type:"oefening", name:"Vrije handstand (hoog volume)", steps:[
         "15+ pogingen per sessie. Rust 45-60 sec tussen pogingen.",
         "Doel: 5-8 seconden op je beste poging. Film jezelf om je lijn te checken.",
         "Zoek actief de grens van over- en underbalance op — zo leer je sneller.",
       ], goal:"15+ pogingen, beste poging ≥ 5 seconden" },
-      { name:"Beide correctiestrategieën combineren", steps:[
+      { type:"techniek", name:"Beide correctiestrategieën combineren", steps:[
         "Bij overbalance: vingertips grijpen, knokkels drukken — halt.",
         "Bij underbalance: schouders eerst (snel), dan heupen als extra correctie.",
         "Wissel bewust van strategie per poging om beide te automatiseren.",
       ], goal:"Per poging: benoem welke strategie je gebruikte. Zo bouw je bewuste reflex op." },
-      { name:"Split-leg muur drill verfijnen", steps:[
+      { type:"oefening", name:"Split-leg muur drill verfijnen", steps:[
         "Handen 15-20 cm van muur. Kickup naar split-leg.",
         "Laat de achterste voet langer zweven — bouw op van 1 naar 3 seconden.",
         "Poging: beide benen in één beweging sluiten zonder muurcontact.",
       ], goal:"10 pogingen — dit is de brug naar volledig vrij" },
     ]},
     pelvis: { label:"Bekkenbodem – Verdieping", color:"#0891B2", items:[
-      { name:"Holds onder belasting", steps:[
+      { type:"oefening", name:"Holds onder belasting", steps:[
         "Span aan en houd vast tijdens een plank of dead hang van 20 seconden.",
         "De bekkenbodem hoort bij je diepe core — train hier als één geheel.",
         "Rust 60 seconden tussen de herhalingen.",
       ], goal:"3 sets van 20 seconden onder belasting" },
-      { name:"Reverse kegels", steps:[
+      { type:"oefening", name:"Reverse kegels", steps:[
         "Adem diep in en duw de bekkenbodem juist zachtjes naar beneden en naar buiten.",
         "Dit is het tegenovergestelde van aanspannen — het traint bewuste ontspanning.",
         "Wissel af: 5 seconden aanspannen, 5 seconden reverse, 5 seconden neutraal.",
       ], goal:"3 sets van 8 wisselingen" },
-      { name:"Volledige integratie", steps:[
+      { type:"oefening", name:"Volledige integratie", steps:[
         "Combineer alles: 10 snelle knijpen, 3 liften, 3 holds van 15 seconden.",
         "Doe de hele reeks staand, zonder tussenpauze.",
         "Dit is je onderhoudsreeks voor na de 10 weken.",
@@ -329,34 +329,34 @@ const SKILL_WEEKS = {
   },
   10: {
     handstand: { label:"Handstand – Finale", color:"#7C3AED", items:[
-      { name:"TEST: vrije handstand 10 seconden", steps:[
+      { type:"test", name:"TEST: vrije handstand 10 seconden", steps:[
         "Warm op: polsopwarming + 3 chest-to-wall (30 sec).",
         "Doe je beste kick-up en balanceer zo lang als je kunt.",
         "3 pogingen met 2 minuten rust — noteer je beste tijd in de notitie.",
       ], goal:"Doel: 10 seconden aaneengesloten" },
-      { name:"TEST: handstand walk", steps:[
+      { type:"test", name:"TEST: handstand walk", steps:[
         "Kick-up → balanceer → zet stappen op je handen.",
         "Verplaats gewicht via je vingertoppen — kleine, gecontroleerde stappen.",
         "3 pogingen met 2 minuten rust — noteer stappen of afstand.",
       ], goal:"Doel: zo ver als je kunt — elke stap is vooruitgang" },
-      { name:"Terugblik en cyclus 2", steps:[
+      { type:"reflectie", name:"Terugblik en cyclus 2", steps:[
         "Vergelijk je score van week 8 (tussentest) met nu — wat is verbeterd?",
         "Wat was de limiterende factor: overbalance, underbalance, kick-up of kracht?",
         "Noteer je startpunt voor cyclus 2 — dit is waar week 1 van de volgende cyclus begint.",
       ], goal:"Startpunt cyclus 2 bepalen" },
     ]},
     pelvis: { label:"Bekkenbodem – Finale", color:"#0891B2", items:[
-      { name:"TEST: maximale hold", steps:[
+      { type:"test", name:"TEST: maximale hold", steps:[
         "Uitgerust, als eerste oefening. Span maximaal aan en houd zo lang mogelijk vast.",
         "Noteer de seconden en vergelijk met je score van week 8.",
         "Doel: 20 seconden of meer.",
       ], goal:"Doel: 20 seconden — noteer je score" },
-      { name:"TEST: snelle knijpen", steps:[
+      { type:"test", name:"TEST: snelle knijpen", steps:[
         "Zoveel mogelijk snelle knijpen op rij, volledige spanning en ontspanning.",
         "Noteer het aantal en vergelijk met week 8.",
         "Doel: 30 herhalingen of meer.",
       ], goal:"Doel: 30 snelle knijpen — noteer je score" },
-      { name:"Onderhoudsplan", steps:[
+      { type:"reflectie", name:"Onderhoudsplan", steps:[
         "Vanaf nu is 3× per week genoeg om je resultaat vast te houden.",
         "Eén ronde: 10 snelle knijpen + 3 liften + 3 holds van 15 seconden.",
         "Noteer je eindscores — dit is het startpunt van cyclus 2.",
@@ -2122,6 +2122,15 @@ function RoutinesTab({routines,onChange,db}) {
   );
 }
 
+// Wat een blok van je vraagt. "doel" bepaalt of de slotregel een trainingsdoel
+// is (sets/tijd) of alleen een inzicht om te onthouden.
+const ITEM_TYPES = {
+  oefening: {label:"Oefening", color:"#059669", bg:"#D1FAE5", doel:true },
+  techniek: {label:"Techniek", color:"#D97706", bg:"#FEF3C7", doel:false},
+  test:     {label:"Test",     color:"#7C3AED", bg:"#EDE9FD", doel:true },
+  reflectie:{label:"Reflectie",color:"#64748B", bg:"#E9EDF2", doel:false},
+};
+
 // ─── SKILLS TAB ───────────────────────────────────────────────────────────────
 function SkillsTab({week,focusSkill}) {
   const schedule = week.skillSchedule || DEFAULT_SKILL_SCHEDULE;
@@ -2202,24 +2211,40 @@ function SkillsTab({week,focusSkill}) {
           <div style={{fontSize:12,color:C.textMuted,marginBottom:14}}>
             {PHASE_LABELS[Math.min(lvl-1,9)]}{lvl===curLvl&&" · jouw huidige niveau"}
           </div>
-          {data.items.map((item,i)=>(
-            <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,
-              padding:"14px 16px",marginBottom:10,boxShadow:C.shadow}}>
-              <div style={{fontSize:14,fontWeight:700,color:info.color,marginBottom:9}}>{item.name}</div>
-              {item.steps.map((step,j)=>(
-                <div key={j} style={{display:"flex",gap:9,fontSize:13,color:C.textSub,alignItems:"flex-start",marginBottom:6}}>
-                  <span style={{color:info.color,fontWeight:700,flexShrink:0,minWidth:16,opacity:0.7}}>{j+1}.</span>
-                  <span style={{lineHeight:1.55}}>{step}</span>
+          {data.items.map((item,i)=>{
+            const t = ITEM_TYPES[item.type]||ITEM_TYPES.oefening;
+            // Blokken die je alleen leest, treden visueel terug.
+            const doen = t.doel;
+            return (
+              <div key={i} style={{
+                background:doen?C.surface:C.surfaceAlt,
+                border:`1px solid ${C.border}`,borderRadius:12,
+                padding:"14px 16px",marginBottom:10,boxShadow:doen?C.shadow:"none",
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:9}}>
+                  <span style={{fontSize:14,fontWeight:700,color:doen?info.color:C.textSub}}>{item.name}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:t.color,background:t.bg,
+                    padding:"2px 7px",borderRadius:4,textTransform:"uppercase",letterSpacing:0.4,flexShrink:0}}>
+                    {t.label}
+                  </span>
                 </div>
-              ))}
-              {item.goal&&(
-                <div style={{fontSize:12,color:info.color,marginTop:10,padding:"8px 11px",
-                  background:info.bg,borderRadius:8,fontWeight:500}}>
-                  → {item.goal}
-                </div>
-              )}
-            </div>
-          ))}
+                {item.steps.map((step,j)=>(
+                  <div key={j} style={{display:"flex",gap:9,fontSize:13,color:C.textSub,alignItems:"flex-start",marginBottom:6}}>
+                    <span style={{color:doen?info.color:C.textMuted,fontWeight:700,flexShrink:0,minWidth:16,opacity:0.7}}>{j+1}.</span>
+                    <span style={{lineHeight:1.55}}>{step}</span>
+                  </div>
+                ))}
+                {item.goal&&(
+                  <div style={{fontSize:12,marginTop:10,padding:"8px 11px",borderRadius:8,fontWeight:500,
+                    background:doen?info.bg:C.surface,
+                    color:doen?info.color:C.textSub,
+                    border:doen?"none":`1px solid ${C.border}`}}>
+                    {doen?`→ ${item.goal}`:`💡 ${item.goal}`}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </>
       )}
     </div>
