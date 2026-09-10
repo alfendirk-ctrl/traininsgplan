@@ -569,6 +569,15 @@ async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); 
 async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} pushToSupabase({routines:d}); }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
 
+// Video-ID uit een YouTube-URL (watch, youtu.be, embed of shorts) voor de thumbnail.
+function ytId(url){
+  if(!url) return null;
+  const m = String(url).match(
+    /(?:youtube\.com\/(?:watch\?(?:[^&]*&)*v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+  );
+  return m?m[1]:null;
+}
+
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
   bg:"#F7F6F3", surface:"#FFFFFF", surfaceAlt:"#F0EEE9", surfaceHover:"#ECEAE4",
@@ -732,17 +741,48 @@ function Sheet({title,accent,onClose,children,zIndex=Z_SHEET,headerExtra}) {
   );
 }
 
+// Videokaartje met thumbnail; valt terug op een ▶-vlak als de URL geen
+// YouTube-video is of de afbeelding niet laadt.
+function VideoLink({url,title}) {
+  const id = ytId(url);
+  const [failed,setFailed] = useState(false);
+  useEffect(()=>{ setFailed(false); },[id]);
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" style={{
+      display:"flex",alignItems:"center",gap:10,textDecoration:"none",
+      background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:8,
+    }}>
+      {id&&!failed?(
+        <img src={`https://img.youtube.com/vi/${id}/mqdefault.jpg`} alt=""
+          onError={()=>setFailed(true)}
+          style={{width:80,height:45,objectFit:"cover",borderRadius:6,flexShrink:0,background:C.surfaceAlt}} />
+      ):(
+        <div style={{width:80,height:45,borderRadius:6,flexShrink:0,background:C.surfaceAlt,
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:C.textMuted}}>▶</div>
+      )}
+      <span style={{flex:1,minWidth:0}}>
+        <span style={{display:"block",fontSize:13,fontWeight:600,color:C.text,
+          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{title||"Video"}</span>
+        <span style={{display:"block",fontSize:11,color:C.green,marginTop:2,fontWeight:500}}>↗ Open op YouTube</span>
+      </span>
+    </a>
+  );
+}
+
 function RoutineInfo({routine}) {
   const notes = (routine.notes||"").trim();
   const links = (routine.links||[]).filter(l=>l.url&&l.url.trim());
-  if(!notes&&links.length===0) return null;
+  const video = routine.kind==="video" ? (routine.videoUrl||"").trim() : "";
+  if(!notes&&links.length===0&&!video) return null;
   return (
-    <div style={{background:C.surfaceAlt,borderRadius:10,padding:"10px 12px"}}>
+    <div style={{background:C.surfaceAlt,borderRadius:10,padding:"10px 12px",
+      display:"flex",flexDirection:"column",gap:8}}>
+      {video&&<VideoLink url={video} title={routine.name} />}
       {notes&&(
         <div style={{fontSize:13,color:C.textSub,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{notes}</div>
       )}
       {links.length>0&&(
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:notes?8:0}}>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           {links.map((l,i)=>(
             <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{
               fontSize:12,color:C.green,background:C.greenLight,textDecoration:"none",
@@ -787,7 +827,9 @@ function RoutinePickerModal({routines,onSelect,onClose,context}) {
                     <span style={{fontSize:14,fontWeight:600,color:C.text}}>{r.name||"Naamloze routine"}</span>
                     {typeLabel&&<span style={{fontSize:10,fontWeight:600,color:typeColor,background:typeBg,padding:"1px 6px",borderRadius:4,flexShrink:0}}>{typeLabel}</span>}
                   </div>
-                  <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>{(r.exercises||[]).length} oefeningen</div>
+                  <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>
+                    {r.kind==="video"?"▶️ Video":`${(r.exercises||[]).length} oefeningen`}
+                  </div>
                 </div>
                 <span style={{color:C.green,fontSize:13,fontWeight:500,flexShrink:0}}>Laden →</span>
               </button>
@@ -1592,14 +1634,17 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
   // Samenvattingsregels voor de ingeklapte blokken
   const mCount = (day.morningExercises||[]).filter(e=>e.name&&e.name.trim()).length;
   const eCount = (day.exercises||[]).filter(e=>e.name&&e.name.trim()).length;
+  // Een video-routine heeft geen oefeningen; toon dan alleen de naam.
+  const routineDetail = (r,count) =>
+    !r ? "Geen routine" : r.kind==="video" ? `▶️ ${r.name}` : `${r.name} · ${count} oef.`;
   const morningDetail =
       day.morningType==="exercises" ? `${mCount} ${mCount===1?"oefening":"oefeningen"}`
-    : day.morningType==="routine"   ? `${selectedMorningRoutine?.name||"Geen routine"} · ${mCount} oef.`
+    : day.morningType==="routine"   ? routineDetail(selectedMorningRoutine,mCount)
     : day.morningType==="video"     ? (day.morningRoutineName||"Video")
     : null;
   const eveningDetail =
       day.type==="gym"      ? `Gym · ${eCount} ${eCount===1?"oefening":"oefeningen"}`
-    : day.type==="routine"  ? `${selectedEveningRoutine?.name||"Geen routine"} · ${eCount} oef.`
+    : day.type==="routine"  ? routineDetail(selectedEveningRoutine,eCount)
     : day.type==="video"    ? (day.routineName||"Video")
     : null;
   const morningStartExs = (day.morningType==="exercises"||day.morningType==="routine")&&mCount>0 ? day.morningExercises : [];
@@ -1798,18 +1843,22 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
               {selectedMorningRoutine&&(
                 <>
                   <RoutineInfo routine={selectedMorningRoutine} />
-                  {/* Sync checkbox */}
-                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                    <input type="checkbox" checked={!!day.morningRoutineSync}
-                      onChange={e=>upd({morningRoutineSync:e.target.checked})}
-                      style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                    <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                  </label>
-                  {/* Exercise list */}
-                  <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
-                    accentColor={C.green} accentBg={C.greenLight}
-                    setsPlaceholder="60s"
-                    onStartWorkout={startWorkout} setsEditor={true} />
+                  {selectedMorningRoutine.kind!=="video"&&(
+                    <>
+                      {/* Sync checkbox */}
+                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                        <input type="checkbox" checked={!!day.morningRoutineSync}
+                          onChange={e=>upd({morningRoutineSync:e.target.checked})}
+                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                      </label>
+                      {/* Exercise list */}
+                      <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
+                        accentColor={C.green} accentBg={C.greenLight}
+                        setsPlaceholder="60s"
+                        onStartWorkout={startWorkout} setsEditor={true} />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -1868,17 +1917,21 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
               {selectedEveningRoutine&&(
                 <>
                   <RoutineInfo routine={selectedEveningRoutine} />
-                  {/* Sync checkbox */}
-                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                    <input type="checkbox" checked={!!day.routineSync}
-                      onChange={e=>upd({routineSync:e.target.checked})}
-                      style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                    <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                  </label>
-                  {/* Exercise list */}
-                  <ExerciseBlock exercises={day.exercises} onChange={updEx}
-                    accentColor={C.green} accentBg={C.greenLight}
-                    onStartWorkout={startWorkout} setsEditor={true} />
+                  {selectedEveningRoutine.kind!=="video"&&(
+                    <>
+                      {/* Sync checkbox */}
+                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                        <input type="checkbox" checked={!!day.routineSync}
+                          onChange={e=>upd({routineSync:e.target.checked})}
+                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
+                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
+                      </label>
+                      {/* Exercise list */}
+                      <ExerciseBlock exercises={day.exercises} onChange={updEx}
+                        accentColor={C.green} accentBg={C.greenLight}
+                        onStartWorkout={startWorkout} setsEditor={true} />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -1983,9 +2036,10 @@ function WeekEval({week,onSave}) {
 }
 
 // ─── ROUTINES TAB ─────────────────────────────────────────────────────────────
-function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChangeNotes,onChangeLinks,onDelete,db}) {
+function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChangeNotes,onChangeLinks,onPatch,onDelete,db}) {
   const [open,setOpen]           = useState(true);
   const [showDbModal,setShowDbModal] = useState(false);
+  const isVideo = routine.kind==="video";
 
   const addEx = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
   const updEx = (i,v) => { const e=[...routine.exercises]; e[i]=v; onChangeExercises(e); };
@@ -2006,32 +2060,55 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChan
         borderBottom:open?`1px solid ${C.border}`:"none",
       }}>
         <button onClick={()=>setOpen(p=>!p)} style={{background:"none",border:"none",cursor:"pointer",color:C.textMuted,fontSize:14,padding:0,flexShrink:0,lineHeight:1,transition:"transform .15s",transform:open?"rotate(90deg)":"rotate(0deg)"}}>▶</button>
-        <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{typeIcon}</span>
+        <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{isVideo?"▶️":typeIcon}</span>
         <input value={routine.name} onChange={e=>onChangeName(e.target.value)}
           style={{fontFamily:font,fontSize:14,fontWeight:600,color:C.text,background:"transparent",border:"none",outline:"none",flex:1,minWidth:0}} />
-        <span style={{fontSize:12,color:C.textMuted,flexShrink:0}}>{routine.exercises.length} oef.</span>
+        <span style={{fontSize:12,color:C.textMuted,flexShrink:0}}>
+          {isVideo?"Video":`${routine.exercises.length} oef.`}
+        </span>
         <button onClick={onDelete} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:18,padding:"0 2px",lineHeight:1,flexShrink:0}}>×</button>
       </div>
       {open&&(
         <div style={{padding:"12px 14px 14px"}}>
+          {/* Soort: oefeningenlijst of follow-along video */}
+          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:10}}>
+            <Seg active={!isVideo} color={C.green}  bg={C.greenLight}  onClick={()=>onPatch({kind:"exercises"})}>📋 Oefeningen</Seg>
+            <Seg active={isVideo}  color={C.purple} bg={C.purpleLight} onClick={()=>onPatch({kind:"video"})}>▶️ Video</Seg>
+          </div>
           {/* Type selector */}
           <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
             <Seg active={routine.type==="ochtend"} color={C.amber}  bg={C.amberLight}  onClick={()=>onChangeType("ochtend")}>☀️ Ochtend</Seg>
             <Seg active={routine.type==="avond"}   color={C.purple} bg={C.purpleLight} onClick={()=>onChangeType("avond")}>🌙 Avond</Seg>
             <Seg active={!routine.type}                                                 onClick={()=>onChangeType(null)}>Beide</Seg>
           </div>
-          {/* Exercises */}
-          {routine.exercises.length===0&&(
-            <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 8px"}}>Nog geen oefeningen</div>
+
+          {isVideo?(
+            <>
+              <input value={routine.videoUrl||""} onChange={e=>onPatch({videoUrl:e.target.value})}
+                placeholder="https://www.youtube.com/watch?v=…"
+                style={inp({fontSize:13,padding:"9px 11px"})} />
+              {(routine.videoUrl||"").trim()&&(
+                <div style={{marginTop:8}}>
+                  <VideoLink url={routine.videoUrl} title={routine.name} />
+                </div>
+              )}
+            </>
+          ):(
+            <>
+              {/* Exercises */}
+              {routine.exercises.length===0&&(
+                <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"4px 0 8px"}}>Nog geen oefeningen</div>
+              )}
+              {routine.exercises.map((ex,i)=>(
+                <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" setsEditor={true} />
+              ))}
+              {/* Action buttons */}
+              <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
+                <Btn onClick={addEx} variant="green" size="sm">+ Nieuw</Btn>
+                {db&&<Btn onClick={()=>setShowDbModal(true)} variant="subtle" size="sm">⊕ Uit database</Btn>}
+              </div>
+            </>
           )}
-          {routine.exercises.map((ex,i)=>(
-            <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)} setsPlaceholder="3×5" setsEditor={true} />
-          ))}
-          {/* Action buttons */}
-          <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
-            <Btn onClick={addEx} variant="green" size="sm">+ Nieuw</Btn>
-            {db&&<Btn onClick={()=>setShowDbModal(true)} variant="subtle" size="sm">⊕ Uit database</Btn>}
-          </div>
 
           {/* Notities */}
           <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${C.border}`}}>
@@ -2088,36 +2165,77 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChan
 }
 
 function RoutinesTab({routines,onChange,db}) {
-  const addRoutine    = () => onChange([...routines,{id:mkId(),name:"Nieuwe routine",type:null,exercises:[],notes:"",links:[]}]);
+  const mkRoutine = (kind) => ({
+    id:mkId(), kind,
+    name: kind==="video" ? "Nieuwe video" : "Nieuwe routine",
+    type:null, exercises:[], videoUrl:"", notes:"", links:[],
+  });
+  const addRoutine    = () => onChange([...routines,mkRoutine("exercises")]);
+  const addVideo      = () => onChange([...routines,mkRoutine("video")]);
   const removeRoutine = (id) => onChange(routines.filter(r=>r.id!==id));
   const updateRoutine = (id,patch) => onChange(routines.map(r=>r.id===id?{...r,...patch}:r));
 
+  const videos = routines.filter(r=>r.kind==="video");
+  const lists  = routines.filter(r=>r.kind!=="video");
+
+  const card = (r) => (
+    <RoutineCard key={r.id} routine={r}
+      onChangeName={name=>updateRoutine(r.id,{name})}
+      onChangeExercises={exs=>updateRoutine(r.id,{exercises:exs})}
+      onChangeType={type=>updateRoutine(r.id,{type})}
+      onChangeNotes={notes=>updateRoutine(r.id,{notes})}
+      onChangeLinks={links=>updateRoutine(r.id,{links})}
+      onPatch={patch=>updateRoutine(r.id,patch)}
+      onDelete={()=>removeRoutine(r.id)}
+      db={db} />
+  );
+
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:16}}>
+        <div style={{minWidth:0}}>
           <div style={{fontSize:16,fontWeight:700,color:C.text}}>Routines</div>
-          <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>Maak oefenroutines die je in dagkaarten kunt laden</div>
+          <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>Oefenlijsten en follow-along video's om in dagen te laden</div>
         </div>
-        <Btn onClick={addRoutine} variant="primary" size="sm">+ Routine</Btn>
+        <div style={{display:"flex",gap:6,flexShrink:0}}>
+          <Btn onClick={addVideo}   variant="purple"  size="sm">+ Video</Btn>
+          <Btn onClick={addRoutine} variant="primary" size="sm">+ Routine</Btn>
+        </div>
       </div>
-      {routines.length===0?(
+
+      {routines.length===0&&(
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"32px 20px",textAlign:"center"}}>
           <div style={{fontSize:32,marginBottom:10}}>📋</div>
-          <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>Nog geen routines</div>
-          <div style={{fontSize:13,color:C.textMuted,marginBottom:16}}>Maak een routine aan en laad hem in elke dag met één klik.</div>
-          <Btn onClick={addRoutine} variant="primary">+ Eerste routine</Btn>
+          <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>Nog niets aangemaakt</div>
+          <div style={{fontSize:13,color:C.textMuted,marginBottom:16}}>
+            Maak een oefenroutine, of verzamel je follow-along video's als losse items.
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+            <Btn onClick={addRoutine} variant="primary">+ Eerste routine</Btn>
+            <Btn onClick={addVideo}   variant="purple">+ Eerste video</Btn>
+          </div>
         </div>
-      ):routines.map(r=>(
-        <RoutineCard key={r.id} routine={r}
-          onChangeName={name=>updateRoutine(r.id,{name})}
-          onChangeExercises={exs=>updateRoutine(r.id,{exercises:exs})}
-          onChangeType={type=>updateRoutine(r.id,{type})}
-          onChangeNotes={notes=>updateRoutine(r.id,{notes})}
-          onChangeLinks={links=>updateRoutine(r.id,{links})}
-          onDelete={()=>removeRoutine(r.id)}
-          db={db} />
-      ))}
+      )}
+
+      {videos.length>0&&(
+        <div style={{marginBottom:22}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>
+            ▶️ Video's · {videos.length}
+          </div>
+          {videos.map(card)}
+        </div>
+      )}
+
+      {lists.length>0&&(
+        <div>
+          {videos.length>0&&(
+            <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>
+              📋 Oefenroutines · {lists.length}
+            </div>
+          )}
+          {lists.map(card)}
+        </div>
+      )}
     </div>
   );
 }
