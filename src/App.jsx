@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from './supabase.js';
+import RepsTab from './RepsTab.jsx';
+import { C, font, mono, inp } from './tokens.js';
 
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
 const SKILL_WEEKS = {
@@ -369,13 +371,13 @@ const DAYS       = ["ma","di","wo","do","vr","za","zo"];
 const SKILL_DAYS = ["ma","di","wo","do","vr","za"]; // no sunday for skill planning
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
-const SKILL_KEYS = ["handstand","pelvis"];
+const SKILL_KEYS = ["handstand"];
 const RATINGS    = ["Te makkelijk","Goed","Zwaar","Niet gelukt"];
 const RATING_COLORS = ["#059669","#7C3AED","#D97706","#DC2626"];
 const PHASE_LABELS  = ["Fundament","Fundament","Opbouw","Opbouw · Deload","Intensificatie","Intensificatie","Consolidatie","Testweek","Verdieping","Finale"];
 
-const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"], pelvis:["di","do","za"] };
-const DEFAULT_SKILL_LEVEL    = { handstand:1, pelvis:1 };
+const DEFAULT_SKILL_SCHEDULE = { handstand:["ma","wo","vr"] };
+const DEFAULT_SKILL_LEVEL    = { handstand:1 };
 
 function adaptSkillSchedule(prevSchedule, prevLevel, ratings) {
   const schedule = {}, level = {}, reasons = {};
@@ -433,6 +435,7 @@ const STORAGE_KEY    = "training_v5";
 const DB_KEY         = "training_db_v1";
 const ROUTINES_KEY   = "training_routines_v1";
 const REST_KEY       = "training_rest_v1";
+const REPS_KEY       = "reps_v1";
 const SYNC_KEY_LOCAL = "training_sync_key";
 
 const DEFAULT_REST = { side:30, set:60, ex:90 };
@@ -569,6 +572,21 @@ async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); 
 async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} pushToSupabase({routines:d}); }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
 
+// De bekkenbodem zat in week.skillLevel.pelvis en woont nu in de Reps-tab, die
+// zijn eigen key gebruikt. Neem het bestaande niveau één keer over als
+// startpunt; bestaat reps_v1 al, dan is de overname eerder gedaan.
+function migratePelvisLevelToReps(weeks){
+  try{
+    if(localStorage.getItem(REPS_KEY)) return;
+    const active = (weeks||[])[(weeks||[]).length-1];
+    const prev   = active&&active.skillLevel ? active.skillLevel.pelvis : null;
+    const level  = Number.isInteger(prev)&&prev>=1&&prev<=10 ? prev : 1;
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    localStorage.setItem(REPS_KEY, JSON.stringify({date, level, logged:{}, custom:[], history:[]}));
+  }catch{}
+}
+
 // Video-ID uit een YouTube-URL (watch, youtu.be, embed of shorts) voor de thumbnail.
 function ytId(url){
   if(!url) return null;
@@ -578,22 +596,7 @@ function ytId(url){
   return m?m[1]:null;
 }
 
-// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
-const C = {
-  bg:"#F7F6F3", surface:"#FFFFFF", surfaceAlt:"#F0EEE9", surfaceHover:"#ECEAE4",
-  border:"#E4E0D8", borderMid:"#D0CCBF",
-  text:"#1A1814", textSub:"#6B6456", textMuted:"#A09585",
-  purple:"#7C3AED", purpleLight:"#EDE9FD", purpleMid:"#DDD6FE",
-  green:"#059669",  greenLight:"#D1FAE5",
-  red:"#DC2626",    redLight:"#FEE2E2",
-  amber:"#D97706",  amberLight:"#FEF3C7",
-  shadow:"0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04)",
-  shadowLg:"0 8px 24px rgba(0,0,0,0.12),0 2px 6px rgba(0,0,0,0.06)",
-};
-const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
-const mono = "'SF Mono','Fira Mono',monospace";
-
-const inp = (extra={}) => ({ fontFamily:font, fontSize:15, color:C.text, background:C.surfaceAlt, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 12px", outline:"none", width:"100%", boxSizing:"border-box", WebkitAppearance:"none", ...extra });
+// Design tokens staan in tokens.js, gedeeld met RepsTab.jsx.
 
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
 const Tag = ({color,bg,children}) => (
@@ -2571,6 +2574,7 @@ export default function App() {
   const loadAll = useCallback(async()=>{
     await initSync();
     const [w,d,r] = await Promise.all([loadData(),loadDb(),loadRoutines()]);
+    migratePelvisLevelToReps(w);
     setWeeks(w);
     setActiveIdx(w.length-1);
     setDb(d);
@@ -2658,7 +2662,7 @@ export default function App() {
   const aw     = weeks[activeIdx];
   const skills = SKILL_WEEKS[Math.min(aw.weekNum,10)];
 
-  const TABS = [["plan","Plan"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
+  const TABS = [["plan","Plan"],["reps","Reps"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
   return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text}}>
@@ -2683,15 +2687,16 @@ export default function App() {
               <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
             </div>
           </div>
-          {/* Tab bar */}
-          <div style={{display:"flex",marginTop:6}}>
+          {/* Tab bar — scrollt horizontaal op zeer smalle schermen (6 tabs),
+              blijft op normale breedtes verdeeld over de volle breedte. */}
+          <div style={{display:"flex",marginTop:6,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
             {TABS.map(([id,l])=>(
               <button key={id} onClick={()=>setTab(id)} style={{
                 flex:1,padding:"10px 4px",background:"none",border:"none",
                 borderBottom:`2px solid ${tab===id?C.purple:"transparent"}`,
                 color:tab===id?C.purple:C.textMuted,
                 cursor:"pointer",fontSize:13,fontFamily:font,fontWeight:tab===id?600:400,
-                transition:"color .15s",
+                transition:"color .15s",whiteSpace:"nowrap",
               }}>{l}</button>
             ))}
           </div>
@@ -2777,6 +2782,8 @@ export default function App() {
         )}
 
         {/* ROUTINES */}
+        {tab==="reps"&&<RepsTab db={db} />}
+
         {tab==="skills"&&<SkillsTab week={aw} focusSkill={skillFocus} />}
 
         {tab==="routines"&&<RoutinesTab routines={routines} onChange={persistRoutines} db={db} />}
