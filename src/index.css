@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Preflight staat uit (zie tailwind.config.js): de bestaande app is volledig
+   inline gestyled en mag niet van styling veranderen. De Reps-app heeft wel
+   een paar van die resets nodig, dus die gelden alleen binnen zijn eigen root.
+   :where() houdt de specificiteit op nul, zodat Tailwind-utilities blijven winnen. */
+
+:where(#reps-root) button,
+:where(#reps-root) input,
+:where(#reps-root) select,
+:where(#reps-root) textarea { font: inherit; color: inherit; }
+
+:where(#reps-root) button { background: none; border: 0; cursor: pointer; }
+
+:where(#reps-root) ol,
+:where(#reps-root) ul { list-style: none; }
+
+:where(#reps-root) h1,
+:where(#reps-root) h2,
+:where(#reps-root) h3 { font-size: inherit; font-weight: inherit; }
+
+/* Nummervelden zonder spinners, zoals in het ontwerp. */
+:where(#reps-root) input[type="number"] { -moz-appearance: textfield; }
+:where(#reps-root) input[type="number"]::-webkit-outer-spin-button,
+:where(#reps-root) input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

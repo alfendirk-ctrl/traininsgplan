@@ -435,7 +435,6 @@ const STORAGE_KEY    = "training_v5";
 const DB_KEY         = "training_db_v1";
 const ROUTINES_KEY   = "training_routines_v1";
 const REST_KEY       = "training_rest_v1";
-const REPS_KEY       = "reps_v1";
 const SYNC_KEY_LOCAL = "training_sync_key";
 
 const DEFAULT_REST = { side:30, set:60, ex:90 };
@@ -572,20 +571,6 @@ async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); 
 async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} pushToSupabase({routines:d}); }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
 
-// De bekkenbodem zat in week.skillLevel.pelvis en woont nu in de Reps-tab, die
-// zijn eigen key gebruikt. Neem het bestaande niveau één keer over als
-// startpunt; bestaat reps_v1 al, dan is de overname eerder gedaan.
-function migratePelvisLevelToReps(weeks){
-  try{
-    if(localStorage.getItem(REPS_KEY)) return;
-    const active = (weeks||[])[(weeks||[]).length-1];
-    const prev   = active&&active.skillLevel ? active.skillLevel.pelvis : null;
-    const level  = Number.isInteger(prev)&&prev>=1&&prev<=10 ? prev : 1;
-    const d = new Date();
-    const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    localStorage.setItem(REPS_KEY, JSON.stringify({date, level, logged:{}, custom:[], history:[]}));
-  }catch{}
-}
 
 // Video-ID uit een YouTube-URL (watch, youtu.be, embed of shorts) voor de thumbnail.
 function ytId(url){
@@ -2574,7 +2559,6 @@ export default function App() {
   const loadAll = useCallback(async()=>{
     await initSync();
     const [w,d,r] = await Promise.all([loadData(),loadDb(),loadRoutines()]);
-    migratePelvisLevelToReps(w);
     setWeeks(w);
     setActiveIdx(w.length-1);
     setDb(d);
@@ -2661,6 +2645,14 @@ export default function App() {
 
   const aw     = weeks[activeIdx];
   const skills = SKILL_WEEKS[Math.min(aw.weekNum,10)];
+
+  // Reps is een eigen app met eigen navigatie en schermvullende sheets; die
+  // neemt het hele scherm over. De "Plan"-knop in zijn navigatie brengt je terug.
+  if(tab==="reps") return (
+    <div id="reps-root">
+      <RepsTab onExit={()=>setTab("plan")} />
+    </div>
+  );
 
   const TABS = [["plan","Plan"],["reps","Reps"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
@@ -2782,7 +2774,7 @@ export default function App() {
         )}
 
         {/* ROUTINES */}
-        {tab==="reps"&&<RepsTab db={db} />}
+        {tab==="reps"&&null}
 
         {tab==="skills"&&<SkillsTab week={aw} focusSkill={skillFocus} />}
 
