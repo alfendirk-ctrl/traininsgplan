@@ -17,8 +17,13 @@
   flex-direction: column;
   overflow: hidden;
   background: #0a0a0a;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* De onderbalk is position:fixed en ankert daarmee aan de padding-box van
+   #reps-root — padding daar tilt hem dus niet op. De ruimte voor de
+   home-indicator moet op de balk zelf, anders staan de knoppen in de strook
+   waar iOS de veeg-omhoog afvangt en reageren ze niet op een tik. */
+:where(#reps-root) nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* De app-root binnen de shell is de scroller. min-height:100vh zou hier juist
    weer overflow maken, dus die zetten we uit. */

@@ -646,6 +646,7 @@ export default function RepsTab({ onExit }) {
   if (!state.onboarded) {
     return (
       <Onboarding
+        onExit={onExit}
         onDone={(equipment) => {
           const levels = {};
           Object.keys(EX).forEach((id) => { levels[id] = "standard"; });
@@ -736,7 +737,7 @@ export default function RepsTab({ onExit }) {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-50" style={{ fontFamily: FONT }}>
       <div className="mx-auto max-w-md pb-28">
-        <Header state={state} />
+        <Header state={state} onExit={onExit} />
 
         {saveError && (
           <p className="mx-5 mb-4 border-l-2 border-neutral-700 pl-3 text-xs leading-relaxed text-neutral-400">
@@ -792,7 +793,7 @@ function Eyebrow({ children, className = "" }) {
   return <div className={`text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500 ${className}`}>{children}</div>;
 }
 
-function Header({ state }) {
+function Header({ state, onExit }) {
   const streak = useMemo(() => {
     const dates = new Set(state.history.map((h) => h.date));
     let cur = iso();
@@ -809,10 +810,20 @@ function Header({ state }) {
   }, [state.history]);
 
   return (
-    <header className="flex items-center justify-between px-5 pb-6 pt-7">
-      <div className="text-[11px] font-bold uppercase tracking-[0.3em]">Daily Reps</div>
+    <header className="flex items-center justify-between gap-3 px-5 pb-6 pt-7">
+      <div className="flex min-w-0 items-center gap-3">
+        {/* Altijd bereikbare uitgang bovenaan; onderaan het scherm zit de
+            home-indicator van de telefoon in de weg. */}
+        {onExit && (
+          <button onClick={onExit}
+            className={`flex min-h-[44px] shrink-0 items-center rounded-lg border border-neutral-700 px-3.5 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-300 active:bg-neutral-800 ${RING}`}>
+            ← Plan
+          </button>
+        )}
+        <div className="truncate text-[11px] font-bold uppercase tracking-[0.3em]">Daily Reps</div>
+      </div>
       {streak > 1 && (
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+        <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
           <span className="tabular-nums" style={{ color: ACCENT }}>{streak}</span> in a row
         </div>
       )}
@@ -1501,13 +1512,19 @@ function Nav({ tab, setTab, onExit }) {
 
 /* ---------- Onboarding ---------- */
 
-function Onboarding({ onDone }) {
+function Onboarding({ onDone, onExit }) {
   const [step, setStep] = useState(0);
   const [equipment, setEquipment] = useState({ bar: false, rings: false, rope: false, band: false, weight: false });
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-50" style={{ fontFamily: FONT }}>
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-7 pt-8">
+        {onExit && (
+          <button onClick={onExit}
+            className={`mb-5 flex min-h-[44px] shrink-0 items-center self-start rounded-lg border border-neutral-700 px-3.5 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-300 active:bg-neutral-800 ${RING}`}>
+            ← Plan
+          </button>
+        )}
         <div className="flex gap-1.5">
           {[0, 1].map((i) => (
             <div key={i} className="h-px flex-1" style={{ backgroundColor: i <= step ? ACCENT : "#262626" }} />
