@@ -368,7 +368,7 @@ const SKILL_WEEKS = {
 };
 
 const DAYS       = ["ma","di","wo","do","vr","za","zo"];
-const SKILL_DAYS = ["ma","di","wo","do","vr","za"]; // no sunday for skill planning
+const SKILL_DAYS = ["ma","di","wo","do","vr","za","zo"];
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
 const SKILL_KEYS = ["handstand"];
@@ -1557,7 +1557,6 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
       return {key:sk, lvl, info:SKILL_INFO[sk], data:SKILL_WEEKS[lvl]?.[sk]||null};
     });
   const primary  = skills[0]||null;
-  const isRest   = dayKey==="zo";
 
   const upd = (patch) => onChange({...day,...patch});
 
@@ -1673,7 +1672,6 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
                 </span>
               );
             })}
-            {isRest&&<span style={{fontSize:12,color:C.textMuted}}>Rust</span>}
             {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4,fontWeight:day.morningDone?700:400}}>{day.morningDone?"✓":"☀️"} {morningChipLabel}</span>}
             {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4,fontWeight:day.eveningDone?700:400}}>{day.eveningDone?"✓":(day.type==="gym"?"🏋️":"📋")} {eveningChipLabel}</span>}
             {day.mood==="goed"  &&<span style={{fontSize:13}}>💪</span>}
@@ -1699,17 +1697,13 @@ function DayCard({dayKey,day,weekNum,skillSchedule,skillLevel,onChange,db,onSave
               onStart={morningStartExs.length>0?()=>setPendingExs(morningStartExs):null} />
           </div>
 
-          {!isRest&&(
-            <>
-              <div style={{height:1,background:C.border,margin:"0 14px"}} />
-              <BlockSummary
-                icon="🌙" label="Avond · Training" color={C.purple} bg={C.purpleLight}
-                detail={eveningDetail} done={!!day.eveningDone}
-                onToggleDone={()=>upd({eveningDone:!day.eveningDone})}
-                onEdit={()=>setSheet("evening")}
-                onStart={eveningStartExs.length>0?()=>setPendingExs(eveningStartExs):null} />
-            </>
-          )}
+          <div style={{height:1,background:C.border,margin:"0 14px"}} />
+          <BlockSummary
+            icon="🌙" label="Avond · Training" color={C.purple} bg={C.purpleLight}
+            detail={eveningDetail} done={!!day.eveningDone}
+            onToggleDone={()=>upd({eveningDone:!day.eveningDone})}
+            onEdit={()=>setSheet("evening")}
+            onStart={eveningStartExs.length>0?()=>setPendingExs(eveningStartExs):null} />
 
           {/* Skills — alleen een verwijzing; de uitleg staat in het Skills-tabblad */}
           {skills.length>0&&(
@@ -2589,6 +2583,16 @@ export default function App() {
   },[pullSync]);
 
   const persist         = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
+
+  // Nieuwe cyclus: alleen de weken gaan weg, routines en database blijven.
+  const [confirmReset,setConfirmReset] = useState(false);
+  const restartPlan = () => {
+    const w = [mkWeek(1)];
+    persist(w);
+    setActiveIdx(0);
+    setConfirmReset(false);
+    setTab("plan");
+  };
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
   const persistRoutines = useCallback((r)=>{setRoutines(r);saveRoutines(r);},[]);
 
@@ -2664,8 +2668,8 @@ export default function App() {
         <div style={{maxWidth:760,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 0"}}>
             <div>
-              <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Trainingsplan</h1>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · Bekkenbodem · 10 weken</div>
+              <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Grondvorm</h1>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Handstand · 10 weken</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button onClick={()=>setShowSync(true)} title="Sync code" style={{
@@ -2822,10 +2826,33 @@ export default function App() {
                 </div>
               );
             })}
+
+            {/* Opnieuw beginnen — alleen de weken, niet je routines of database. */}
+            <div style={{marginTop:28,paddingTop:20,borderTop:`1px solid ${C.border}`}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>
+                Opnieuw beginnen
+              </div>
+              <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:12}}>
+                Start een nieuwe cyclus bij week 1. Je routines, oefeningendatabase en de Reps-tab
+                blijven staan — alleen je weken verdwijnen, met de dagen, notities en beoordelingen.
+              </div>
+              {!confirmReset?(
+                <Btn onClick={()=>setConfirmReset(true)} variant="ghost" size="sm">Terug naar week 1</Btn>
+              ):(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <button onClick={restartPlan} style={{
+                    fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
+                    padding:"7px 12px",borderRadius:8,border:"none",
+                    background:C.red,color:"#fff",
+                  }}>
+                    Ja, {weeks.length} {weeks.length===1?"week":"weken"} wissen
+                  </button>
+                  <Btn onClick={()=>setConfirmReset(false)} variant="ghost" size="sm">Annuleer</Btn>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {/* DATABASE */}
         {tab==="database"&&db&&<DatabaseTab db={db} onChange={persistDb} />}
 
       </div>
