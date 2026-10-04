@@ -1491,7 +1491,7 @@ function Nav({ tab, setTab, onExit }) {
           <button onClick={onExit}
             className={`flex-1 border-l border-neutral-800 py-4 text-[10px] font-bold uppercase tracking-[0.16em] ${RING}`}
             style={{ color: "#525252" }}>
-            Plan
+            ← Plan
           </button>
         )}
       </div>

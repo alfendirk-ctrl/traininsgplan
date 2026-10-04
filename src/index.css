@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* De Reps-app vult het scherm als een app-shell: een vast kader dat zelf niet
+   scrollt, met de inhoud die er binnenin scrollt. Zonder dit scrollt het
+   document zelf, schuift de adresbalk van de telefoon in en uit, en springt
+   de vaste onderbalk mee — waardoor je hem niet meer kunt raken.
+   De transform maakt #reps-root het ankerpunt voor de position:fixed
+   elementen van de app (onderbalk, oefening-sheets), zodat die precies
+   binnen dit kader vallen in plaats van tegen het browservenster. */
+#reps-root {
+  position: fixed;
+  inset: 0;
+  transform: translateZ(0);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0a0a0a;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* De app-root binnen de shell is de scroller. min-height:100vh zou hier juist
+   weer overflow maken, dus die zetten we uit. */
+#reps-root > div {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* Preflight staat uit (zie tailwind.config.js): de bestaande app is volledig
    inline gestyled en mag niet van styling veranderen. De Reps-app heeft wel
    een paar van die resets nodig, dus die gelden alleen binnen zijn eigen root.
