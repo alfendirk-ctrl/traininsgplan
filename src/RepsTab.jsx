@@ -333,7 +333,7 @@ const EX = {
 
   /* --- Pelvic floor: a separate daily track, not part of the rotation --- */
   pfQuick: {
-    name: "Quick Flicks", type: "pelvic", unit: "reps", base: 30, intro: 1,
+    name: "Quick Flicks", type: "pelvic", unit: "reps", base: 60, intro: 1,
     levels: {
       easier: { name: "Lying on your back, knees bent", f: 1 },
       standard: { name: "Sitting upright", f: 1 },
@@ -355,7 +355,7 @@ const EX = {
     ],
   },
   pfHold: {
-    name: "Long Holds", type: "pelvic", unit: "reps", base: 12, intro: 1,
+    name: "Long Holds", type: "pelvic", unit: "reps", base: 25, intro: 1,
     levels: {
       easier: { name: "3-second holds, lying down", f: 1 },
       standard: { name: "5-second holds, sitting", f: 1 },
@@ -374,7 +374,7 @@ const EX = {
     avoid: ["Squeezing so hard the rest of you tenses up. Aim for about half of your maximum effort."],
   },
   pfRelease: {
-    name: "Reverse Kegel", type: "pelvic", unit: "reps", base: 12, intro: 1,
+    name: "Reverse Kegel", type: "pelvic", unit: "reps", base: 20, intro: 1,
     levels: {
       easier: { name: "Lying down, long slow breaths", f: 1 },
       standard: { name: "Sitting, breathing into the belly", f: 1 },
@@ -487,16 +487,20 @@ const roundGoal = (n) => (n >= 100 ? Math.round(n / 10) * 10 : n >= 30 ? Math.ro
 function weekOf(day) { return Math.min(8, Math.floor((day - 1) / 7) + 1); }
 function phaseOf(day) { const w = weekOf(day); return PHASES.find((p) => p.weeks.includes(w)); }
 
-const PELVIC = ["pfQuick", "pfHold", "pfRelease"];
+/* Pelvic floor runs every single day, but only one movement at a time.
+   Over a seven-day cycle that works out at three days of quick flicks, two of
+   long holds and two of reverse kegels — so the squeezing and the releasing
+   side both keep their place. Because each one comes round less often, the
+   daily goals are higher than they would be with all three every day, and the
+   weekly climb still comes from WEEK_MULT. */
+const PELVIC_ROTATION = ["pfQuick", "pfHold", "pfRelease", "pfQuick", "pfHold", "pfQuick", "pfRelease"];
 
-/* Pelvic floor runs every single day, so it sits outside the weekly rotation. */
 function buildDaily(day, levels) {
   const week = weekOf(day);
-  return PELVIC.map((id) => {
-    const ex = EX[id];
-    const level = levels[id] || "standard";
-    return { id, level, goal: roundGoal(ex.base * WEEK_MULT[week - 1] * ex.levels[level].f) };
-  });
+  const id = PELVIC_ROTATION[(day - 1) % PELVIC_ROTATION.length];
+  const ex = EX[id];
+  const level = levels[id] || "standard";
+  return [{ id, level, goal: roundGoal(ex.base * WEEK_MULT[week - 1] * ex.levels[level].f) }];
 }
 
 function buildDay(day, levels) {
@@ -930,7 +934,7 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
           ))}
         </ul>
         <p className="mt-3 text-xs leading-relaxed text-neutral-600">
-          Runs every day, strength or mobility. Invisible from the outside — do them at a desk, in the car, on the sofa. Give it eight weeks before you judge it.
+          One movement a day, rotating through the three. Invisible from the outside — do them at a desk, in the car, on the sofa. Give it eight weeks before you judge it.
         </p>
       </section>
 
