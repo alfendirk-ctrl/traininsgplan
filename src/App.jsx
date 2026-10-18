@@ -2593,6 +2593,39 @@ export default function App() {
     setConfirmReset(false);
     setTab("plan");
   };
+
+  // Plan van de vorige week overnemen: wat je van plan wás, niet wat je deed.
+  // Afvinken, notities, moods en skill-vinkjes blijven dus leeg, en het
+  // skillschema blijft staan omdat dat op je beoordeling is aangepast.
+  const [confirmCopy,setConfirmCopy] = useState(false);
+  const copyPrevWeek = (wi) => {
+    if(wi<1) return;
+    const from = weeks[wi-1];
+    const next = weeks.map((wk,i)=> i!==wi ? wk : {
+      ...wk,
+      days: Object.fromEntries(DAYS.map(d=>{
+        const src = from.days[d] || mkDay();
+        const cur = wk.days[d]   || mkDay();
+        return [d, {
+          ...cur,
+          morningType:        src.morningType ?? null,
+          morningExercises:   (src.morningExercises||[]).map(e=>({...e})),
+          morningRoutineName: src.morningRoutineName || "",
+          morningRoutineUrl:  src.morningRoutineUrl  || "",
+          morningRoutineId:   src.morningRoutineId   ?? null,
+          morningRoutineSync: !!src.morningRoutineSync,
+          type:               src.type ?? null,
+          exercises:          (src.exercises||[]).map(e=>({...e})),
+          routineName:        src.routineName || "",
+          routineUrl:         src.routineUrl  || "",
+          routineId:          src.routineId   ?? null,
+          routineSync:        !!src.routineSync,
+        }];
+      })),
+    });
+    persist(next);
+    setConfirmCopy(false);
+  };
   const persistDb       = useCallback((d)=>{setDb(d);saveDb(d);},[]);
   const persistRoutines = useCallback((r)=>{setRoutines(r);saveRoutines(r);},[]);
 
@@ -2709,7 +2742,7 @@ export default function App() {
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16,alignItems:"center"}}>
               <span style={{fontSize:12,color:C.textMuted}}>Week</span>
               {weeks.map((w,i)=>(
-                <button key={i} onClick={()=>setActiveIdx(i)} style={{
+                <button key={i} onClick={()=>{setActiveIdx(i);setConfirmCopy(false);}} style={{
                   width:36,height:36,borderRadius:9,border:`1.5px solid ${activeIdx===i?C.purple:C.border}`,
                   background:activeIdx===i?C.purple:w.done?C.surfaceAlt:C.surface,
                   color:activeIdx===i?"#fff":w.done?C.textMuted:C.text,
@@ -2738,6 +2771,46 @@ export default function App() {
                       </Tag>
                     ))}
                   </div>
+                </div>
+              );
+            })()}
+
+            {/* Vorige week overnemen als startpunt, daarna per dag bijschaven. */}
+            {activeIdx>0&&!aw.done&&(()=>{
+              const prev = weeks[activeIdx-1];
+              const gevuld = DAYS.some(d=>{
+                const x = aw.days[d]||{};
+                return x.morningType!=null || x.type!=null;
+              });
+              return (
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,
+                  padding:"12px 14px",marginBottom:12,boxShadow:C.shadow}}>
+                  {!confirmCopy?(
+                    <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                      <div style={{flex:1,minWidth:170}}>
+                        <div style={{fontSize:13,fontWeight:600,color:C.text}}>Week {prev.weekNum} overnemen</div>
+                        <div style={{fontSize:12,color:C.textMuted,marginTop:2,lineHeight:1.45}}>
+                          Kopieert per dag de ochtend- en avondinvulling. Afvinken, notities en moods blijven leeg.
+                        </div>
+                      </div>
+                      <Btn onClick={()=>gevuld?setConfirmCopy(true):copyPrevWeek(activeIdx)}
+                        variant="subtle" size="sm">⎘ Overnemen</Btn>
+                    </div>
+                  ):(
+                    <div>
+                      <div style={{fontSize:13,color:C.textSub,lineHeight:1.5,marginBottom:10}}>
+                        Week {aw.weekNum} is al ingevuld. Overnemen overschrijft die invulling met die van
+                        week {prev.weekNum}.
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                        <button onClick={()=>copyPrevWeek(activeIdx)} style={{
+                          fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
+                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+                        }}>Ja, overschrijven</button>
+                        <Btn onClick={()=>setConfirmCopy(false)} variant="ghost" size="sm">Annuleer</Btn>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
