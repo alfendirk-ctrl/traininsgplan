@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { supabase } from './supabase.js';
 import RepsTab from './RepsTab.jsx';
 import { C, font, mono, inp } from './tokens.js';
@@ -2539,6 +2539,39 @@ function DatabaseTab({db,onChange}) {
 }
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
+// Vangnet: zonder dit haalt React bij een renderfout de hele boom weg en hou
+// je een wit scherm over, zonder enige aanwijzing wat er mis is.
+export class ErrorBoundary extends Component {
+  constructor(props){ super(props); this.state = {err:null}; }
+  static getDerivedStateFromError(err){ return {err}; }
+  componentDidCatch(err, info){ console.error("Grondvorm liep vast:", err, info); }
+  render(){
+    if(!this.state.err) return this.props.children;
+    return (
+      <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text,
+        display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+        <div style={{maxWidth:420,width:"100%",background:C.surface,border:`1px solid ${C.border}`,
+          borderRadius:12,padding:"20px 18px",boxShadow:C.shadow}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>Er ging iets mis</div>
+          <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:14}}>
+            De app liep vast bij het tekenen van dit scherm. Je gegevens staan nog gewoon
+            opgeslagen — opnieuw laden lost het meestal op.
+          </div>
+          <button onClick={()=>window.location.reload()} style={{
+            fontFamily:font,fontSize:13,fontWeight:600,cursor:"pointer",width:"100%",
+            padding:"11px 16px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+          }}>Opnieuw laden</button>
+          <details style={{marginTop:12}}>
+            <summary style={{fontSize:12,color:C.textMuted,cursor:"pointer"}}>Technische details</summary>
+            <pre style={{fontSize:11,color:C.textMuted,whiteSpace:"pre-wrap",wordBreak:"break-word",
+              marginTop:8,fontFamily:mono}}>{String(this.state.err?.stack || this.state.err)}</pre>
+          </details>
+        </div>
+      </div>
+    );
+  }
+}
+
 export default function App() {
   const [weeks,setWeeks]         = useState(null);
   const [activeIdx,setActiveIdx] = useState(0);
@@ -2571,7 +2604,7 @@ export default function App() {
     const key = getSyncKey();
     const {data} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
     if(!data) return;
-    if(data.weeks)       { localStorage.setItem(STORAGE_KEY,   JSON.stringify(data.weeks));       setWeeks(migrateWeeks(data.weeks)); }
+    if(data.weeks)       { localStorage.setItem(STORAGE_KEY,   JSON.stringify(data.weeks));       setWeeks(migrateWeeks(data.weeks)); setActiveIdx(i=>Math.min(i, Math.max(0, data.weeks.length-1))); }
     if(data.exercise_db) { localStorage.setItem(DB_KEY,        JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
     if(data.routines)    { localStorage.setItem(ROUTINES_KEY,  JSON.stringify(data.routines));    setRoutines(data.routines); }
   },[]);
@@ -2680,8 +2713,12 @@ export default function App() {
     </div>
   );
 
-  const aw     = weeks[activeIdx];
-  const skills = SKILL_WEEKS[Math.min(aw.weekNum,10)];
+  // Een sync kan minder weken terugsturen dan er stonden (bijvoorbeeld na een
+  // reset op een ander apparaat). activeIdx wees dan naar een week die niet
+  // meer bestaat en het renderen klapte eruit — vandaar een leeg scherm.
+  const safeIdx = Math.min(activeIdx, weeks.length-1);
+  const aw      = weeks[safeIdx];
+  const skills  = SKILL_WEEKS[Math.min(aw.weekNum,10)];
 
   // Reps is een eigen app met eigen navigatie en schermvullende sheets; die
   // neemt het hele scherm over. De "Plan"-knop in zijn navigatie brengt je terug.
@@ -2743,11 +2780,11 @@ export default function App() {
               <span style={{fontSize:12,color:C.textMuted}}>Week</span>
               {weeks.map((w,i)=>(
                 <button key={i} onClick={()=>{setActiveIdx(i);setConfirmCopy(false);}} style={{
-                  width:36,height:36,borderRadius:9,border:`1.5px solid ${activeIdx===i?C.purple:C.border}`,
-                  background:activeIdx===i?C.purple:w.done?C.surfaceAlt:C.surface,
-                  color:activeIdx===i?"#fff":w.done?C.textMuted:C.text,
+                  width:36,height:36,borderRadius:9,border:`1.5px solid ${safeIdx===i?C.purple:C.border}`,
+                  background:safeIdx===i?C.purple:w.done?C.surfaceAlt:C.surface,
+                  color:safeIdx===i?"#fff":w.done?C.textMuted:C.text,
                   cursor:"pointer",fontSize:13,fontFamily:font,fontWeight:600,position:"relative",
-                  boxShadow:activeIdx===i?`0 0 0 3px ${C.purple}22`:"none",transition:"all .15s",
+                  boxShadow:safeIdx===i?`0 0 0 3px ${C.purple}22`:"none",transition:"all .15s",
                 }}>
                   {w.weekNum}
                   {w.done&&<span style={{position:"absolute",top:-3,right:-3,width:10,height:10,borderRadius:"50%",background:C.green,border:`2px solid ${C.bg}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"#fff"}}>✓</span>}
@@ -2776,8 +2813,8 @@ export default function App() {
             })()}
 
             {/* Vorige week overnemen als startpunt, daarna per dag bijschaven. */}
-            {activeIdx>0&&!aw.done&&(()=>{
-              const prev = weeks[activeIdx-1];
+            {safeIdx>0&&!aw.done&&(()=>{
+              const prev = weeks[safeIdx-1];
               const gevuld = DAYS.some(d=>{
                 const x = aw.days[d]||{};
                 return x.morningType!=null || x.type!=null;
@@ -2793,7 +2830,7 @@ export default function App() {
                           Kopieert per dag de ochtend- en avondinvulling. Afvinken, notities en moods blijven leeg.
                         </div>
                       </div>
-                      <Btn onClick={()=>gevuld?setConfirmCopy(true):copyPrevWeek(activeIdx)}
+                      <Btn onClick={()=>gevuld?setConfirmCopy(true):copyPrevWeek(safeIdx)}
                         variant="subtle" size="sm">⎘ Overnemen</Btn>
                     </div>
                   ):(
@@ -2803,7 +2840,7 @@ export default function App() {
                         week {prev.weekNum}.
                       </div>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                        <button onClick={()=>copyPrevWeek(activeIdx)} style={{
+                        <button onClick={()=>copyPrevWeek(safeIdx)} style={{
                           fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
                           padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
                         }}>Ja, overschrijven</button>
@@ -2815,12 +2852,12 @@ export default function App() {
               );
             })()}
 
-            <SkillPlanner week={aw} onChangeSchedule={s=>updateSkillSchedule(activeIdx,s)} />
+            <SkillPlanner week={aw} onChangeSchedule={s=>updateSkillSchedule(safeIdx,s)} />
 
             {DAYS.map(d=>(
               <DayCard key={d} dayKey={d} day={aw.days[d]} weekNum={aw.weekNum}
                 skillSchedule={aw.skillSchedule} skillLevel={aw.skillLevel}
-                onChange={v=>updateDay(activeIdx,d,v)} db={db}
+                onChange={v=>updateDay(safeIdx,d,v)} db={db}
                 routines={routines} onUpdateRoutine={updateRoutineExercises}
                 onOpenSkills={openSkills}
                 onSaveToDb={(section,partId,name)=>{
@@ -2829,7 +2866,7 @@ export default function App() {
                 }} />
             ))}
 
-            {!aw.done&&aw.weekNum<=10&&<WeekEval week={aw} onSave={(r,n)=>closeWeek(activeIdx,r,n)} />}
+            {!aw.done&&aw.weekNum<=10&&<WeekEval week={aw} onSave={(r,n)=>closeWeek(safeIdx,r,n)} />}
 
             {aw.done&&(
               <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginTop:14}}>
