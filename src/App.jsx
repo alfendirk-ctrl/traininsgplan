@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { supabase } from './supabase.js';
 import RepsTab, { REPS_STORAGE_KEY } from './RepsTab.jsx';
+import MobilityTab, { MOBILITY_STORAGE_KEY } from './MobilityTab.jsx';
 import { C, font, mono, inp } from './tokens.js';
 
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
@@ -495,18 +496,21 @@ async function initSync(){
     if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
     if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
     if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
+    if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
   } else {
     // No remote row yet → upload whatever is in localStorage
     const w=localStorage.getItem(STORAGE_KEY);
     const d=localStorage.getItem(DB_KEY);
     const r=localStorage.getItem(ROUTINES_KEY);
     const rp=localStorage.getItem(REPS_STORAGE_KEY);
+    const mb=localStorage.getItem(MOBILITY_STORAGE_KEY);
     supabase.from('trainingsplan').upsert({
       sync_key:key,
       weeks:      w?JSON.parse(w):[],
       exercise_db:d?JSON.parse(d):DEFAULT_DB,
       routines:   r?JSON.parse(r):[],
       reps:       rp?JSON.parse(rp):null,
+      mobility:   mb?JSON.parse(mb):null,
       updated_at: new Date().toISOString(),
     },{onConflict:'sync_key'}).then(()=>{});
   }
@@ -903,6 +907,7 @@ function SyncModal({syncKey,onSwitch,onClose}) {
       if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
       if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
       if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
+      if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
       localStorage.setItem(SYNC_KEY_LOCAL, trimmed);
       onSwitch(); // reloads app state
     } else {
@@ -2676,8 +2681,9 @@ export default function App() {
   const [tab,setTab]             = useState("plan");
   const [skillFocus,setSkillFocus] = useState(null);
   const openSkills = useCallback((key)=>{ setSkillFocus(key); setTab("skills"); },[]);
-  // Reps stond alleen lokaal; nu gaat elke wijziging ook naar de cloud.
-  const persistReps = useCallback((reps)=>{ pushToSupabase({reps}); },[]);
+  // Reps en Mobiliteit staan niet alleen lokaal: elke wijziging gaat ook naar de cloud.
+  const persistReps     = useCallback((reps)=>{ pushToSupabase({reps}); },[]);
+  const persistMobility = useCallback((mobility)=>{ pushToSupabase({mobility}); },[]);
   const [db,setDb]               = useState(null);
   const [routines,setRoutines]   = useState(null);
   const [syncKey,setSyncKey]     = useState("");
@@ -2715,8 +2721,10 @@ export default function App() {
       }
       if(data.exercise_db) { localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
       if(data.routines)    { localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));    setRoutines(data.routines); }
-      // De Reps-tab leest zijn eigen opslag bij het openen, dus bijwerken volstaat.
+      // De Reps- en Mobiliteit-tab lezen hun eigen opslag bij het openen,
+      // dus bijwerken volstaat.
       if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
+      if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
     }catch(e){
       console.error("Sync overgeslagen:", e);
     }
@@ -2859,7 +2867,13 @@ export default function App() {
     </div>
   );
 
-  const TABS = [["plan","Plan"],["reps","Reps"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
+  if(tab==="mob") return (
+    <div id="mob-root">
+      <MobilityTab onExit={()=>setTab("plan")} onPersist={persistMobility} />
+    </div>
+  );
+
+  const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
 
   return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text}}>
@@ -3018,8 +3032,9 @@ export default function App() {
           </div>
         )}
 
-        {/* ROUTINES */}
+        {/* Reps en Mobiliteit vullen hierboven al het hele scherm. */}
         {tab==="reps"&&null}
+        {tab==="mob"&&null}
 
         {tab==="skills"&&<SkillsTab week={aw} focusSkill={skillFocus} />}
 

@@ -2,14 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* De Reps-app vult het scherm als een app-shell: een vast kader dat zelf niet
+/* De Reps- en Mobiliteit-app vullen het scherm als een app-shell: een vast kader dat zelf niet
    scrollt, met de inhoud die er binnenin scrollt. Zonder dit scrollt het
    document zelf, schuift de adresbalk van de telefoon in en uit, en springt
    de vaste onderbalk mee — waardoor je hem niet meer kunt raken.
-   De transform maakt #reps-root het ankerpunt voor de position:fixed
+   De transform maakt de shell het ankerpunt voor de position:fixed
    elementen van de app (onderbalk, oefening-sheets), zodat die precies
    binnen dit kader vallen in plaats van tegen het browservenster. */
-#reps-root {
+#reps-root,
+#mob-root {
   position: fixed;
   inset: 0;
   transform: translateZ(0);
@@ -20,14 +21,15 @@
 }
 
 /* De onderbalk is position:fixed en ankert daarmee aan de padding-box van
-   #reps-root — padding daar tilt hem dus niet op. De ruimte voor de
+   de shell — padding daar tilt hem dus niet op. De ruimte voor de
    home-indicator moet op de balk zelf, anders staan de knoppen in de strook
    waar iOS de veeg-omhoog afvangt en reageren ze niet op een tik. */
-:where(#reps-root) nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+:where(#reps-root, #mob-root) nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* De app-root binnen de shell is de scroller. min-height:100vh zou hier juist
    weer overflow maken, dus die zetten we uit. */
-#reps-root > div {
+#reps-root > div,
+#mob-root > div {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -36,25 +38,26 @@
 }
 
 /* Preflight staat uit (zie tailwind.config.js): de bestaande app is volledig
-   inline gestyled en mag niet van styling veranderen. De Reps-app heeft wel
-   een paar van die resets nodig, dus die gelden alleen binnen zijn eigen root.
+   inline gestyled en mag niet van styling veranderen. De Reps- en de
+   Mobiliteit-app hebben wel een paar van die resets nodig, dus die gelden
+   alleen binnen hun eigen root.
    :where() houdt de specificiteit op nul, zodat Tailwind-utilities blijven winnen. */
 
-:where(#reps-root) button,
-:where(#reps-root) input,
-:where(#reps-root) select,
-:where(#reps-root) textarea { font: inherit; color: inherit; }
+:where(#reps-root, #mob-root) button,
+:where(#reps-root, #mob-root) input,
+:where(#reps-root, #mob-root) select,
+:where(#reps-root, #mob-root) textarea { font: inherit; color: inherit; }
 
-:where(#reps-root) button { background: none; border: 0; cursor: pointer; }
+:where(#reps-root, #mob-root) button { background: none; border: 0; cursor: pointer; }
 
-:where(#reps-root) ol,
-:where(#reps-root) ul { list-style: none; }
+:where(#reps-root, #mob-root) ol,
+:where(#reps-root, #mob-root) ul { list-style: none; }
 
-:where(#reps-root) h1,
-:where(#reps-root) h2,
-:where(#reps-root) h3 { font-size: inherit; font-weight: inherit; }
+:where(#reps-root, #mob-root) h1,
+:where(#reps-root, #mob-root) h2,
+:where(#reps-root, #mob-root) h3 { font-size: inherit; font-weight: inherit; }
 
 /* Nummervelden zonder spinners, zoals in het ontwerp. */
-:where(#reps-root) input[type="number"] { -moz-appearance: textfield; }
-:where(#reps-root) input[type="number"]::-webkit-outer-spin-button,
-:where(#reps-root) input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+:where(#reps-root, #mob-root) input[type="number"] { -moz-appearance: textfield; }
+:where(#reps-root, #mob-root) input[type="number"]::-webkit-outer-spin-button,
+:where(#reps-root, #mob-root) input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
