@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { supabase } from './supabase.js';
-import RepsTab from './RepsTab.jsx';
+import RepsTab, { REPS_STORAGE_KEY } from './RepsTab.jsx';
 import { C, font, mono, inp } from './tokens.js';
 
 // ─── SKILL DATA ───────────────────────────────────────────────────────────────
@@ -494,16 +494,19 @@ async function initSync(){
     if(data.weeks)       { backupWeeks("sync-overschrijft"); localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks)); }
     if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
     if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
+    if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
   } else {
     // No remote row yet → upload whatever is in localStorage
     const w=localStorage.getItem(STORAGE_KEY);
     const d=localStorage.getItem(DB_KEY);
     const r=localStorage.getItem(ROUTINES_KEY);
+    const rp=localStorage.getItem(REPS_STORAGE_KEY);
     supabase.from('trainingsplan').upsert({
       sync_key:key,
       weeks:      w?JSON.parse(w):[],
       exercise_db:d?JSON.parse(d):DEFAULT_DB,
       routines:   r?JSON.parse(r):[],
+      reps:       rp?JSON.parse(rp):null,
       updated_at: new Date().toISOString(),
     },{onConflict:'sync_key'}).then(()=>{});
   }
@@ -899,6 +902,7 @@ function SyncModal({syncKey,onSwitch,onClose}) {
       if(data.weeks)       localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks));
       if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
       if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
+      if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
       localStorage.setItem(SYNC_KEY_LOCAL, trimmed);
       onSwitch(); // reloads app state
     } else {
@@ -2672,6 +2676,8 @@ export default function App() {
   const [tab,setTab]             = useState("plan");
   const [skillFocus,setSkillFocus] = useState(null);
   const openSkills = useCallback((key)=>{ setSkillFocus(key); setTab("skills"); },[]);
+  // Reps stond alleen lokaal; nu gaat elke wijziging ook naar de cloud.
+  const persistReps = useCallback((reps)=>{ pushToSupabase({reps}); },[]);
   const [db,setDb]               = useState(null);
   const [routines,setRoutines]   = useState(null);
   const [syncKey,setSyncKey]     = useState("");
@@ -2709,6 +2715,8 @@ export default function App() {
       }
       if(data.exercise_db) { localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
       if(data.routines)    { localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));    setRoutines(data.routines); }
+      // De Reps-tab leest zijn eigen opslag bij het openen, dus bijwerken volstaat.
+      if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
     }catch(e){
       console.error("Sync overgeslagen:", e);
     }
@@ -2847,7 +2855,7 @@ export default function App() {
   // neemt het hele scherm over. De "Plan"-knop in zijn navigatie brengt je terug.
   if(tab==="reps") return (
     <div id="reps-root">
-      <RepsTab onExit={()=>setTab("plan")} />
+      <RepsTab onExit={()=>setTab("plan")} onPersist={persistReps} />
     </div>
   );
 

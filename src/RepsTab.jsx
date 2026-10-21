@@ -5,7 +5,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
    Single-file React app. Persists via window.storage.
    ============================================================ */
 
-const KEY = "dailyreps:v1";
+export const REPS_STORAGE_KEY = "dailyreps:v1";
+const KEY = REPS_STORAGE_KEY;
 const TOTAL_DAYS = 56;
 const ACCENT = "#FF5C00";
 
@@ -611,7 +612,7 @@ const DEFAULT_STATE = {
    App shell
    ============================================================ */
 
-export default function RepsTab({ onExit }) {
+export default function RepsTab({ onExit, onPersist }) {
   const [state, setState] = useState(null);
   const [tab, setTab] = useState("today");
   const [sheet, setSheet] = useState(null); // { id, mode: 'log' | 'read' }
@@ -638,12 +639,13 @@ export default function RepsTab({ onExit }) {
     (async () => {
       try {
         await storage.set(KEY, JSON.stringify(next));
+        onPersist?.(next);          // ook naar de cloud, zodat dit niet alleen lokaal staat
         setSaveError(false);
       } catch (e) {
         setSaveError(true);
       }
     })();
-  }, []);
+  }, [onPersist]);
 
   if (!state) return <Splash />;
 
