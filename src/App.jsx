@@ -539,29 +539,42 @@ const DEFAULT_DB = {
 };
 
 function migrateWeeks(data){
-  return data.map(week=>({
+  if(!Array.isArray(data)) return [mkWeek(1)];
+  const out = data.filter(w=>w&&typeof w==="object").map(week=>({
     ...week,
+    weekNum: Number.isFinite(week.weekNum) ? week.weekNum : 1,
     // Merge defaults in per skill, zodat een nieuw toegevoegde skill
     // ook in bestaande opgeslagen weken dagen en een niveau krijgt.
     skillSchedule: {...DEFAULT_SKILL_SCHEDULE, ...(week.skillSchedule||{})},
     skillLevel:    {...DEFAULT_SKILL_LEVEL,    ...(week.skillLevel||{})},
     adaptReason:   week.adaptReason   || null,
-    days:Object.fromEntries(Object.entries(week.days).map(([k,day])=>[k,{
-      ...day,
-      showMorningDbModal:false, showDbModal:false,
-      showMorningRoutineModal:false, showRoutineModal:false,
-      morningType: day.morningType||null,
-      type: day.type||null,
-      morningRoutineId: day.morningRoutineId||null,
-      morningRoutineSync: day.morningRoutineSync||false,
-      routineId: day.routineId||null,
-      routineSync: day.routineSync||false,
-      mood: day.mood||null,
-      morningDone: day.morningDone||false,
-      eveningDone: day.eveningDone||false,
-      skillsDone:  day.skillsDone ||{},
-    }]))
+    // Altijd alle zeven dagen, en elke dag met alle velden: een ontbrekende
+    // dag of een ontbrekend veld liet het renderen eerder klappen.
+    days:Object.fromEntries(DAYS.map(k=>{
+      const src = (week.days&&typeof week.days==="object"&&week.days[k]) || {};
+      return [k,{
+        ...mkDay(),
+        ...src,
+        showMorningDbModal:false, showDbModal:false,
+        showMorningRoutineModal:false, showRoutineModal:false,
+        morningType: src.morningType||null,
+        type: src.type||null,
+        morningExercises: Array.isArray(src.morningExercises)?src.morningExercises:[],
+        exercises:        Array.isArray(src.exercises)?src.exercises:[],
+        morningRoutineId: src.morningRoutineId||null,
+        morningRoutineSync: src.morningRoutineSync||false,
+        routineId: src.routineId||null,
+        routineSync: src.routineSync||false,
+        mood: src.mood||null,
+        morningDone: src.morningDone||false,
+        eveningDone: src.eveningDone||false,
+        skillsDone:  (src.skillsDone&&typeof src.skillsDone==="object")?src.skillsDone:{},
+      }];
+    }))
   }));
+  // Een lege lijst is truthy en glipte door de laadcheck heen; dan viel er
+  // niets te tonen en klapte het renderen eruit, ook na herladen.
+  return out.length ? out : [mkWeek(1)];
 }
 async function loadData(){ try{ const r=localStorage.getItem(STORAGE_KEY); return r?migrateWeeks(JSON.parse(r)):[mkWeek(1)]; }catch{ return [mkWeek(1)]; } }
 async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} pushToSupabase({weeks:d}); }
@@ -2553,15 +2566,58 @@ export class ErrorBoundary extends Component {
         <div style={{maxWidth:420,width:"100%",background:C.surface,border:`1px solid ${C.border}`,
           borderRadius:12,padding:"20px 18px",boxShadow:C.shadow}}>
           <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>Er ging iets mis</div>
-          <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:14}}>
+          <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:12}}>
             De app liep vast bij het tekenen van dit scherm. Je gegevens staan nog gewoon
-            opgeslagen — opnieuw laden lost het meestal op.
+            opgeslagen.
+          </div>
+          <div style={{fontSize:12,color:C.red,background:C.redLight,borderRadius:8,
+            padding:"9px 11px",marginBottom:14,fontFamily:mono,wordBreak:"break-word"}}>
+            {String(this.state.err?.message || this.state.err)}
           </div>
           <button onClick={()=>window.location.reload()} style={{
             fontFamily:font,fontSize:13,fontWeight:600,cursor:"pointer",width:"100%",
             padding:"11px 16px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
           }}>Opnieuw laden</button>
-          <details style={{marginTop:12}}>
+          <button onClick={()=>{
+            navigator.clipboard?.writeText(String(this.state.err?.stack||this.state.err));
+            this.setState({copied:true});
+          }} style={{
+            fontFamily:font,fontSize:13,cursor:"pointer",width:"100%",marginTop:8,
+            padding:"11px 16px",borderRadius:8,border:`1px solid ${C.border}`,
+            background:"transparent",color:C.textSub,
+          }}>{this.state.copied?"Gekopieerd":"Kopieer foutmelding"}</button>
+
+          {/* Komt de fout na herladen terug, dan zit hij in het opgeslagen
+              weekplan. Dit wist alleen dat — routines, database en Reps blijven. */}
+          <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${C.border}`}}>
+            <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5,marginBottom:10}}>
+              Blijft de fout terugkomen na herladen? Dan zit er iets mis in je opgeslagen
+              weekplan. Wissen helpt dan — je routines, oefeningendatabase en de Reps-tab
+              blijven staan.
+            </div>
+            {!this.state.confirm?(
+              <button onClick={()=>this.setState({confirm:true})} style={{
+                fontFamily:font,fontSize:12,cursor:"pointer",padding:"8px 12px",borderRadius:8,
+                border:`1px solid ${C.border}`,background:"transparent",color:C.textMuted,
+              }}>Weekplan wissen</button>
+            ):(
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={()=>{
+                  try{ localStorage.removeItem(STORAGE_KEY); }catch{}
+                  window.location.reload();
+                }} style={{
+                  fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
+                  padding:"8px 12px",borderRadius:8,border:"none",background:C.red,color:"#fff",
+                }}>Ja, wissen en herladen</button>
+                <button onClick={()=>this.setState({confirm:false})} style={{
+                  fontFamily:font,fontSize:12,cursor:"pointer",padding:"8px 12px",borderRadius:8,
+                  border:`1px solid ${C.border}`,background:"transparent",color:C.textSub,
+                }}>Annuleer</button>
+              </div>
+            )}
+          </div>
+
+          <details style={{marginTop:14}}>
             <summary style={{fontSize:12,color:C.textMuted,cursor:"pointer"}}>Technische details</summary>
             <pre style={{fontSize:11,color:C.textMuted,whiteSpace:"pre-wrap",wordBreak:"break-word",
               marginTop:8,fontFamily:mono}}>{String(this.state.err?.stack || this.state.err)}</pre>
@@ -2601,12 +2657,22 @@ export default function App() {
   const pullSync = useCallback(async()=>{
     if(!supabase) return;
     if(Date.now() - lastLocalSaveMs < 5000) return;
-    const key = getSyncKey();
-    const {data} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
-    if(!data) return;
-    if(data.weeks)       { localStorage.setItem(STORAGE_KEY,   JSON.stringify(data.weeks));       setWeeks(migrateWeeks(data.weeks)); setActiveIdx(i=>Math.min(i, Math.max(0, data.weeks.length-1))); }
-    if(data.exercise_db) { localStorage.setItem(DB_KEY,        JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
-    if(data.routines)    { localStorage.setItem(ROUTINES_KEY,  JSON.stringify(data.routines));    setRoutines(data.routines); }
+    try{
+      const key = getSyncKey();
+      const {data} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
+      if(!data) return;
+      // Een leeg of kapot antwoord mag nooit de werkende staat vervangen.
+      if(Array.isArray(data.weeks)&&data.weeks.length){
+        const w = migrateWeeks(data.weeks);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.weeks));
+        setWeeks(w);
+        setActiveIdx(i=>Math.min(i, w.length-1));
+      }
+      if(data.exercise_db) { localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
+      if(data.routines)    { localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));    setRoutines(data.routines); }
+    }catch(e){
+      console.error("Sync overgeslagen:", e);
+    }
   },[]);
 
   useEffect(()=>{
@@ -2716,8 +2782,25 @@ export default function App() {
   // Een sync kan minder weken terugsturen dan er stonden (bijvoorbeeld na een
   // reset op een ander apparaat). activeIdx wees dan naar een week die niet
   // meer bestaat en het renderen klapte eruit — vandaar een leeg scherm.
-  const safeIdx = Math.min(activeIdx, weeks.length-1);
+  const safeIdx = Math.max(0, Math.min(activeIdx, weeks.length-1));
   const aw      = weeks[safeIdx];
+
+  // Laatste vangnet: liever een knop om door te gaan dan een vastgelopen scherm.
+  if(!aw) return (
+    <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{maxWidth:420,width:"100%",background:C.surface,border:`1px solid ${C.border}`,
+        borderRadius:12,padding:"20px 18px",boxShadow:C.shadow}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>Geen weken gevonden</div>
+        <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:14}}>
+          Je weekplan is leeg geraakt. Je routines, oefeningendatabase en de Reps-tab
+          staan er nog gewoon.
+        </div>
+        <Btn onClick={restartPlan} variant="primary" full>Begin bij week 1</Btn>
+      </div>
+    </div>
+  );
+
   const skills  = SKILL_WEEKS[Math.min(aw.weekNum,10)];
 
   // Reps is een eigen app met eigen navigatie en schermvullende sheets; die
