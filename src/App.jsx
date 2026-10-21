@@ -436,6 +436,29 @@ const DB_KEY         = "training_db_v1";
 const ROUTINES_KEY   = "training_routines_v1";
 const REST_KEY       = "training_rest_v1";
 const SYNC_KEY_LOCAL = "training_sync_key";
+const BACKUP_KEY     = "training_v5_backup";
+
+// Bewaar de ruwe inhoud vóór elke stap die hem kan vervangen: een sync die
+// overschrijft, of een reparatie die op week 1 terugvalt. Zonder dit is een
+// kapot gelezen weekplan onherroepelijk weg.
+function backupWeeks(reason){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw || raw==="[]" || raw==="null") return;
+    const prev = localStorage.getItem(BACKUP_KEY);
+    if(prev && JSON.parse(prev).raw === raw) return;   // niets nieuws te bewaren
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({at:new Date().toISOString(), reason, raw}));
+  }catch{}
+}
+function readBackup(){
+  try{
+    const b = localStorage.getItem(BACKUP_KEY);
+    if(!b) return null;
+    const {at, reason, raw} = JSON.parse(b);
+    const weeks = migrateWeeks(JSON.parse(raw));
+    return {at, reason, weeks};
+  }catch{ return null; }
+}
 
 const DEFAULT_REST = { side:30, set:60, ex:90 };
 function loadRest(){
@@ -468,7 +491,7 @@ async function initSync(){
   const {data,error} = await supabase.from('trainingsplan').select('*').eq('sync_key',key).maybeSingle();
   if(error) return;
   if(data){
-    if(data.weeks)       localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks));
+    if(data.weeks)       { backupWeeks("sync-overschrijft"); localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.weeks)); }
     if(data.exercise_db) localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db));
     if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
   } else {
@@ -576,7 +599,22 @@ function migrateWeeks(data){
   // niets te tonen en klapte het renderen eruit, ook na herladen.
   return out.length ? out : [mkWeek(1)];
 }
-async function loadData(){ try{ const r=localStorage.getItem(STORAGE_KEY); return r?migrateWeeks(JSON.parse(r)):[mkWeek(1)]; }catch{ return [mkWeek(1)]; } }
+async function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return [mkWeek(1)];
+  try{
+    const parsed = JSON.parse(raw);
+    const weeks  = migrateWeeks(parsed);
+    // Viel de reparatie terug op een lege week? Dan was er iets mis met de
+    // opgeslagen inhoud: eerst veiligstellen, dan pas verder.
+    const leeg = !Array.isArray(parsed) || parsed.filter(w=>w&&typeof w==="object").length===0;
+    if(leeg) backupWeeks("reparatie-terugval");
+    return weeks;
+  }catch{
+    backupWeeks("onleesbaar");
+    return [mkWeek(1)];
+  }
+}
 async function saveData(d){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); }catch{} pushToSupabase({weeks:d}); }
 async function loadDb(){ try{ const r=localStorage.getItem(DB_KEY); return r?JSON.parse(r):DEFAULT_DB; }catch{ return DEFAULT_DB; } }
 async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }catch{} pushToSupabase({exercise_db:d}); }
@@ -2664,6 +2702,7 @@ export default function App() {
       // Een leeg of kapot antwoord mag nooit de werkende staat vervangen.
       if(Array.isArray(data.weeks)&&data.weeks.length){
         const w = migrateWeeks(data.weeks);
+        backupWeeks("sync-overschrijft");
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data.weeks));
         setWeeks(w);
         setActiveIdx(i=>Math.min(i, w.length-1));
@@ -2685,6 +2724,7 @@ export default function App() {
 
   // Nieuwe cyclus: alleen de weken gaan weg, routines en database blijven.
   const [confirmReset,setConfirmReset] = useState(false);
+  const [confirmRestore,setConfirmRestore] = useState(false);
   const restartPlan = () => {
     const w = [mkWeek(1)];
     persist(w);
@@ -3019,6 +3059,44 @@ export default function App() {
                 </div>
               );
             })}
+
+            {/* Back-up terugzetten — gemaakt vlak voor een sync of reparatie
+                het weekplan verving. */}
+            {(()=>{
+              const bu = readBackup();
+              if(!bu) return null;
+              const zelfde = bu.weeks.length===weeks.length &&
+                             bu.weeks.every((w,i)=>w.weekNum===weeks[i]?.weekNum);
+              if(zelfde) return null;
+              return (
+                <div style={{marginTop:28,paddingTop:20,borderTop:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>
+                    Back-up gevonden
+                  </div>
+                  <div style={{fontSize:13,color:C.textSub,lineHeight:1.55,marginBottom:12}}>
+                    Er staat een kopie van {bu.weeks.length} {bu.weeks.length===1?"week":"weken"} van
+                    vlak voordat je weekplan werd vervangen
+                    ({new Date(bu.at).toLocaleString("nl-NL")}). Je hebt er nu {weeks.length}.
+                  </div>
+                  {!confirmRestore?(
+                    <Btn onClick={()=>setConfirmRestore(true)} variant="subtle" size="sm">Back-up bekijken en terugzetten</Btn>
+                  ):(
+                    <div>
+                      <div style={{fontSize:12,color:C.textMuted,marginBottom:10,fontFamily:mono}}>
+                        {bu.weeks.map(w=>`week ${w.weekNum}${w.done?" ✓":""}`).join(" · ")}
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                        <button onClick={()=>{ persist(bu.weeks); setActiveIdx(bu.weeks.length-1); setConfirmRestore(false); setTab("plan"); }} style={{
+                          fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
+                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+                        }}>Deze terugzetten</button>
+                        <Btn onClick={()=>setConfirmRestore(false)} variant="ghost" size="sm">Annuleer</Btn>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Opnieuw beginnen — alleen de weken, niet je routines of database. */}
             <div style={{marginTop:28,paddingTop:20,borderTop:`1px solid ${C.border}`}}>
