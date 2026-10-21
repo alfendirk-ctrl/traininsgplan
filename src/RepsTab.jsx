@@ -1342,7 +1342,9 @@ function ProgressTab({ state, onPick, onReset }) {
         {last.length === 0 ? (
           <p className="mt-3 text-[13px] leading-relaxed text-neutral-500">Finish your first day and it turns up here.</p>
         ) : (
-          <div className="mt-4 flex h-24 items-end gap-1">
+          // items-stretch, niet items-end: anders krimpen de kolommen naar hun
+          // label en vallen de procentuele balkhoogtes op nul terug.
+          <div className="mt-4 flex h-24 items-stretch gap-1">
             {last.map((h) => (
               <div key={h.day} className="flex flex-1 flex-col items-center gap-1.5">
                 <div className="flex w-full flex-1 items-end">
