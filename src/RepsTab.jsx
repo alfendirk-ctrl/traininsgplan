@@ -442,11 +442,109 @@ const EX = {
     cues: ["Minimal push from the trailing foot."],
     avoid: ["Bouncing off the bottom leg."],
   },
+
+  /* ── No-bar stand-ins. Scheduled in place of the hanging movements when you
+     say you haven't got a pull-up bar. A door, a table and the floor is all
+     they need. ─────────────────────────────────────────────────────────── */
+  towelrow: {
+    name: "Towel Door Row", type: "strength", unit: "reps", base: 24, intro: 1,
+    levels: {
+      easier: { name: "Feet close to the door, body upright", f: 1.15 },
+      standard: { name: "Feet walked out, body at roughly 45°", f: 1 },
+      harder: { name: "Feet far out, body close to horizontal", f: 0.7 },
+    },
+    setup: "Loop a strong towel around both handles of a closed, latched door and stand on the side the door opens away from you, so your pull presses it into the frame. One end in each hand, arms straight, lean back.",
+    how: [
+      "Walk your feet towards the door until your weight hangs back through your arms.",
+      "Pull your chest towards your hands with your elbows close to your ribs.",
+      "Lower under control until your arms are straight again.",
+    ],
+    cues: ["Shoulder blades move first, arms second.", "Body stays one straight line — squeeze your glutes."],
+    avoid: ["A hollow door or a loose handle. Hang your full weight on it once before you start a set.", "Hips sinking back as the set gets hard."],
+  },
+  pronepull: {
+    name: "Prone Lat Pull", type: "strength", unit: "reps", base: 24, intro: 1,
+    levels: {
+      easier: { name: "Arms wide, thumbs up, small lift", f: 1.2 },
+      standard: { name: "Arms overhead, elbows pulled to your ribs, 1-second squeeze", f: 1 },
+      harder: { name: "3-second squeeze at the bottom of every rep", f: 0.75 },
+    },
+    setup: "Lie face down, forehead on the floor or a folded towel, arms stretched out overhead.",
+    how: [
+      "Lift your hands just clear of the floor.",
+      "Pull your elbows down and back towards your ribs and squeeze your shoulder blades together.",
+      "Reach back overhead without letting your hands land.",
+    ],
+    cues: ["There's no weight, so the squeeze is the whole exercise. Slow beats many.", "Shoulders away from your ears throughout."],
+    avoid: ["Lifting your chest and chin to make it feel like more — the work belongs in your back, not your neck."],
+  },
+  legraise: {
+    name: "Lying Leg Raise", type: "strength", unit: "reps", base: 15, intro: 1,
+    levels: {
+      easier: { name: "Knees bent, hands under your hips", f: 1.3 },
+      standard: { name: "Straight legs, lowered to just above the floor", f: 1 },
+      harder: { name: "Straight legs, three seconds down", f: 0.7 },
+    },
+    setup: "Lie on your back, hands under your hips or flat at your sides. Press your lower back into the floor.",
+    how: [
+      "Raise your legs until they point at the ceiling.",
+      "Lower them slowly while keeping your lower back flat.",
+      "Stop before your back lifts away from the floor — that point is your range.",
+    ],
+    cues: ["Lower back glued to the floor. That is what makes this work.", "Bend your knees the moment your back starts to arch."],
+    avoid: ["Arching and hauling the legs up with your hip flexors."],
+  },
+  doorlat: {
+    name: "Doorway Lat Stretch", type: "mobility", unit: "seconds", base: 60, intro: 1,
+    levels: {
+      easier: { name: "Hands on a table, knees soft", f: 1 },
+      standard: { name: "Hands on a doorframe at chest height, hips sinking back", f: 1 },
+      harder: { name: "One arm at a time, ribs turning away", f: 0.9 },
+    },
+    setup: "Hands on a doorframe or the edge of a table at about chest height, feet under your hips.",
+    how: [
+      "Walk backwards and let your hips sink away from your hands.",
+      "Let your chest drop between your arms and your head hang.",
+      "Breathe low and let it settle rather than pushing into it.",
+    ],
+    cues: ["This gives you what the hang gives you: length down your lats and your side.", "Send your hips back, don't push with your arms."],
+    avoid: ["Letting your lower back collapse. Keep a light brace through your middle."],
+  },
 };
 
 /* Movements named on the original Strength Side page. Everything else is our own
    addition, chosen to fill out the strength / mobility / conditioning rotation. */
 const FROM_SOURCE = new Set(["squat", "lunge", "pushup", "pullup", "row", "hkr", "couch", "bearcrawl", "crab", "jumprope", "burpee"]);
+
+/* Without a pull-up bar, everything you'd have to hang from gets a stand-in.
+   More than one, so that a day holding two hanging movements doesn't turn into
+   the same row twice. */
+const NO_BAR = {
+  pullup: ["towelrow", "pronepull"],
+  chinup: ["pronepull", "towelrow"],
+  hkr: ["legraise"],
+  deadhang: ["doorlat"],
+};
+const NEEDS_BAR = Object.keys(NO_BAR);
+
+/* Welk soort trek het is, zodat een dag met een rij erin niet nog een rij
+   als vervanger krijgt. */
+const PATTERN = { row: "row", towelrow: "row", pronepull: "floorpull", legraise: "core", doorlat: "lats" };
+
+function swapForNoBar(ids) {
+  const out = [];
+  const from = {};
+  const patterns = new Set(ids.map((id) => PATTERN[id]).filter(Boolean));
+  ids.forEach((id) => {
+    if (!NO_BAR[id]) { out.push(id); return; }
+    const free = NO_BAR[id].filter((a) => !out.includes(a));
+    const alt = free.find((a) => !patterns.has(PATTERN[a])) || free[0] || NO_BAR[id][0];
+    patterns.add(PATTERN[alt]);
+    from[alt] = id;
+    out.push(alt);
+  });
+  return { ids: out, from };
+}
 
 /* ---------- Program structure ---------- */
 
@@ -504,7 +602,7 @@ function buildDaily(day, levels) {
   return [{ id, level, goal: roundGoal(ex.base * WEEK_MULT[week - 1] * ex.levels[level].f) }];
 }
 
-function buildDay(day, levels) {
+function buildDay(day, levels, equipment = {}) {
   if (day === 1) return { day, focus: "test", kind: "baseline", exercises: [] };
   if (day === TOTAL_DAYS) return { day, focus: "test", kind: "retest", exercises: [] };
 
@@ -516,13 +614,14 @@ function buildDay(day, levels) {
   for (let d = 2; d < day; d++) if (d !== TOTAL_DAYS && WEEK_PATTERN[(d - 1) % 7] === focus) count++;
 
   const pool = TEMPLATES[focus].filter((t) => t.every((id) => EX[id].intro <= week));
-  const ids = pool[count % pool.length];
+  const planned = pool[count % pool.length];
+  const { ids, from } = equipment.bar ? { ids: planned, from: {} } : swapForNoBar(planned);
 
   const exercises = ids.map((id) => {
     const ex = EX[id];
     const level = levels[id] || "standard";
     const goal = roundGoal(ex.base * WEEK_MULT[week - 1] * ex.levels[level].f);
-    return { id, level, goal };
+    return from[id] ? { id, level, goal, sub: from[id] } : { id, level, goal };
   });
 
   return { day, focus, kind: "workout", exercises };
@@ -576,7 +675,7 @@ const FOCUS = {
   test: { label: "Test", color: "#FAFAFA" },
 };
 
-const GROUP_OF = { pushup: "push", dip: "push", pikepushup: "push", pullup: "pull", chinup: "pull", row: "pull", hkr: "pull" };
+const GROUP_OF = { pushup: "push", dip: "push", pikepushup: "push", pullup: "pull", chinup: "pull", row: "pull", hkr: "pull", towelrow: "pull", pronepull: "pull" };
 const groupOf = (id) => {
   if (GROUP_OF[id]) return GROUP_OF[id];
   const t = EX[id].type;
@@ -584,7 +683,7 @@ const groupOf = (id) => {
 };
 
 const EQUIPMENT = [
-  { id: "bar", label: "Pull-up bar", note: "Required. A doorway bar or a bar at the park both work.", required: true },
+  { id: "bar", label: "Pull-up bar", note: "A doorway bar or one at the park. Without it, the hanging movements are swapped for door, table and floor versions.", required: false },
   { id: "rings", label: "Gymnastics rings", note: "For rows. A sturdy table works instead." },
   { id: "rope", label: "Jump rope", note: "For conditioning days. We show a no-rope version too." },
   { id: "band", label: "Resistance band", note: "For assisted pull-ups and chin-ups." },
@@ -665,7 +764,7 @@ export default function RepsTab({ onExit, onPersist }) {
 
   const today = iso();
   const doneToday = state.lastCompletedDate === today;
-  const workout = buildDay(state.currentDay, state.levels);
+  const workout = buildDay(state.currentDay, state.levels, state.equipment);
   const daily = buildDaily(state.currentDay, state.levels);
   const logged = state.loggedDay === state.currentDay ? state.logged : {};
 
@@ -674,6 +773,14 @@ export default function RepsTab({ onExit, onPersist }) {
 
   const setLevel = (id, level) =>
     save({ ...state, levels: { ...state.levels, [id]: level }, seen: { ...state.seen, [id]: true } });
+
+  /* Kit can change any day. Today's session is rebuilt straight away; anything
+     you already logged for a movement that stays in the day keeps its reps. */
+  const setEquipment = (equipment) => {
+    const levels = { ...state.levels };
+    if (!equipment.rope) levels.jumprope = "easier";
+    save({ ...state, equipment, levels });
+  };
 
   const addReps = (id, n) => {
     const ex = [...workout.exercises, ...daily].find((e) => e.id === id);
@@ -737,7 +844,8 @@ export default function RepsTab({ onExit, onPersist }) {
   const sheetEntry = sheet
     ? sheet.mode === "log"
       ? [...workout.exercises, ...daily].find((e) => e.id === sheet.id)
-      : { id: sheet.id, level: state.levels[sheet.id] || "standard", goal: null }
+      : { id: sheet.id, level: state.levels[sheet.id] || "standard", goal: null,
+          ...(!state.equipment.bar && NEEDS_BAR.includes(sheet.id) ? { needsBar: true } : {}) }
     : null;
 
   return (
@@ -759,7 +867,7 @@ export default function RepsTab({ onExit, onPersist }) {
           />
         )}
         {tab === "moves" && <Moves levels={state.levels} onOpen={(id) => setSheet({ id, mode: "read" })} />}
-        {tab === "progress" && <ProgressTab state={state} onPick={setReviewDay} onReset={resetAll} />}
+        {tab === "progress" && <ProgressTab state={state} onPick={setReviewDay} onEquipment={setEquipment} onReset={resetAll} />}
       </div>
 
       <Nav tab={tab} setTab={setTab} onExit={onExit} />
@@ -970,6 +1078,9 @@ function ExerciseRow({ entry, logged, isNew, onOpen }) {
             {isNew && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}>New</span>}
           </div>
           <div className="mt-1 truncate text-xs text-neutral-500">{ex.levels[entry.level].name}</div>
+          {entry.sub && (
+            <div className="mt-1 truncate text-[11px] text-neutral-600">No bar — in place of {EX[entry.sub].name}</div>
+          )}
         </div>
         <div className="shrink-0 pt-0.5 text-right">
           <div className="text-[26px] font-bold leading-none tabular-nums tracking-tight" style={{ color: done ? ACCENT : "#FAFAFA" }}>
@@ -1056,6 +1167,18 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, onLevel, onAdd, onC
         <div className="mt-2.5 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: FROM_SOURCE.has(entry.id) ? "#525252" : ACCENT }}>
           {FROM_SOURCE.has(entry.id) ? "From the original program" : "Added movement"}
         </div>
+
+        {entry.sub && (
+          <p className="mt-4 border-l-2 pl-3 text-[13px] leading-relaxed text-neutral-300" style={{ borderColor: ACCENT }}>
+            Standing in for {EX[entry.sub].name} because you haven't got a pull-up bar. Tick the bar under
+            Progress on the day you get one and {EX[entry.sub].name} comes straight back.
+          </p>
+        )}
+        {entry.needsBar && (
+          <p className="mt-4 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
+            Needs a pull-up bar, so it isn't being scheduled. {EX[NO_BAR[entry.id][0]].name} is taking its place.
+          </p>
+        )}
 
         {browse && (
           <p className="mt-5 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
@@ -1302,6 +1425,7 @@ function Moves({ levels, onOpen }) {
                     <span className="block truncate text-[14px] font-bold">{e.name}</span>
                     <span className="block truncate text-xs text-neutral-500">{e.levels[levels[id] || "standard"].name}</span>
                   </span>
+                  {NO_BAR[id] && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Bar</span>}
                   {e.intro > 1 && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Week {e.intro}</span>}
                 </button>
               </li>
@@ -1315,7 +1439,7 @@ function Moves({ levels, onOpen }) {
 
 /* ---------- Progress ---------- */
 
-function ProgressTab({ state, onPick, onReset }) {
+function ProgressTab({ state, onPick, onEquipment, onReset }) {
   const done = state.history.length;
   const totalReps = state.history.reduce((s, h) => s + h.done, 0);
   const last = state.history.slice(-14);
@@ -1369,7 +1493,7 @@ function ProgressTab({ state, onPick, onReset }) {
                   const day = wi * 7 + di + 1;
                   const entry = byDay[day];
                   const isToday = day === state.currentDay;
-                  const color = FOCUS[buildDay(day, state.levels).focus].color;
+                  const color = FOCUS[buildDay(day, state.levels, state.equipment).focus].color;
                   return (
                     <button key={day} onClick={() => entry && onPick(entry)} disabled={!entry}
                       aria-label={`Day ${day}`}
@@ -1417,6 +1541,42 @@ function ProgressTab({ state, onPick, onReset }) {
           </div>
         </section>
       )}
+
+      <section className="mt-9">
+        <Eyebrow>What you've got</Eyebrow>
+        <p className="mt-2 text-xs leading-relaxed text-neutral-600">
+          Change this whenever your kit changes. Without a pull-up bar, everything you'd have to hang from is
+          swapped for a version that works with a door, a table and the floor. Tick the bar the day you get one
+          and the hanging work comes straight back — today's session included.
+        </p>
+        <ul className="mt-4 space-y-px overflow-hidden rounded-2xl border border-neutral-800">
+          {EQUIPMENT.map((eq) => {
+            const on = !!state.equipment[eq.id];
+            return (
+              <li key={eq.id}>
+                <button onClick={() => onEquipment({ ...state.equipment, [eq.id]: !on })}
+                  aria-pressed={on}
+                  className={`flex w-full items-start gap-3 bg-neutral-900 px-4 py-4 text-left ${RING}`}
+                  style={on ? { backgroundColor: "#1C1208" } : undefined}>
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border text-[10px] font-bold leading-none text-neutral-950"
+                    style={{ borderColor: on ? ACCENT : "#4A4A4A", backgroundColor: on ? ACCENT : "transparent" }}>
+                    {on ? "✓" : ""}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-bold">{eq.label}</span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-neutral-500">{eq.note}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {!state.equipment.bar && (
+          <div className="mt-3 border-l-2 pl-3 text-xs leading-relaxed text-neutral-400" style={{ borderColor: ACCENT }}>
+            Running without a bar. {NEEDS_BAR.map((id) => `${EX[id].name} → ${EX[NO_BAR[id][0]].name}`).join(", ")}.
+          </div>
+        )}
+      </section>
 
       <button onClick={onReset} className={`mt-10 w-full border border-neutral-800 py-3.5 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600 ${RING}`}>
         Start the eight weeks over
@@ -1585,7 +1745,8 @@ function Onboarding({ onDone, onExit }) {
               </ul>
               {!equipment.bar && (
                 <p className="mt-3 border-l-2 pl-3 text-xs leading-relaxed text-neutral-400" style={{ borderColor: ACCENT }}>
-                  Pull-ups, rows and hangs run through the whole program. Get a doorway bar, or find one at a park, before day 2.
+                  No bar, no problem: pull-ups, chin-ups, hanging knee raises and the dead hang are swapped for
+                  versions that work with a door, a table and the floor. Tick the bar whenever you get one.
                 </p>
               )}
             </div>

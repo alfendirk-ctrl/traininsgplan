@@ -408,6 +408,7 @@ const EX = {
   },
   deadhang: {
     name: "Dead Hang", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 45,
+    needsBar: true,
     levels: {
       easier:   { name: "Voeten aan de grond, deels gewicht dragend", f: 1.15 },
       standard: { name: "Vrij hangen aan gestrekte armen", f: 1 },
@@ -421,6 +422,22 @@ const EX = {
     ],
     cues: ["Dit is de beste oefening voor een stijve schouder die er is.", "Grip is meestal eerder op dan je schouder; dat mag."],
     avoid: ["Met opgetrokken schouders blijven hangen zonder te ontspannen."],
+  },
+  doorlat: {
+    name: "Deuropening-latstretch", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 50,
+    levels: {
+      easier:   { name: "Handen op een tafel, knie\u00ebn licht gebogen", f: 1.15 },
+      standard: { name: "Handen op de deurpost op borsthoogte, heupen naar achteren", f: 1 },
+      harder:   { name: "E\u00e9n arm tegelijk, ribben wegdraaien", f: 0.9 },
+    },
+    setup: "Handen op een deurpost of op de rand van een tafel, ongeveer op borsthoogte. Voeten onder je heupen.",
+    how: [
+      "Loop achteruit en laat je heupen van je handen weg zakken.",
+      "Laat je borst tussen je armen door zakken en je hoofd hangen.",
+      "Adem laag door en laat het zakken in plaats van te duwen.",
+    ],
+    cues: ["Dit geeft je wat de dead hang je geeft: lengte door je lats en je zij, zonder rekstok.", "Stuur je heupen naar achteren, duw niet met je armen."],
+    avoid: ["Je onderrug laten doorzakken. Hou je middel licht aangespannen."],
   },
   chestdoor: {
     name: "Borstopener in de deuropening", region: "shoulder", role: "open", unit: "sec", perSide: true, base: 60,
@@ -713,7 +730,8 @@ const roundGoal = (n, unit) => {
 function weekOf(day) { return Math.min(8, Math.floor((day - 1) / 7) + 1); }
 function phaseOf(day) { const w = weekOf(day); return PHASES.find((p) => p.weeks.includes(w)); }
 
-const poolOf = (region, role) => EX_IDS.filter((id) => EX[id].region === region && EX[id].role === role);
+const poolOf = (region, role, hasBar) =>
+  EX_IDS.filter((id) => EX[id].region === region && EX[id].role === role && (hasBar || !EX[id].needsBar));
 
 /* Deterministisch kiezen: dezelfde dag geeft altijd dezelfde oefening,
    maar over de dagen heen rouleert het door de hele regio. */
@@ -721,8 +739,8 @@ const poolOf = (region, role) => EX_IDS.filter((id) => EX[id].region === region 
    Een teller die per plek met precies één oploopt rouleert netjes door de
    hele lijst; met het dagnummer viel de keuze samen met het ritme van de week
    en bleven er oefeningen voorgoed ongebruikt. */
-function pickAt(region, role, n, taken) {
-  const pool = poolOf(region, role);
+function pickAt(region, role, n, taken, hasBar) {
+  const pool = poolOf(region, role, hasBar);
   if (!pool.length) return null;
   for (let i = 0; i < pool.length; i++) {
     const id = pool[(n + i) % pool.length];
@@ -752,10 +770,10 @@ function maintSlots(focus) {
   return out;
 }
 
-function addMaint(slots, idx, taken, add) {
+function addMaint(slots, idx, taken, add, hasBar) {
   const [region, role] = slots[((idx % slots.length) + slots.length) % slots.length];
   const lap = Math.floor(idx / slots.length);
-  add(pickAt(region, role, lap, taken) || pickAt(region, "open", lap, taken));
+  add(pickAt(region, role, lap, taken, hasBar) || pickAt(region, "open", lap, taken, hasBar));
 }
 
 function entryFor(id, day, levels, focus) {
@@ -766,7 +784,7 @@ function entryFor(id, day, levels, focus) {
   return { id, level, goal };
 }
 
-function buildDay(day, levels, focus) {
+function buildDay(day, levels, focus, hasBar) {
   if (day === 1) return { day, kind: "test", test: "baseline", exercises: [] };
   if (day === TOTAL_DAYS) return { day, kind: "test", test: "retest", exercises: [] };
 
@@ -779,22 +797,22 @@ function buildDay(day, levels, focus) {
   const add = (id) => { if (id) ids.push(id); };
 
   if (kind === "gericht") {
-    add(pickAt(focus, "prep", seq, taken));
-    add(pickAt(focus, "open", seq, taken));
-    add(pickAt(focus, "load", seq, taken));
-    addMaint(slots, seq * 2, taken, add);
-    addMaint(slots, seq * 2 + 1, taken, add);
+    add(pickAt(focus, "prep", seq, taken, hasBar));
+    add(pickAt(focus, "open", seq, taken, hasBar));
+    add(pickAt(focus, "load", seq, taken, hasBar));
+    addMaint(slots, seq * 2, taken, add, hasBar);
+    addMaint(slots, seq * 2 + 1, taken, add, hasBar);
   } else if (kind === "volledig") {
-    add(pickAt(focus, "open", seq, taken));
+    add(pickAt(focus, "open", seq, taken, hasBar));
     others.forEach((r, i) => {
       const t = seq + i;
-      add(pickAt(r, ROLE_CYCLE[t % 3], Math.floor(t / 3), taken) || pickAt(r, "open", t, taken));
+      add(pickAt(r, ROLE_CYCLE[t % 3], Math.floor(t / 3), taken, hasBar) || pickAt(r, "open", t, taken, hasBar));
     });
   } else {
-    add(pickAt("flow", "flow", seq, taken));
-    add(pickAt(focus, "open", seq, taken));
-    add(pickAt(focus, "load", seq, taken));
-    addMaint(slots, seq * 3, taken, add);
+    add(pickAt("flow", "flow", seq, taken, hasBar));
+    add(pickAt(focus, "open", seq, taken, hasBar));
+    add(pickAt(focus, "load", seq, taken, hasBar));
+    addMaint(slots, seq * 3, taken, add, hasBar);
   }
 
   return { day, kind, exercises: ids.map((id) => entryFor(id, day, levels, focus)) };
@@ -852,6 +870,9 @@ const toSeconds = (id, n) => (EX[id].unit === "sec" ? n : n * 4);
 const DEFAULT_STATE = {
   v: 1,
   onboarded: false,
+  /* Oefeningen waar je voor moet hangen vallen weg tot je aangeeft dat je
+     een rekstok hebt. Omzetten kan bij Voortgang. */
+  equipment: { bar: false },
   focus: "hip",
   pendingFocus: null,
   focusLog: [],
@@ -925,7 +946,8 @@ export default function MobilityTab({ onExit, onPersist }) {
 
   const today = iso();
   const doneToday = state.lastCompletedDate === today;
-  const workout = buildDay(state.currentDay, state.levels, state.focus);
+  const hasBar = !!(state.equipment && state.equipment.bar);
+  const workout = buildDay(state.currentDay, state.levels, state.focus, hasBar);
   const logged = state.loggedDay === state.currentDay ? state.logged : {};
   const anyLoggedToday = Object.values(logged).some((v) => v > 0);
 
@@ -1014,6 +1036,10 @@ export default function MobilityTab({ onExit, onPersist }) {
     }
   };
 
+  /* Krijg je alsnog een rekstok, dan komt de dead hang meteen terug in de
+     rotatie — ook in de sessie van vandaag. */
+  const setBar = (bar) => save({ ...state, equipment: { ...state.equipment, bar } });
+
   const resetAll = () =>
     save({ ...DEFAULT_STATE, onboarded: true, focus: state.focus, levels: state.levels, seen: state.seen });
 
@@ -1043,7 +1069,7 @@ export default function MobilityTab({ onExit, onPersist }) {
           />
         )}
         {tab === "moves" && <Moves levels={state.levels} focus={state.focus} onOpen={(id) => setSheet({ id, mode: "read" })} />}
-        {tab === "progress" && <ProgressTab state={state} onPick={setReviewDay} onFocus={() => setFocusSheet(true)} onReset={resetAll} />}
+        {tab === "progress" && <ProgressTab state={state} onPick={setReviewDay} onFocus={() => setFocusSheet(true)} onBar={setBar} onReset={resetAll} />}
       </div>
 
       <Nav tab={tab} setTab={setTab} onExit={onExit} />
@@ -1694,6 +1720,7 @@ function Moves({ levels, focus, onOpen }) {
                         <span className="block truncate text-[14px] font-bold">{e.name}</span>
                         <span className="block truncate text-xs text-neutral-500">{ROLES[e.role].label} · {e.levels[levels[id] || "standard"].name}</span>
                       </span>
+                      {e.needsBar && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Rekstok</span>}
                     </button>
                   </li>
                 );
@@ -1708,7 +1735,7 @@ function Moves({ levels, focus, onOpen }) {
 
 /* ---------- Voortgang ---------- */
 
-function ProgressTab({ state, onPick, onFocus, onReset }) {
+function ProgressTab({ state, onPick, onFocus, onBar, onReset }) {
   const done = state.history.length;
   const last = state.history.slice(-14);
   const max = Math.max(1, ...last.map((h) => h.goal));
@@ -1860,6 +1887,37 @@ function ProgressTab({ state, onPick, onFocus, onReset }) {
           </p>
         </section>
       )}
+
+      <section className="mt-9">
+        <Eyebrow>Spullen</Eyebrow>
+        {(() => {
+          const bar = !!(state.equipment && state.equipment.bar);
+          const hangers = EX_IDS.filter((id) => EX[id].needsBar).map((id) => EX[id].name).join(", ");
+          return (
+            <>
+              <button onClick={() => onBar(!bar)} aria-pressed={bar}
+                className={`mt-3 flex w-full items-start gap-3 rounded-2xl border border-neutral-800 bg-neutral-900 px-4 py-4 text-left ${RING}`}
+                style={bar ? { backgroundColor: "#0C1824" } : undefined}>
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border text-[10px] font-bold leading-none text-neutral-950"
+                  style={{ borderColor: bar ? ACCENT : "#4A4A4A", backgroundColor: bar ? ACCENT : "transparent" }}>
+                  {bar ? "\u2713" : ""}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-bold">Ik heb een rekstok</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-500">
+                    {bar
+                      ? `${hangers} draait mee in de rotatie.`
+                      : `${hangers} blijft eruit zolang dit uit staat. De Deuropening-latstretch doet hetzelfde werk.`}
+                  </span>
+                </span>
+              </button>
+              <p className="mt-3 text-[11px] leading-relaxed text-neutral-600">
+                Omzetten kan wanneer je wilt; de sessie van vandaag wordt meteen opnieuw samengesteld.
+              </p>
+            </>
+          );
+        })()}
+      </section>
 
       <button onClick={onReset} className={`mt-10 w-full border border-neutral-800 py-3.5 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600 ${RING}`}>
         Acht weken opnieuw beginnen
