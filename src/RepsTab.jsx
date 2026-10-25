@@ -699,6 +699,10 @@ const DEFAULT_STATE = {
   currentDay: 1,
   levels: {},
   logged: {},
+  /* Wat je vandaag per oefening los hebt gelogd, zodat één mistik eruit kan
+     zonder de rest kwijt te raken. logged blijft het totaal en de waarheid;
+     ontbreekt entries (oudere opslag), dan telt het totaal als één beurt. */
+  entries: {},
   loggedDay: null,
   lastCompletedDate: null,
   gapHandledOn: null,
@@ -767,6 +771,8 @@ export default function RepsTab({ onExit, onPersist }) {
   const workout = buildDay(state.currentDay, state.levels, state.equipment);
   const daily = buildDaily(state.currentDay, state.levels);
   const logged = state.loggedDay === state.currentDay ? state.logged : {};
+  const entries = state.loggedDay === state.currentDay ? (state.entries || {}) : {};
+  const entriesFor = (id) => entries[id] || (logged[id] > 0 ? [logged[id]] : []);
 
   const missed = state.lastCompletedDate ? Math.max(0, dayDiff(state.lastCompletedDate, today) - 1) : 0;
   const showGap = missed > 0 && state.gapHandledOn !== today && state.history.length > 0;
@@ -785,12 +791,27 @@ export default function RepsTab({ onExit, onPersist }) {
   const addReps = (id, n) => {
     const ex = [...workout.exercises, ...daily].find((e) => e.id === id);
     if (!ex) return;
-    const next = Math.max(0, Math.min(ex.goal, (logged[id] || 0) + n));
+    const was = logged[id] || 0;
+    const next = Math.max(0, Math.min(ex.goal, was + n));
+    const delta = next - was;
+    if (!delta) return;
     save({
       ...state,
       loggedDay: state.currentDay,
       logged: { ...logged, [id]: next },
+      entries: { ...entries, [id]: [...entriesFor(id), delta] },
       seen: { ...state.seen, [id]: true },
+    });
+  };
+
+  // Eén beurt terugnemen; het totaal is de som van wat overblijft.
+  const removeEntry = (id, idx) => {
+    const list = entriesFor(id).filter((_, i) => i !== idx);
+    save({
+      ...state,
+      loggedDay: state.currentDay,
+      logged: { ...logged, [id]: list.reduce((a, b) => a + b, 0) },
+      entries: { ...entries, [id]: list },
     });
   };
 
@@ -810,6 +831,7 @@ export default function RepsTab({ onExit, onPersist }) {
       lastCompletedDate: today,
       currentDay: Math.min(TOTAL_DAYS, state.currentDay + 1),
       logged: {},
+      entries: {},
       loggedDay: null,
     });
   };
@@ -832,7 +854,7 @@ export default function RepsTab({ onExit, onPersist }) {
 
   const handleGap = (choice) => {
     if (choice === "skip" && missed <= 7) {
-      save({ ...state, currentDay: Math.min(TOTAL_DAYS, state.currentDay + missed), gapHandledOn: today, logged: {}, loggedDay: null });
+      save({ ...state, currentDay: Math.min(TOTAL_DAYS, state.currentDay + missed), gapHandledOn: today, logged: {}, entries: {}, loggedDay: null });
     } else {
       save({ ...state, gapHandledOn: today });
     }
@@ -876,16 +898,75 @@ export default function RepsTab({ onExit, onPersist }) {
         <ExerciseSheet
           entry={sheetEntry}
           logged={logged[sheetEntry.id] || 0}
+          entries={entriesFor(sheetEntry.id)}
+          previous={lastTime(state.history, sheetEntry.id, state.currentDay)}
+          day={sheet.mode === "log" ? [...workout.exercises, ...daily] : null}
+          allLogged={logged}
           firstTime={!state.seen[sheetEntry.id]}
           readOnly={sheet.mode === "read" || doneToday}
           onLevel={(l) => setLevel(sheetEntry.id, l)}
           onAdd={(n) => addReps(sheetEntry.id, n)}
+          onRemove={(i) => removeEntry(sheetEntry.id, i)}
+          onSwitch={(id) => setSheet({ id, mode: "log" })}
           onClose={() => setSheet(null)}
         />
       )}
 
       {reviewDay && <Review entry={reviewDay} onClose={() => setReviewDay(null)} />}
       {showGap && <GapModal missed={missed} onChoose={handleGap} />}
+    </div>
+  );
+}
+
+const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const isTimed = (id) => EX[id].unit.indexOf("sec") !== -1;
+
+/* Wat je de vorige keer bij deze oefening hebt gehaald. Staat al in je
+   geschiedenis; het is het getal waar je naar zoekt als je twijfelt. */
+function lastTime(history, id, currentDay) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    if (h.day >= currentDay) continue;
+    const e = (h.exercises || []).find((x) => x.id === id);
+    if (e && e.logged > 0) return { logged: e.logged, goal: e.goal, day: h.day };
+  }
+  return null;
+}
+
+/* Ringetje met het aantal dat nog te gaan is, voor de oefeningenrij bovenin
+   het venster. */
+function CountRing({ pct, label, color, dim }) {
+  const r = 15, c = 2 * Math.PI * r;
+  return (
+    <span className="relative inline-flex h-10 w-10 items-center justify-center">
+      <svg viewBox="0 0 36 36" className="absolute inset-0 h-10 w-10 -rotate-90">
+        <circle cx="18" cy="18" r={r} fill="none" stroke="#2A2A2A" strokeWidth="2.5" />
+        <circle cx="18" cy="18" r={r} fill="none" stroke={color} strokeWidth="2.5"
+          strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, pct))} strokeLinecap="round" />
+      </svg>
+      <span className="relative text-[11px] font-bold tabular-nums" style={{ color: dim ? "#A3A3A3" : "#FAFAFA" }}>{label}</span>
+    </span>
+  );
+}
+
+function ExerciseStrip({ day, allLogged, activeId, onSwitch }) {
+  return (
+    <div className="flex gap-1 overflow-x-auto px-3 pb-3 pt-1" style={{ scrollbarWidth: "none" }}>
+      {day.map((e) => {
+        const done = Math.min(e.goal, allLogged[e.id] || 0);
+        const left = Math.max(0, e.goal - done);
+        const on = e.id === activeId;
+        return (
+          <button key={e.id} onClick={() => onSwitch(e.id)} aria-current={on ? "true" : undefined}
+            className={`flex w-[72px] shrink-0 flex-col items-center gap-1 rounded-xl px-1 py-2 ${RING}`}
+            style={on ? { backgroundColor: "#1F1F1F" } : undefined}>
+            <CountRing pct={done / e.goal} color={left === 0 ? "#3F8F5B" : ACCENT} dim={!on}
+              label={left === 0 ? "✓" : isTimed(e.id) ? mmss(left) : String(left)} />
+            <span className="w-full truncate text-center text-[9px] leading-tight"
+              style={{ color: on ? "#FAFAFA" : "#737373" }}>{EX[e.id].name}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -989,6 +1070,61 @@ function RepTicks({ goal, logged }) {
   );
 }
 
+/* Waar je staat in de acht weken: een balk per fase, en de dagen van deze
+   week met een slot op wat nog niet open is. */
+function ProgramBar({ history }) {
+  const done = history.length;
+  const pct = Math.round((done / TOTAL_DAYS) * 100);
+  return (
+    <div>
+      <div className="flex gap-1">
+        {PHASES.map((ph) => {
+          const first = (ph.weeks[0] - 1) * 7 + 1;
+          const last = ph.weeks[ph.weeks.length - 1] * 7;
+          const span = last - first + 1;
+          const filled = Math.max(0, Math.min(span, done - (first - 1)));
+          return (
+            <div key={ph.name} className="h-1" style={{ flexGrow: span, flexBasis: 0, backgroundColor: "#262626" }}>
+              <div className="h-full" style={{ width: `${(filled / span) * 100}%`, backgroundColor: ACCENT }} />
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600">
+        {pct}% of the program done
+      </div>
+    </div>
+  );
+}
+
+function WeekStrip({ currentDay, history }) {
+  const week = weekOf(currentDay);
+  const start = (week - 1) * 7 + 1;
+  const done = new Set(history.map((h) => h.day));
+  return (
+    <div className="flex gap-1">
+      {Array.from({ length: 7 }).map((_, i) => {
+        const d = start + i;
+        if (d > TOTAL_DAYS) return <div key={d} className="flex-1" />;
+        const isDone = done.has(d);
+        const isToday = d === currentDay;
+        const locked = d > currentDay;
+        return (
+          <div key={d}
+            className="flex h-7 flex-1 items-center justify-center text-[11px] font-bold tabular-nums"
+            style={{
+              backgroundColor: isDone ? ACCENT : isToday ? "#1F1F1F" : "#161616",
+              color: isDone ? "#0A0A0A" : isToday ? ACCENT : "#3D3D3D",
+              boxShadow: isToday ? `inset 0 0 0 1px ${ACCENT}` : undefined,
+            }}>
+            {locked ? <span className="text-[10px] leading-none">🔒</span> : d}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ---------- Today ---------- */
 
 function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, onSaveTest }) {
@@ -1007,7 +1143,12 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
 
   return (
     <main className="px-5">
-      <Eyebrow>Day {state.currentDay} · Week {week}</Eyebrow>
+      <ProgramBar history={state.history} />
+      <div className="mt-4">
+        <WeekStrip currentDay={state.currentDay} history={state.history} />
+      </div>
+
+      <Eyebrow className="mt-6">Day {state.currentDay} · Week {week}</Eyebrow>
       <h1 className="mt-2 flex items-center gap-2.5 text-[32px] font-bold leading-none tracking-tight">
         <span className="h-3 w-3" style={{ backgroundColor: f.color }} />
         {f.label}
@@ -1113,7 +1254,7 @@ function RestOfDay({ day }) {
 
 /* ---------- Exercise sheet ---------- */
 
-function ExerciseSheet({ entry, logged, firstTime, readOnly, onLevel, onAdd, onClose }) {
+function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, firstTime, readOnly, onLevel, onAdd, onRemove, onSwitch, onClose }) {
   const ex = EX[entry.id];
   const browse = entry.goal == null;
   const timed = ex.unit.indexOf("sec") !== -1;
@@ -1122,14 +1263,22 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, onLevel, onAdd, onC
 
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
+  const [custom, setCustom] = useState(null);   // null = dicht, anders de ingetikte tekst
   useEffect(() => {
     if (!running) return;
     const i = setInterval(() => setElapsed((x) => x + 1), 1000);
     return () => clearInterval(i);
   }, [running]);
 
-  const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  // Van oefening wisselen: timer en invoerveld horen bij de vorige.
+  useEffect(() => { setElapsed(0); setRunning(false); setCustom(null); }, [entry.id]);
+
   const showLevelFirst = firstTime && !browse;
+  const addCustom = () => {
+    const n = parseInt(custom, 10);
+    if (n > 0) onAdd(n);
+    setCustom(null);
+  };
 
   const levelPicker = (
     <section>
@@ -1162,8 +1311,20 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, onLevel, onAdd, onC
         <button onClick={onClose} className={`-mr-2 px-2 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 ${RING}`}>Close</button>
       </div>
 
+      {/* De oefeningen van vandaag, zodat je niet hoeft te sluiten om door te gaan. */}
+      {day && day.length > 1 && (
+        <div className="mx-auto w-full max-w-md border-b border-neutral-800">
+          <ExerciseStrip day={day} allLogged={allLogged} activeId={entry.id} onSwitch={onSwitch} />
+        </div>
+      )}
+
       <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto px-5 pb-10">
         <h2 className="mt-6 text-[30px] font-bold leading-none tracking-tight">{ex.name}</h2>
+        {previous && (
+          <div className="mt-2 text-[12px] tabular-nums text-neutral-500">
+            Last time: {previous.logged} of {previous.goal} {ex.unit} · day {previous.day}
+          </div>
+        )}
         <div className="mt-2.5 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: FROM_SOURCE.has(entry.id) ? "#525252" : ACCENT }}>
           {FROM_SOURCE.has(entry.id) ? "From the original program" : "Added movement"}
         </div>
@@ -1235,11 +1396,43 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, onLevel, onAdd, onC
                   </div>
                 )}
 
-                {logged > 0 && (
-                  <button onClick={() => onAdd(-(timed ? 15 : steps[steps.length - 1]))}
-                    className={`mt-3 text-[11px] uppercase tracking-[0.16em] text-neutral-600 ${RING}`}>
-                    Undo {timed ? "15 sec" : steps[steps.length - 1]}
+                {custom === null && (
+                  <button onClick={() => setCustom("")}
+                    className={`mt-2 w-full rounded-xl border border-neutral-800 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 ${RING}`}>
+                    Custom amount
                   </button>
+                )}
+
+                {custom !== null && (
+                  <div className="mt-3 flex gap-2">
+                    <input type="number" inputMode="numeric" min="1" autoFocus
+                      value={custom} onChange={(e) => setCustom(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                      placeholder={timed ? "seconds" : "reps"}
+                      className={`min-w-0 flex-1 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-lg font-bold tabular-nums text-neutral-50 placeholder-neutral-700 ${RING}`} />
+                    <button onClick={addCustom}
+                      className={`rounded-xl px-5 text-[11px] font-bold uppercase tracking-[0.16em] ${RING}`}
+                      style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>Add</button>
+                    <button onClick={() => setCustom(null)}
+                      className={`rounded-xl border border-neutral-700 px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 ${RING}`}>Cancel</button>
+                  </div>
+                )}
+
+                {/* Elke beurt los, zodat één mistik eruit kan. */}
+                {entries.length > 0 && (
+                  <div className="mt-4 border-t border-neutral-800 pt-3">
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600">Logged today</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {entries.map((n, i) => (
+                        <button key={i} onClick={() => onRemove(i)}
+                          aria-label={`Remove ${n}`}
+                          className={`flex items-center gap-1.5 rounded-full bg-neutral-800 py-1.5 pl-3 pr-2 text-[12px] font-bold tabular-nums text-neutral-200 ${RING}`}>
+                          {n}
+                          <span className="text-[13px] leading-none text-neutral-500">×</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </>
             )}
