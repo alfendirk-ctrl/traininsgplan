@@ -2688,6 +2688,7 @@ export default function App() {
   const [routines,setRoutines]   = useState(null);
   const [syncKey,setSyncKey]     = useState("");
   const [showSync,setShowSync]   = useState(false);
+  const [showMore,setShowMore]   = useState(false);
 
   const loadAll = useCallback(async()=>{
     await initSync();
@@ -2873,7 +2874,15 @@ export default function App() {
     </div>
   );
 
-  const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"],["skills","Skills"],["routines","Routines"],["history","Geschiedenis"],["database","Database"]];
+  // Dagelijks in de balk; wat je af en toe nodig hebt achter "Meer".
+  const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"]];
+  const MORE = [
+    ["skills",   "Skills",       "Hoe je de handstand per week opbouwt"],
+    ["routines", "Routines",     "Oefenlijsten en video's om in je dagen te laden"],
+    ["history",  "Geschiedenis", "Afgesloten weken, back-up en opnieuw beginnen"],
+    ["database", "Database",     "Je eigen oefeningen, per lichaamsdeel"],
+  ];
+  const inMore = MORE.find(([id])=>id===tab);
 
   return (
     <div style={{fontFamily:font,background:C.bg,minHeight:"100vh",color:C.text}}>
@@ -2898,9 +2907,10 @@ export default function App() {
               <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
             </div>
           </div>
-          {/* Tab bar — scrollt horizontaal op zeer smalle schermen (6 tabs),
-              blijft op normale breedtes verdeeld over de volle breedte. */}
-          <div style={{display:"flex",marginTop:6,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+          {/* Tab bar — drie dagelijkse tabbladen plus één knop voor de rest.
+              De vierde toont de naam van het onderdeel waar je in zit, zodat
+              je ook achter "Meer" ziet waar je bent. */}
+          <div style={{display:"flex",marginTop:6}}>
             {TABS.map(([id,l])=>(
               <button key={id} onClick={()=>setTab(id)} style={{
                 flex:1,padding:"10px 4px",background:"none",border:"none",
@@ -2910,6 +2920,17 @@ export default function App() {
                 transition:"color .15s",whiteSpace:"nowrap",
               }}>{l}</button>
             ))}
+            <button onClick={()=>setShowMore(true)} style={{
+              flex:1,padding:"10px 4px",background:"none",border:"none",
+              borderBottom:`2px solid ${inMore?C.purple:"transparent"}`,
+              color:inMore?C.purple:C.textMuted,
+              cursor:"pointer",fontSize:13,fontFamily:font,fontWeight:inMore?600:400,
+              transition:"color .15s",whiteSpace:"nowrap",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:3,
+            }}>
+              {inMore?inMore[1]:"Meer"}
+              <span style={{fontSize:9,opacity:0.7}}>▾</span>
+            </button>
           </div>
         </div>
       </div>
@@ -3150,6 +3171,27 @@ export default function App() {
         {tab==="database"&&db&&<DatabaseTab db={db} onChange={persistDb} />}
 
       </div>
+
+      {/* Meer — alles wat je niet elke dag nodig hebt */}
+      {showMore&&(
+        <Sheet title="Meer" onClose={()=>setShowMore(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {MORE.map(([id,label,uitleg])=>{
+              const actief = tab===id;
+              return (
+                <button key={id} onClick={()=>{setTab(id);setShowMore(false);}} style={{
+                  display:"block",width:"100%",textAlign:"left",cursor:"pointer",fontFamily:font,
+                  background:actief?C.purpleLight:C.surface,
+                  border:`1px solid ${actief?C.purple:C.border}`,borderRadius:10,padding:"12px 14px",
+                }}>
+                  <div style={{fontSize:14,fontWeight:600,color:actief?C.purple:C.text}}>{label}</div>
+                  <div style={{fontSize:12,color:C.textMuted,marginTop:2,lineHeight:1.45}}>{uitleg}</div>
+                </button>
+              );
+            })}
+          </div>
+        </Sheet>
+      )}
 
       {/* Sync modal */}
       {showSync&&syncKey&&(
