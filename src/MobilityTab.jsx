@@ -52,7 +52,8 @@ const ROLES = {
 const EX = {
   /* ── HEUP ─────────────────────────────────────────────────── */
   hipcars: {
-    name: "Hip CARs", region: "hip", role: "prep", unit: "reps", perSide: true, base: 10,
+    name: "Hip CARs", region: "hip", role: "prep", unit: "reps", perSide: true, base: 6,
+    secPerRep: 10, q: "hip CARs controlled articular rotations",
     from: "routine", video: "https://youtu.be/JlxndP60w8E?t=336",
     levels: {
       easier:   { name: "Liggend op je rug, knie gebogen", f: 1.2 },
@@ -70,6 +71,7 @@ const EX = {
   },
   shinbox: {
     name: "Shin Box Swivels", region: "hip", role: "prep", unit: "sec", perSide: false, base: 40,
+    q: "shin box swivel 90 90 switch",
     from: "routine",
     levels: {
       easier:   { name: "Handen achter je op de grond als steun", f: 1.15 },
@@ -87,6 +89,7 @@ const EX = {
   },
   ninety: {
     name: "90/90 Hold", region: "hip", role: "open", unit: "sec", perSide: true, base: 60,
+    q: "90 90 hip stretch hold",
     from: "routine", video: "https://www.youtube.com/watch?v=jJn2ijaiir0&t=39s",
     levels: {
       easier:   { name: "Op een kussen of blok, handen achter je", f: 1.15 },
@@ -104,6 +107,7 @@ const EX = {
   },
   pigeon: {
     name: "90-90 Pigeon Lean", region: "hip", role: "open", unit: "sec", perSide: true, base: 90,
+    q: "90 90 pigeon lean hip stretch",
     from: "routine",
     levels: {
       easier:   { name: "Onderarmen op een blok of bank", f: 1.15 },
@@ -121,6 +125,7 @@ const EX = {
   },
   shinboxlift: {
     name: "Shin Box Hip Lift", region: "hip", role: "load", unit: "reps", perSide: true, base: 10,
+    secPerRep: 5, q: "shin box hip lift get up",
     from: "routine",
     levels: {
       easier:   { name: "Met een hand op de grond als steun", f: 1.2 },
@@ -138,6 +143,7 @@ const EX = {
   },
   couch: {
     name: "Couch Stretch", region: "hip", role: "open", unit: "sec", perSide: true, base: 90,
+    q: "couch stretch hip flexor",
     levels: {
       easier:   { name: "Achterste voet op de grond, knie laag", f: 1.15 },
       standard: { name: "Achterste voet tegen de muur of bank", f: 1 },
@@ -154,6 +160,7 @@ const EX = {
   },
   hipext: {
     name: "Externe rotatie op de bank", region: "hip", role: "load", unit: "reps", perSide: true, base: 10,
+    secPerRep: 6, q: "prone hip external rotation bench",
     from: "routine",
     levels: {
       easier:   { name: "Alleen optillen en 1 tel houden", f: 1.2 },
@@ -171,6 +178,7 @@ const EX = {
   },
   deepsquat: {
     name: "Deep Squat Hold", region: "hip", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "deep squat hold mobility",
     from: "routine",
     levels: {
       easier:   { name: "Hielen op een boek, vasthouden aan een deurpost", f: 1.15 },
@@ -188,6 +196,7 @@ const EX = {
   },
   cossack: {
     name: "Cossack Squat", region: "hip", role: "load", unit: "reps", perSide: true, base: 12,
+    secPerRep: 6, q: "cossack squat",
     levels: {
       easier:   { name: "Vasthouden aan een paal of deurpost", f: 1.2 },
       standard: { name: "Handen los, hiel blijft op de grond", f: 1 },
@@ -205,7 +214,8 @@ const EX = {
 
   /* ── HAMSTRINGS ───────────────────────────────────────────── */
   floss: {
-    name: "Morning Floss", region: "hamstring", role: "prep", unit: "reps", perSide: true, base: 10,
+    name: "Morning Floss", region: "hamstring", role: "prep", unit: "reps", perSide: true, base: 16,
+    secPerRep: 3, q: "sciatic nerve floss hamstring",
     from: "routine",
     levels: {
       easier:   { name: "Liggend, been met de handen gesteund", f: 1.2 },
@@ -223,6 +233,7 @@ const EX = {
   },
   pancake: {
     name: "Horse Stance + Pancake", region: "hamstring", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "horse stance pancake stretch",
     from: "routine",
     levels: {
       easier:   { name: "Zittend op een kussen, handen voor je", f: 1.15 },
@@ -240,6 +251,7 @@ const EX = {
   },
   straddle: {
     name: "Straddle → kleermaker → op de knieën", region: "hamstring", role: "open", unit: "sec", perSide: false, base: 90,
+    q: "straddle stretch seated forward fold",
     from: "routine",
     levels: {
       easier:   { name: "3 × 20 s, op een kussen", f: 1.15 },
@@ -257,6 +269,7 @@ const EX = {
   },
   sldl: {
     name: "One-leg stiff-leg deadlift", region: "hamstring", role: "load", unit: "reps", perSide: true, base: 10,
+    secPerRep: 5, q: "single leg stiff leg deadlift bodyweight",
     from: "routine",
     levels: {
       easier:   { name: "Vingertoppen aan de muur voor balans", f: 1.2 },
@@ -273,7 +286,8 @@ const EX = {
     avoid: ["Snelheid. Het evenwicht zoeken hoort bij de oefening."],
   },
   jefferson: {
-    name: "Jefferson Curl", region: "hamstring", role: "load", unit: "reps", perSide: false, base: 8,
+    name: "Jefferson Curl", region: "hamstring", role: "load", unit: "reps", perSide: false, base: 4,
+    secPerRep: 20, q: "jefferson curl",
     levels: {
       easier:   { name: "Op de grond, zonder gewicht", f: 1.2 },
       standard: { name: "Op een verhoging, zonder gewicht", f: 1 },
@@ -292,6 +306,7 @@ const EX = {
   /* ── RUG ──────────────────────────────────────────────────── */
   catcow: {
     name: "Cat-Cow", region: "spine", role: "prep", unit: "reps", perSide: false, base: 16,
+    secPerRep: 4, q: "cat cow spinal mobility",
     levels: {
       easier:   { name: "Zittend op een stoel", f: 1.2 },
       standard: { name: "Op handen en knieën", f: 1 },
@@ -308,6 +323,7 @@ const EX = {
   },
   openbook: {
     name: "Open Book", region: "spine", role: "prep", unit: "reps", perSide: true, base: 16,
+    secPerRep: 5, q: "open book thoracic rotation",
     levels: {
       easier:   { name: "Knieën op een kussen, kleine draai", f: 1.2 },
       standard: { name: "Zijlig, knieën 90°, arm volgt je blik", f: 1 },
@@ -324,6 +340,7 @@ const EX = {
   },
   tspine: {
     name: "Borstwervel-extensie over een rol", region: "spine", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "thoracic extension foam roller",
     levels: {
       easier:   { name: "Over een opgerolde handdoek", f: 1.15 },
       standard: { name: "Over een foamroller, handen achter je hoofd", f: 1 },
@@ -340,6 +357,7 @@ const EX = {
   },
   seal: {
     name: "Seal / Cobra", region: "spine", role: "open", unit: "sec", perSide: false, base: 45,
+    q: "seal stretch cobra pose",
     levels: {
       easier:   { name: "Op je onderarmen (sphinx)", f: 1.15 },
       standard: { name: "Op gestrekte armen, heupen op de grond", f: 1 },
@@ -356,6 +374,7 @@ const EX = {
   },
   arch: {
     name: "Arch Hold", region: "spine", role: "load", unit: "sec", perSide: false, base: 45,
+    q: "arch hold superman hold",
     levels: {
       easier:   { name: "Alleen bovenlichaam omhoog", f: 1.2 },
       standard: { name: "Armen en benen los van de grond", f: 1 },
@@ -373,7 +392,8 @@ const EX = {
 
   /* ── SCHOUDER ─────────────────────────────────────────────── */
   shouldercars: {
-    name: "Shoulder CARs", region: "shoulder", role: "prep", unit: "reps", perSide: true, base: 10,
+    name: "Shoulder CARs", region: "shoulder", role: "prep", unit: "reps", perSide: true, base: 6,
+    secPerRep: 10, q: "shoulder CARs controlled articular rotations",
     from: "db",
     levels: {
       easier:   { name: "Kleine cirkel, elleboog gebogen", f: 1.2 },
@@ -391,6 +411,7 @@ const EX = {
   },
   passthrough: {
     name: "Pass-Through met stok of band", region: "shoulder", role: "prep", unit: "reps", perSide: false, base: 12,
+    secPerRep: 5, q: "shoulder pass through stick dislocates",
     from: "db",
     levels: {
       easier:   { name: "Brede greep met een band", f: 1.2 },
@@ -408,6 +429,7 @@ const EX = {
   },
   deadhang: {
     name: "Dead Hang", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 45,
+    q: "dead hang bar",
     needsBar: true,
     levels: {
       easier:   { name: "Voeten aan de grond, deels gewicht dragend", f: 1.15 },
@@ -425,6 +447,7 @@ const EX = {
   },
   doorlat: {
     name: "Deuropening-latstretch", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 50,
+    q: "doorway lat stretch",
     levels: {
       easier:   { name: "Handen op een tafel, knie\u00ebn licht gebogen", f: 1.15 },
       standard: { name: "Handen op de deurpost op borsthoogte, heupen naar achteren", f: 1 },
@@ -441,6 +464,7 @@ const EX = {
   },
   chestdoor: {
     name: "Borstopener in de deuropening", region: "shoulder", role: "open", unit: "sec", perSide: true, base: 60,
+    q: "doorway pec stretch",
     levels: {
       easier:   { name: "Onderarm op de deurpost, elleboog laag", f: 1.15 },
       standard: { name: "Onderarm op de deurpost, elleboog op schouderhoogte", f: 1 },
@@ -457,6 +481,7 @@ const EX = {
   },
   wallslide: {
     name: "Wall Slide", region: "shoulder", role: "load", unit: "reps", perSide: false, base: 12,
+    secPerRep: 5, q: "wall slide scapular",
     levels: {
       easier:   { name: "Alleen onderarmen tegen de muur", f: 1.2 },
       standard: { name: "Onderarmen en polsen aan de muur", f: 1 },
@@ -473,6 +498,7 @@ const EX = {
   },
   ytw: {
     name: "Prone Y-T-W", region: "shoulder", role: "load", unit: "reps", perSide: false, base: 18,
+    secPerRep: 4, q: "prone y t w raises",
     levels: {
       easier:   { name: "Duimen omhoog, kleine beweging", f: 1.2 },
       standard: { name: "Drie standen, 1 tel houden per herhaling", f: 1 },
@@ -491,6 +517,7 @@ const EX = {
   /* ── ENKEL & VOET ─────────────────────────────────────────── */
   rollfoot: {
     name: "Bal onder je voet rollen", region: "ankle", role: "prep", unit: "sec", perSide: true, base: 60,
+    q: "foot rolling lacrosse ball plantar",
     from: "routine",
     levels: {
       easier:   { name: "Zittend, lichte druk", f: 1.15 },
@@ -508,6 +535,7 @@ const EX = {
   },
   kneewall: {
     name: "Knie-naar-muur", region: "ankle", role: "load", unit: "reps", perSide: true, base: 20,
+    secPerRep: 3, q: "knee to wall ankle mobility",
     levels: {
       easier:   { name: "Voet dicht bij de muur", f: 1.2 },
       standard: { name: "Tenen een vuistbreedte van de muur", f: 1 },
@@ -524,6 +552,7 @@ const EX = {
   },
   calfwall: {
     name: "Kuitstretch aan de muur", region: "ankle", role: "open", unit: "sec", perSide: true, base: 90,
+    q: "calf stretch wall",
     from: "db",
     levels: {
       easier:   { name: "Knie licht gebogen (soleus)", f: 1.15 },
@@ -541,6 +570,7 @@ const EX = {
   },
   toesit: {
     name: "Op je knieën zitten", region: "ankle", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "kneeling sit on heels quad ankle stretch",
     from: "routine",
     levels: {
       easier:   { name: "Wreven plat, handen als steun achter je", f: 1.15 },
@@ -558,6 +588,7 @@ const EX = {
   },
   heelsquat: {
     name: "Heel Elevated Squat", region: "ankle", role: "load", unit: "reps", perSide: false, base: 15,
+    secPerRep: 4, q: "heel elevated squat",
     from: "db",
     levels: {
       easier:   { name: "Hielen op een boek van 4 cm, vasthouden", f: 1.2 },
@@ -576,7 +607,8 @@ const EX = {
 
   /* ── POLS ─────────────────────────────────────────────────── */
   wristcars: {
-    name: "Pols-CARs", region: "wrist", role: "prep", unit: "reps", perSide: false, base: 20,
+    name: "Pols-CARs", region: "wrist", role: "prep", unit: "reps", perSide: false, base: 14,
+    secPerRep: 4, q: "wrist CARs circles warm up",
     levels: {
       easier:   { name: "Losse cirkels, vuist dicht", f: 1.2 },
       standard: { name: "Grote cirkels, vingers gestrekt", f: 1 },
@@ -593,6 +625,7 @@ const EX = {
   },
   wristrock: {
     name: "Polsrockers", region: "wrist", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "wrist rocks push up position",
     levels: {
       easier:   { name: "Op de tafel, weinig gewicht", f: 1.15 },
       standard: { name: "Op handen en knieën, voor- en achterwaarts", f: 1 },
@@ -609,6 +642,7 @@ const EX = {
   },
   wristload: {
     name: "Polsbelasting, handen omgedraaid", region: "wrist", role: "load", unit: "sec", perSide: false, base: 45,
+    q: "reverse wrist stretch hands turned",
     levels: {
       easier:   { name: "Zittend, handen op de tafel", f: 1.2 },
       standard: { name: "Op handen en knieën, vingers naar achteren", f: 1 },
@@ -627,6 +661,7 @@ const EX = {
   /* ── FLOW ─────────────────────────────────────────────────── */
   bearcrawl: {
     name: "Bear Crawl", region: "flow", role: "flow", unit: "sec", perSide: false, base: 60,
+    q: "bear crawl forward backward",
     levels: {
       easier:   { name: "Op de plaats, knieën net van de grond", f: 1.15 },
       standard: { name: "Vooruit en achteruit kruipen", f: 1 },
@@ -642,7 +677,8 @@ const EX = {
     avoid: ["Heupen die omhoog of van links naar rechts schieten."],
   },
   crab: {
-    name: "Crab Reach", region: "flow", role: "flow", unit: "reps", perSide: true, base: 16,
+    name: "Crab Reach", region: "flow", role: "flow", unit: "reps", perSide: true, base: 12,
+    secPerRep: 6, q: "crab reach animal flow",
     levels: {
       easier:   { name: "Alleen heupen optillen, geen reach", f: 1.2 },
       standard: { name: "Heupen omhoog en met één arm over je hoofd reiken", f: 1 },
@@ -659,6 +695,7 @@ const EX = {
   },
   animalflow: {
     name: "Animal Flow", region: "flow", role: "flow", unit: "sec", perSide: false, base: 180,
+    q: "animal flow beginner flow",
     from: "routine", video: "https://www.youtube.com/watch?v=4jlwG7JPCns",
     levels: {
       easier:   { name: "Twee bewegingen afwisselen", f: 1.15 },
@@ -674,8 +711,249 @@ const EX = {
     cues: ["Dit is je speeldag. Alles wat je deze week los hebt gemaakt, gebruik je hier.", "Langzaam bewegen is zwaarder dan snel."],
     avoid: ["Stoppen zodra het zwaar wordt. Zak liever even door op je knieën en ga door."],
   },
+  /* ── Later toegevoegd, zodat elk lichaamsdeel meer te kiezen heeft en de
+     rotatie niet steeds bij dezelfde oefeningen uitkomt. ──────────────── */
+  frog: {
+    name: "Frog Stretch", region: "hip", role: "open", unit: "sec", perSide: false, base: 75,
+    q: "frog stretch hip adductor",
+    levels: {
+      easier:   { name: "Knieën minder wijd, op je handen", f: 1.15 },
+      standard: { name: "Op je onderarmen, knieën op 90°", f: 1 },
+      harder:   { name: "Rustig heen en weer wiegen in de eindstand", f: 0.85 },
+    },
+    setup: "Op handen en knieën, knieën zo wijd als comfortabel, binnenkanten van je onderbenen en voeten plat op de grond.",
+    how: [
+      "Zak op je onderarmen en duw je heupen rustig naar achteren.",
+      "Hou je onderrug lang; de beweging komt uit je heupen.",
+      "Blijf stil en adem laag door, of wieg heel langzaam heen en weer.",
+    ],
+    cues: ["Voeten in lijn met je knieën, niet naar elkaar toe.", "Dit is de meest directe opener voor je liezen die er is."],
+    avoid: ["Pijn aan de binnenkant van de knie. Zet je knieën dan minder wijd."],
+  },
+  hipairplane: {
+    name: "Hip Airplane", region: "hip", role: "load", unit: "reps", perSide: true, base: 8,
+    secPerRep: 6, q: "hip airplane exercise",
+    levels: {
+      easier:   { name: "Handen aan een muur of stoel", f: 1.2 },
+      standard: { name: "Vrij staand, romp horizontaal", f: 1 },
+      harder:   { name: "Boven 2 tellen stilhouden per herhaling", f: 0.8 },
+    },
+    setup: "Sta op één been, buig voorover tot je romp bijna horizontaal is, het andere been strekt naar achteren.",
+    how: [
+      "Draai je bekken open naar buiten, zo ver als je kunt zonder te wankelen.",
+      "Draai daarna terug en sluit je heup helemaal.",
+      "Hou het standbeen stabiel; alleen je bekken draait.",
+    ],
+    cues: ["Dit traint precies het bereik dat je in 90/90 passief opzoekt.", "Langzaam is zwaarder en beter."],
+    avoid: ["Omvallen opvangen door je rug te draaien. Pak dan steun."],
+  },
+  seatedham: {
+    name: "Zittende hamstringstretch", region: "hamstring", role: "open", unit: "sec", perSide: true, base: 90,
+    q: "seated hamstring stretch one leg",
+    levels: {
+      easier:   { name: "Op een kussen, knie licht gebogen", f: 1.15 },
+      standard: { name: "Been gestrekt, voorover met rechte rug", f: 1 },
+      harder:   { name: "Tenen naar je toe, borst naar je knie", f: 0.85 },
+    },
+    setup: "Zit met één been gestrekt voor je, het andere gebogen met de voetzool tegen je dijbeen.",
+    how: [
+      "Kantel je bekken naar voren en zak met een lange rug over het gestrekte been.",
+      "Hou je tenen actief naar je toe getrokken.",
+      "Hou vast en wissel daarna van kant.",
+    ],
+    cues: ["Lange rug boven ver komen. Een bolle rug rekt je rug, niet je hamstring.", "Knieschijf naar het plafond."],
+    avoid: ["Veren. Rustig hangen werkt beter dan duwen."],
+  },
+  nordic: {
+    name: "Nordic Curl, afzakkend", region: "hamstring", role: "load", unit: "reps", perSide: false, base: 6,
+    secPerRep: 8, q: "nordic hamstring curl beginner",
+    levels: {
+      easier:   { name: "Handen op een stoel, kleine hoek", f: 1.3 },
+      standard: { name: "Zo ver mogelijk zakken, opvangen met je handen", f: 1 },
+      harder:   { name: "Vijf tellen zakken per herhaling", f: 0.7 },
+    },
+    setup: "Kniel met je enkels vast onder iets zwaars of laat ze vasthouden. Kussen onder je knieën.",
+    how: [
+      "Hou je lichaam van knie tot schouder in één lijn.",
+      "Laat jezelf zo langzaam mogelijk naar voren zakken.",
+      "Vang jezelf op met je handen en duw terug omhoog.",
+    ],
+    cues: ["Billen aanspannen; zodra je heupen knikken is de herhaling voorbij.", "Twee centimeter verder dan vorige week is genoeg vooruitgang."],
+    avoid: ["Deze bij spierpijn in je hamstrings doen. Hij hakt erin."],
+  },
+  thread: {
+    name: "Thread the Needle", region: "spine", role: "prep", unit: "reps", perSide: true, base: 12,
+    secPerRep: 5, q: "thread the needle thoracic stretch",
+    levels: {
+      easier:   { name: "Kleine draai, hoofd ondersteund", f: 1.2 },
+      standard: { name: "Arm helemaal onder je lichaam door", f: 1 },
+      harder:   { name: "Boven 3 tellen stilhouden in de open stand", f: 0.85 },
+    },
+    setup: "Op handen en knieën, heupen boven je knieën.",
+    how: [
+      "Schuif één arm onder je lichaam door tot je schouder de grond raakt.",
+      "Draai daarna diezelfde arm open naar het plafond en kijk hem na.",
+      "Blijf rustig heen en weer draaien en wissel van kant.",
+    ],
+    cues: ["Heupen blijven boven je knieën staan; alleen je bovenrug draait.", "Uitademen in de draai."],
+    avoid: ["Met je heupen meedraaien."],
+  },
+  sidebend: {
+    name: "Zijwaartse buiging", region: "spine", role: "open", unit: "sec", perSide: true, base: 60,
+    q: "standing side bend stretch obliques",
+    levels: {
+      easier:   { name: "Staand, hand in je zij", f: 1.15 },
+      standard: { name: "Staand, arm over je hoofd", f: 1 },
+      harder:   { name: "Zittend in kleermakerszit, arm lang over je hoofd", f: 0.9 },
+    },
+    setup: "Sta rechtop met je voeten op heupbreedte, of zit in kleermakerszit.",
+    how: [
+      "Breng één arm over je hoofd en buig opzij.",
+      "Hou beide zitbotten of beide voeten even zwaar belast.",
+      "Adem in je bovenste ribben en hou de positie.",
+    ],
+    cues: ["Lang maken voordat je buigt — niet inzakken.", "Je mag niet naar voren hangen; blijf in één vlak."],
+    avoid: ["Je heup opzij laten uitwijken om verder te komen."],
+  },
+  birddog: {
+    name: "Bird Dog", region: "spine", role: "load", unit: "reps", perSide: true, base: 16,
+    secPerRep: 5, q: "bird dog exercise form",
+    levels: {
+      easier:   { name: "Alleen arm, of alleen been", f: 1.2 },
+      standard: { name: "Tegenovergestelde arm en been, 2 tellen houden", f: 1 },
+      harder:   { name: "Boven 5 tellen houden, elleboog naar knie en weer strekken", f: 0.8 },
+    },
+    setup: "Op handen en knieën, buik licht aangespannen, rug vlak.",
+    how: [
+      "Strek je rechterarm en je linkerbeen tegelijk tot ze in lijn staan met je romp.",
+      "Hou twee tellen stil zonder te kantelen.",
+      "Zak terug en wissel.",
+    ],
+    cues: ["Een glas water op je onderrug zou niet mogen omvallen.", "Lang maken in plaats van hoog tillen."],
+    avoid: ["Je been hoger tillen dan je heup; dan komt het uit je onderrug."],
+  },
+  shoulderext: {
+    name: "Schouderextensie op de grond", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "seated shoulder extension stretch hands behind",
+    levels: {
+      easier:   { name: "Handen ver achter je, vingers naar buiten", f: 1.15 },
+      standard: { name: "Handen achter je, langzaam je billen naar voren schuiven", f: 1 },
+      harder:   { name: "Handen op een verhoging achter je", f: 0.85 },
+    },
+    setup: "Zit op de grond met gebogen knieën, handen achter je, vingers van je af.",
+    how: [
+      "Schuif je billen langzaam van je handen vandaan.",
+      "Hou je borst omhoog en je schouders laag.",
+      "Stop waar je de rek voor in je schouders voelt en blijf daar.",
+    ],
+    cues: ["Dit is de tegenhanger van alles wat je naar voren trekt op een dag.", "Ellebogen gestrekt maar niet op slot."],
+    avoid: ["Doorzakken tot het voor in de schouder gaat steken."],
+  },
+  toespread: {
+    name: "Tenen tillen en spreiden", region: "ankle", role: "prep", unit: "reps", perSide: false, base: 16,
+    secPerRep: 4, q: "toe yoga lift big toe exercise",
+    levels: {
+      easier:   { name: "Zittend, voet op de grond", f: 1.2 },
+      standard: { name: "Staand, alleen je grote teen tillen, dan alleen de rest", f: 1 },
+      harder:   { name: "Tenen spreiden en 3 tellen houden", f: 0.85 },
+    },
+    setup: "Blote voeten plat op de grond, gewicht gelijk verdeeld.",
+    how: [
+      "Til alleen je grote tenen op en hou de andere op de grond.",
+      "Draai het om: grote tenen omlaag, de rest omhoog.",
+      "Spreid tot slot al je tenen zo ver mogelijk uit elkaar.",
+    ],
+    cues: ["Lukt het niet? Dat is normaal, het is een vaardigheid. Help eerst met je hand.", "Je voeten dragen alles wat erboven zit."],
+    avoid: ["Je hele voet laten rollen in plaats van alleen de tenen bewegen."],
+  },
+  calfraise: {
+    name: "Kuitheffen over een rand", region: "ankle", role: "load", unit: "reps", perSide: false, base: 20,
+    secPerRep: 3, q: "deficit calf raise step full range",
+    levels: {
+      easier:   { name: "Op de vlakke grond, beide benen", f: 1.2 },
+      standard: { name: "Voorvoeten op een trede, hiel diep eronder", f: 1 },
+      harder:   { name: "Eén been tegelijk, boven 2 tellen stil", f: 0.6 },
+    },
+    setup: "Voorvoeten op een trede of dikke drempel, hielen vrij in de lucht. Hand aan de muur.",
+    how: [
+      "Laat je hielen zo diep mogelijk zakken.",
+      "Duw jezelf omhoog tot je zo hoog mogelijk op je voorvoeten staat.",
+      "Zak gecontroleerd terug door het hele bereik.",
+    ],
+    cues: ["Het hele bereik is het punt: diep eronder én helemaal omhoog.", "Langzaam zakken is waar het meeste in zit."],
+    avoid: ["Stuiteren onderaan."],
+  },
+  prayerwrist: {
+    name: "Polsgebed, voor en achter", region: "wrist", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "prayer stretch wrist forearm",
+    levels: {
+      easier:   { name: "Handen hoger voor je borst", f: 1.15 },
+      standard: { name: "Handpalmen samen, ellebogen zakken", f: 1 },
+      harder:   { name: "Omgekeerd gebed: handruggen tegen elkaar, omlaag", f: 0.9 },
+    },
+    setup: "Handpalmen tegen elkaar voor je borst, vingers omhoog.",
+    how: [
+      "Laat je ellebogen zakken tot je de rek in je onderarmen voelt, handen blijven tegen elkaar.",
+      "Hou de helft van de tijd vast.",
+      "Draai dan je handen om, handruggen tegen elkaar, vingers omlaag, en hou de rest van de tijd.",
+    ],
+    cues: ["Twee richtingen in één oefening: strekkers en buigers.", "Handen blijven op hun plek, alleen je ellebogen bewegen."],
+    avoid: ["Je schouders optrekken."],
+  },
+  fingerext: {
+    name: "Vingerstrekking tegen de tafel", region: "wrist", role: "load", unit: "reps", perSide: false, base: 20,
+    secPerRep: 3, q: "finger extensor strengthening rubber band",
+    levels: {
+      easier:   { name: "Vingers optillen van de tafel, één voor één", f: 1.2 },
+      standard: { name: "Alle vingers tegelijk optillen en 2 tellen houden", f: 1 },
+      harder:   { name: "Met een elastiekje om je vingers naar buiten spreiden", f: 0.8 },
+    },
+    setup: "Handen plat op een tafel, onderarmen ontspannen.",
+    how: [
+      "Til al je vingers tegelijk van de tafel, zo hoog als je komt.",
+      "Hou twee tellen vast en laat zakken.",
+      "Met een elastiekje om je vingertoppen: spreiden en langzaam terug.",
+    ],
+    cues: ["Je knijpt de hele dag; dit is de tegenbeweging die niemand doet.", "Pols blijft op de tafel liggen."],
+    avoid: ["Je hele hand optillen in plaats van alleen de vingers."],
+  },
+  monkey: {
+    name: "Monkey", region: "flow", role: "flow", unit: "sec", perSide: false, base: 60,
+    q: "animal flow monkey movement tutorial",
+    levels: {
+      easier:   { name: "Op de plaats, handen verzetten en voeten volgen", f: 1.15 },
+      standard: { name: "Zijwaarts verplaatsen, handen eerst", f: 1 },
+      harder:   { name: "Heen en terug zonder te stoppen, laag blijven", f: 0.85 },
+    },
+    setup: "Diepe hurkzit, handen op de grond naast je voeten.",
+    how: [
+      "Zet beide handen opzij neer en verplaats je gewicht erop.",
+      "Laat je voeten volgen en land weer in de hurkzit.",
+      "Blijf zijwaarts heen en weer gaan.",
+    ],
+    cues: ["Zacht landen. Als je jezelf hoort neerkomen, ga je te snel.", "Hurkzit blijft diep tussen de sprongen door."],
+    avoid: ["Omhoog komen tussen de herhalingen door."],
+  },
+  scorpion: {
+    name: "Scorpion Reach", region: "flow", role: "flow", unit: "reps", perSide: true, base: 12,
+    secPerRep: 6, q: "scorpion reach animal flow",
+    levels: {
+      easier:   { name: "Liggend op je buik, been over je lichaam heen", f: 1.2 },
+      standard: { name: "Vanuit de berenstand je been onder je door en open", f: 1 },
+      harder:   { name: "Eindstand 2 tellen vasthouden", f: 0.85 },
+    },
+    setup: "Berenstand: handen en voeten op de grond, knieën net los.",
+    how: [
+      "Breng één been onder je lichaam door naar de andere kant.",
+      "Draai je heup open en strek het been naar achteren omhoog.",
+      "Kom terug in de berenstand en wissel.",
+    ],
+    cues: ["Volg je voet met je ogen; dan draait je borstwervel vanzelf mee.", "Steunarm blijft gestrekt."],
+    avoid: ["Doorzakken in je onderrug in de eindstand."],
+  },
   sunsalute: {
-    name: "Zonnegroet", region: "flow", role: "flow", unit: "reps", perSide: false, base: 6,
+    name: "Zonnegroet", region: "flow", role: "flow", unit: "reps", perSide: false, base: 3,
+    secPerRep: 50, q: "sun salutation a",
     levels: {
       easier:   { name: "Met knieën op de grond bij de chaturanga", f: 1.2 },
       standard: { name: "Volledige ronde, rustig tempo", f: 1 },
@@ -710,10 +988,10 @@ const WEEK_MULT = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5];
 const FOCUS_BOOST = 1.25;
 
 const KINDS = {
-  gericht:  { label: "Gericht",  note: "Drie oefeningen voor je focus, twee voor de rest." },
-  volledig: { label: "Volledig", note: "Eén oefening per lichaamsdeel. Het hele lichaam langs." },
-  flow:     { label: "Flow",     note: "Doorlopend bewegen, plus twee oefeningen voor je focus." },
-  test:     { label: "Meting",   note: "Vijf getallen." },
+  gericht:  { label: "Gericht", note: "Drie oefeningen voor je focus, twee voor de rest." },
+  volledig: { label: "Breed",   note: "Drie voor je focus, drie voor lichaamsdelen die er al even niet aan te pas kwamen." },
+  flow:     { label: "Flow",    note: "Doorlopend bewegen, plus twee oefeningen voor je focus." },
+  test:     { label: "Meting",  note: "Vijf getallen." },
 };
 
 const PHASES = [
@@ -747,6 +1025,20 @@ function pickAt(region, role, n, taken, hasBar) {
     if (!taken.has(id)) { taken.add(id); return id; }
   }
   return null;
+}
+
+/* Hoeveel onderhoudsplekken er in alle voorgaande dagen samen zaten. Eén
+   doorlopende teller over alle soorten dagen, anders komt elk soort dag maar
+   een paar rondes ver door de lijst en blijven de laatste oefeningen van een
+   lichaamsdeel ongebruikt. */
+const MAINT_PER_KIND = { gericht: 2, volledig: 3, flow: 1 };
+function maintIndexAt(day) {
+  let n = 0;
+  for (let d = 2; d < day; d++) {
+    if (d === TOTAL_DAYS) continue;
+    n += MAINT_PER_KIND[DAY_PATTERN[(d - 1) % 7]] || 0;
+  }
+  return n;
 }
 
 /* Hoeveel dagen van ditzelfde soort gingen eraan vooraf. */
@@ -790,6 +1082,7 @@ function buildDay(day, levels, focus, hasBar) {
 
   const kind = DAY_PATTERN[(day - 1) % 7];
   const seq = occurrenceOf(day, kind);
+  const mi = maintIndexAt(day);
   const others = FOCUS_REGIONS.filter((r) => r !== focus);
   const slots = maintSlots(focus);
   const taken = new Set();
@@ -800,19 +1093,22 @@ function buildDay(day, levels, focus, hasBar) {
     add(pickAt(focus, "prep", seq, taken, hasBar));
     add(pickAt(focus, "open", seq, taken, hasBar));
     add(pickAt(focus, "load", seq, taken, hasBar));
-    addMaint(slots, seq * 2, taken, add, hasBar);
-    addMaint(slots, seq * 2 + 1, taken, add, hasBar);
+    addMaint(slots, mi, taken, add, hasBar);
+    addMaint(slots, mi + 1, taken, add, hasBar);
   } else if (kind === "volledig") {
+    /* Ook hier eerst je focus. Daarna drie andere lichaamsdelen uit de ronde,
+       zodat er over twee van deze dagen heen niets lang blijft liggen. */
+    add(pickAt(focus, "prep", seq, taken, hasBar));
     add(pickAt(focus, "open", seq, taken, hasBar));
-    others.forEach((r, i) => {
-      const t = seq + i;
-      add(pickAt(r, ROLE_CYCLE[t % 3], Math.floor(t / 3), taken, hasBar) || pickAt(r, "open", t, taken, hasBar));
-    });
+    add(pickAt(focus, "load", seq, taken, hasBar));
+    addMaint(slots, mi, taken, add, hasBar);
+    addMaint(slots, mi + 1, taken, add, hasBar);
+    addMaint(slots, mi + 2, taken, add, hasBar);
   } else {
     add(pickAt("flow", "flow", seq, taken, hasBar));
     add(pickAt(focus, "open", seq, taken, hasBar));
     add(pickAt(focus, "load", seq, taken, hasBar));
-    addMaint(slots, seq * 3, taken, add, hasBar);
+    addMaint(slots, mi, taken, add, hasBar);
   }
 
   return { day, kind, exercises: ids.map((id) => entryFor(id, day, levels, focus)) };
@@ -863,9 +1159,16 @@ const goalText = (entry) => {
   const u = unitShort(ex.unit);
   return ex.perSide ? `2 × ${Math.round(entry.goal / 2)} ${u}` : `${entry.goal} ${u}`;
 };
-/* Ruwe schatting voor "tijd per lichaamsdeel": een herhaling kost ongeveer
-   vier seconden. Het gaat om de verhouding, niet om de exacte minuut. */
-const toSeconds = (id, n) => (EX[id].unit === "sec" ? n : n * 4);
+/* Hoe lang iets echt duurt. Houdtijden spreken voor zich; een herhaling kost
+   per oefening iets anders — een Hip CAR is tien seconden, een cat-cow vier.
+   Dat staat als secPerRep bij de oefening zelf. */
+const toSeconds = (id, n) => (EX[id].unit === "sec" ? n : n * (EX[id].secPerRep || 4));
+
+/* Opstellen, van kant wisselen en even bijkomen tussen de oefeningen door. */
+const SWITCH_SEC = 25;
+const sessionSeconds = (exercises) =>
+  exercises.reduce((s, e) => s + toSeconds(e.id, e.goal), 0) + exercises.length * SWITCH_SEC;
+const asMinutes = (sec) => Math.max(1, Math.round(sec / 60));
 
 const DEFAULT_STATE = {
   v: 1,
@@ -1222,7 +1525,9 @@ function Today({ state, workout, logged, doneToday, onOpen, onFocus, onComplete,
       <div className="mt-5">
         <DayBar exercises={workout.exercises} logged={logged} />
         <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-xs tabular-nums text-neutral-400">{finished} van {workout.exercises.length} af</span>
+          <span className="text-xs tabular-nums text-neutral-400">
+            {finished} van {workout.exercises.length} af · ± {asMinutes(sessionSeconds(workout.exercises))} min
+          </span>
           <span className="text-xs text-neutral-600">{phase.name}</span>
         </div>
       </div>
@@ -1400,12 +1705,22 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, isFocus, onLevel, o
 
         <p className="mt-4 text-[13px] leading-relaxed text-neutral-500">{ROLES[ex.role].note}</p>
 
-        {ex.video && (
-          <a href={ex.video} target="_blank" rel="noreferrer"
-            className={`mt-4 inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-300 ${RING}`}>
-            ▶ Video bekijken
+        {/* Eigen link waar die er is; anders YouTube openen op de zoekterm van
+            deze oefening. Zo is er altijd beeld en nooit een dode link. */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {ex.video && (
+            <a href={ex.video} target="_blank" rel="noreferrer"
+              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] ${RING}`}
+              style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
+              ▶ Jouw video
+            </a>
+          )}
+          <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.q || ex.name)}`}
+            target="_blank" rel="noreferrer"
+            className={`inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-300 ${RING}`}>
+            ▶ {ex.video ? "Andere video's" : "Video zoeken"}
           </a>
-        )}
+        </div>
 
         {browse && (
           <p className="mt-5 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
@@ -1423,9 +1738,9 @@ function ExerciseSheet({ entry, logged, firstTime, readOnly, isFocus, onLevel, o
               </span>
               <span className="text-xs text-neutral-500">te gaan van {goalText(entry)}</span>
             </div>
-            {ex.perSide && (
-              <div className="mt-1 text-[11px] text-neutral-600">Het doel geldt voor beide kanten samen.</div>
-            )}
+            <div className="mt-1 text-[11px] text-neutral-600">
+              ± {asMinutes(toSeconds(entry.id, entry.goal))} min{ex.perSide ? " · het doel geldt voor beide kanten samen" : ""}
+            </div>
 
             <div className="mt-4">
               <Bar goal={entry.goal} logged={logged} color={region.color} />
@@ -1531,8 +1846,9 @@ function FocusSheet({ current, pending, blocked, onChoose, onClose }) {
       <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto px-5 pb-10">
         <h2 className="mt-6 text-[30px] font-bold leading-[1.08] tracking-tight">Waar heb je<br />het meeste last van?</h2>
         <p className="mt-4 text-[13px] leading-relaxed text-neutral-400">
-          Dat gebied komt elke dag terug met drie oefeningen en krijgt een kwart meer volume. De rest houd je op peil
-          met twee oefeningen per dag, die langs alle andere gebieden rouleren.
+          Dat gebied komt elke dag terug met drie oefeningen — opwarmen, openen, belasten — en krijgt een kwart meer
+          volume. Daarmee gaat elke sessie voor minstens de helft over je focus. De rest van je lichaam houd je
+          ondertussen op peil met oefeningen die langs alle andere gebieden rouleren.
         </p>
         {blocked && (
           <p className="mt-4 border-l-2 pl-3 text-[13px] leading-relaxed text-neutral-300" style={{ borderColor: ACCENT }}>
@@ -1793,7 +2109,7 @@ function ProgressTab({ state, onPick, onFocus, onBar, onReset }) {
           })}
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-neutral-600">
-          Herhalingen zijn omgerekend naar ongeveer vier seconden per stuk, dus lees dit als een verhouding.
+          Herhalingen tellen mee op hun eigen tempo — een Hip CAR duurt tien seconden, een cat-cow vier.
         </p>
       </section>
 
@@ -2049,7 +2365,7 @@ function Onboarding({ onDone, onExit }) {
                 Acht weken.<br />Eén korte sessie<br />per dag.
               </h1>
               <div className="mt-8 space-y-4 text-[14px] leading-relaxed text-neutral-400">
-                <p>Vier of vijf oefeningen per dag met een doel in tijd of herhalingen. Tien tot vijftien minuten als je het in één keer doet.</p>
+                <p>Vier tot zes oefeningen per dag met een doel in tijd of herhalingen. In week 1 ben je er zo'n zeven minuten mee bezig, in week 8 een minuut of elf.</p>
                 <p>Je kiest één hoofdfocus: het lichaamsdeel waar je nu het meeste last van hebt. Dat komt elke dag terug met drie oefeningen. De rest van je lichaam houd je ondertussen op peil.</p>
                 <p>Elke ochtend staat er een nieuwe sessie klaar. Vooruitwerken kan niet, en dat is expres.</p>
               </div>

@@ -1341,6 +1341,12 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
           </p>
         )}
 
+        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + " exercise form")}`}
+          target="_blank" rel="noreferrer"
+          className={`mt-4 inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-300 ${RING}`}>
+          ▶ Find a video
+        </a>
+
         {browse && (
           <p className="mt-5 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
             Reading only. Rep goals appear on the day this movement comes up.
