@@ -105,24 +105,6 @@ const EX = {
     cues: ["Beide zitbotten naar de grond — niet wegleunen van de stugge kant.", "Rustige neusademhaling maakt het bereik groter dan duwen."],
     avoid: ["De voorste enkel laten slappen. Hou je voet actief zodat je knie beschermd blijft."],
   },
-  pigeon: {
-    name: "90-90 Pigeon Lean", region: "hip", role: "open", unit: "sec", perSide: true, base: 90,
-    q: "90 90 pigeon lean hip stretch",
-    from: "routine",
-    levels: {
-      easier:   { name: "Onderarmen op een blok of bank", f: 1.15 },
-      standard: { name: "Onderarmen naar de grond", f: 1 },
-      harder:   { name: "Borst naar het voorste scheenbeen", f: 0.8 },
-    },
-    setup: "Vanuit 90/90: leun over je voorste been naar voren. Hou je heupen recht naar voren gericht.",
-    how: [
-      "Zak met een rechte rug voorover tot je de rek diep in de bil voelt.",
-      "Hou de positie stil vast, niet veren.",
-      "Kom langzaam omhoog en wissel van kant.",
-    ],
-    cues: ["De rek hoort in het midden van je bil te zitten, niet in de knie.", "Adem uit en laat op elke uitademing een stukje zakken."],
-    avoid: ["Pijn aan de binnenkant van de voorste knie. Zet dan je voet dichter bij je lichaam."],
-  },
   shinboxlift: {
     name: "Shin Box Hip Lift", region: "hip", role: "load", unit: "reps", perSide: true, base: 10,
     secPerRep: 5, q: "shin box hip lift get up",
@@ -157,24 +139,6 @@ const EX = {
     ],
     cues: ["De bil aanspannen is wat het van een rek een mobilisatie maakt.", "Onderrug lang houden, niet hol trekken om verder te komen."],
     avoid: ["Pijn in de knieschijf. Leg er een handdoek onder of zak lager."],
-  },
-  hipext: {
-    name: "Externe rotatie op de bank", region: "hip", role: "load", unit: "reps", perSide: true, base: 10,
-    secPerRep: 6, q: "prone hip external rotation bench",
-    from: "routine",
-    levels: {
-      easier:   { name: "Alleen optillen en 1 tel houden", f: 1.2 },
-      standard: { name: "Optillen en 3 tellen houden", f: 1 },
-      harder:   { name: "5 tellen houden, zo hoog als je kunt", f: 0.8 },
-    },
-    setup: "Lig op je buik op een bank of bed, één knie 90° gebogen en het onderbeen over de rand.",
-    how: [
-      "Draai je onderbeen naar binnen toe zodat je heup naar buiten roteert.",
-      "Hou de eindstand actief vast zonder je bekken te laten kantelen.",
-      "Laat langzaam zakken en herhaal.",
-    ],
-    cues: ["Klein bereik, maximale inspanning. Dit is krachttraining voor je heuprotatie.", "Heup blijft op de bank plakken."],
-    avoid: ["Met je bekken meedraaien — dan haal je het bereik uit je onderrug."],
   },
   deepsquat: {
     name: "Deep Squat Hold", region: "hip", role: "open", unit: "sec", perSide: false, base: 60,
@@ -248,24 +212,6 @@ const EX = {
     ],
     cues: ["Eerst bekken kantelen, dán pas zakken.", "Knieën blijven naar boven wijzen."],
     avoid: ["Met een bolle rug naar voren hangen."],
-  },
-  straddle: {
-    name: "Straddle → kleermaker → op de knieën", region: "hamstring", role: "open", unit: "sec", perSide: false, base: 90,
-    q: "straddle stretch seated forward fold",
-    from: "routine",
-    levels: {
-      easier:   { name: "3 × 20 s, op een kussen", f: 1.15 },
-      standard: { name: "3 × 30 s, de drie posities na elkaar", f: 1 },
-      harder:   { name: "3 × 40 s, zonder handsteun", f: 0.85 },
-    },
-    setup: "Drie zitposities achter elkaar, elk ongeveer even lang. Zet een timer en wissel door.",
-    how: [
-      "Straddle: benen wijd, rustig voorover met een lange rug.",
-      "Kleermaker: benen gekruist, voorover buigen en je rug laten rekken.",
-      "Op je knieën zitten: billen op je hielen, wreven plat, rechtop blijven.",
-    ],
-    cues: ["Drie posities, één doel: lang zitten zonder te verkrampen.", "Doe hem 's ochtends — dan telt hij dubbel."],
-    avoid: ["Knieklachten bij het knielen. Leg dan een opgerolde handdoek onder je enkels."],
   },
   sldl: {
     name: "One-leg stiff-leg deadlift", region: "hamstring", role: "load", unit: "reps", perSide: true, base: 10,
@@ -586,24 +532,6 @@ const EX = {
     cues: ["Begin met 20 seconden als het nieuw is. Het went snel.", "Handen achter je op de grond maakt het meteen draaglijk."],
     avoid: ["Knieklachten. Leg een kussen tussen je hielen en je billen."],
   },
-  heelsquat: {
-    name: "Heel Elevated Squat", region: "ankle", role: "load", unit: "reps", perSide: false, base: 15,
-    secPerRep: 4, q: "heel elevated squat",
-    from: "db",
-    levels: {
-      easier:   { name: "Hielen op een boek van 4 cm, vasthouden", f: 1.2 },
-      standard: { name: "Hielen op 2 cm, handen voor je", f: 1 },
-      harder:   { name: "Vlakke grond, onderaan 2 tellen stil", f: 0.8 },
-    },
-    setup: "Hielen op een boek of plankje, voeten op schouderbreedte.",
-    how: [
-      "Zak zo diep als je kunt met je borst omhoog.",
-      "Hou onderaan even stil en duw jezelf omhoog.",
-      "Maak elke week de verhoging iets lager.",
-    ],
-    cues: ["De verhoging is tijdelijk gereedschap, geen eindstation.", "Knieën mogen ver over je tenen."],
-    avoid: ["Onderaan in je rug doorzakken."],
-  },
 
   /* ── POLS ─────────────────────────────────────────────────── */
   wristcars: {
@@ -764,40 +692,6 @@ const EX = {
     cues: ["Lange rug boven ver komen. Een bolle rug rekt je rug, niet je hamstring.", "Knieschijf naar het plafond."],
     avoid: ["Veren. Rustig hangen werkt beter dan duwen."],
   },
-  nordic: {
-    name: "Nordic Curl, afzakkend", region: "hamstring", role: "load", unit: "reps", perSide: false, base: 6,
-    secPerRep: 8, q: "nordic hamstring curl beginner",
-    levels: {
-      easier:   { name: "Handen op een stoel, kleine hoek", f: 1.3 },
-      standard: { name: "Zo ver mogelijk zakken, opvangen met je handen", f: 1 },
-      harder:   { name: "Vijf tellen zakken per herhaling", f: 0.7 },
-    },
-    setup: "Kniel met je enkels vast onder iets zwaars of laat ze vasthouden. Kussen onder je knieën.",
-    how: [
-      "Hou je lichaam van knie tot schouder in één lijn.",
-      "Laat jezelf zo langzaam mogelijk naar voren zakken.",
-      "Vang jezelf op met je handen en duw terug omhoog.",
-    ],
-    cues: ["Billen aanspannen; zodra je heupen knikken is de herhaling voorbij.", "Twee centimeter verder dan vorige week is genoeg vooruitgang."],
-    avoid: ["Deze bij spierpijn in je hamstrings doen. Hij hakt erin."],
-  },
-  thread: {
-    name: "Thread the Needle", region: "spine", role: "prep", unit: "reps", perSide: true, base: 12,
-    secPerRep: 5, q: "thread the needle thoracic stretch",
-    levels: {
-      easier:   { name: "Kleine draai, hoofd ondersteund", f: 1.2 },
-      standard: { name: "Arm helemaal onder je lichaam door", f: 1 },
-      harder:   { name: "Boven 3 tellen stilhouden in de open stand", f: 0.85 },
-    },
-    setup: "Op handen en knieën, heupen boven je knieën.",
-    how: [
-      "Schuif één arm onder je lichaam door tot je schouder de grond raakt.",
-      "Draai daarna diezelfde arm open naar het plafond en kijk hem na.",
-      "Blijf rustig heen en weer draaien en wissel van kant.",
-    ],
-    cues: ["Heupen blijven boven je knieën staan; alleen je bovenrug draait.", "Uitademen in de draai."],
-    avoid: ["Met je heupen meedraaien."],
-  },
   sidebend: {
     name: "Zijwaartse buiging", region: "spine", role: "open", unit: "sec", perSide: true, base: 60,
     q: "standing side bend stretch obliques",
@@ -832,23 +726,6 @@ const EX = {
     cues: ["Een glas water op je onderrug zou niet mogen omvallen.", "Lang maken in plaats van hoog tillen."],
     avoid: ["Je been hoger tillen dan je heup; dan komt het uit je onderrug."],
   },
-  shoulderext: {
-    name: "Schouderextensie op de grond", region: "shoulder", role: "open", unit: "sec", perSide: false, base: 60,
-    q: "seated shoulder extension stretch hands behind",
-    levels: {
-      easier:   { name: "Handen ver achter je, vingers naar buiten", f: 1.15 },
-      standard: { name: "Handen achter je, langzaam je billen naar voren schuiven", f: 1 },
-      harder:   { name: "Handen op een verhoging achter je", f: 0.85 },
-    },
-    setup: "Zit op de grond met gebogen knieën, handen achter je, vingers van je af.",
-    how: [
-      "Schuif je billen langzaam van je handen vandaan.",
-      "Hou je borst omhoog en je schouders laag.",
-      "Stop waar je de rek voor in je schouders voelt en blijf daar.",
-    ],
-    cues: ["Dit is de tegenhanger van alles wat je naar voren trekt op een dag.", "Ellebogen gestrekt maar niet op slot."],
-    avoid: ["Doorzakken tot het voor in de schouder gaat steken."],
-  },
   toespread: {
     name: "Tenen tillen en spreiden", region: "ankle", role: "prep", unit: "reps", perSide: false, base: 16,
     secPerRep: 4, q: "toe yoga lift big toe exercise",
@@ -882,23 +759,6 @@ const EX = {
     ],
     cues: ["Het hele bereik is het punt: diep eronder én helemaal omhoog.", "Langzaam zakken is waar het meeste in zit."],
     avoid: ["Stuiteren onderaan."],
-  },
-  prayerwrist: {
-    name: "Polsgebed, voor en achter", region: "wrist", role: "open", unit: "sec", perSide: false, base: 60,
-    q: "prayer stretch wrist forearm",
-    levels: {
-      easier:   { name: "Handen hoger voor je borst", f: 1.15 },
-      standard: { name: "Handpalmen samen, ellebogen zakken", f: 1 },
-      harder:   { name: "Omgekeerd gebed: handruggen tegen elkaar, omlaag", f: 0.9 },
-    },
-    setup: "Handpalmen tegen elkaar voor je borst, vingers omhoog.",
-    how: [
-      "Laat je ellebogen zakken tot je de rek in je onderarmen voelt, handen blijven tegen elkaar.",
-      "Hou de helft van de tijd vast.",
-      "Draai dan je handen om, handruggen tegen elkaar, vingers omlaag, en hou de rest van de tijd.",
-    ],
-    cues: ["Twee richtingen in één oefening: strekkers en buigers.", "Handen blijven op hun plek, alleen je ellebogen bewegen."],
-    avoid: ["Je schouders optrekken."],
   },
   fingerext: {
     name: "Vingerstrekking tegen de tafel", region: "wrist", role: "load", unit: "reps", perSide: false, base: 20,
