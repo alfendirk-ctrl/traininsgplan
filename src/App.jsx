@@ -267,7 +267,7 @@ const Btn = ({onClick,children,variant="primary",full=false,size="md"}) => {
   const pad = size==="sm"?"7px 12px":size==="lg"?"13px 20px":"10px 16px";
   const fs  = size==="sm"?12:size==="lg"?15:13;
   const styles = {
-    primary:  {background:C.purple,color:"#fff",border:"none"},
+    primary:  {background:C.purple,color:"#0A0A0A",border:"none"},
     ghost:    {background:"transparent",color:C.textSub,border:`1px solid ${C.border}`},
     amber:    {background:C.amberLight,color:C.amber,border:"none"},
     purple:   {background:C.purpleLight,color:C.purple,border:"none"},
@@ -963,7 +963,7 @@ function WorkoutMode({exercises, onClose, initialRest}) {
             <div style={{fontSize:24,fontWeight:700,color:"#fff",marginBottom:8}}>Workout klaar!</div>
             <div style={{fontSize:14,color:"#888",marginBottom:40}}>{validExs.length} oefeningen afgerond</div>
             <button onClick={onClose} style={{
-              background:C.purple,color:"#fff",border:"none",borderRadius:14,
+              background:C.purple,color:"#0A0A0A",border:"none",borderRadius:14,
               padding:"16px 40px",fontSize:17,fontWeight:700,cursor:"pointer",fontFamily:font,
             }}>Afsluiten</button>
           </>
@@ -1046,7 +1046,7 @@ function WorkoutMode({exercises, onClose, initialRest}) {
             ) : null}
 
             <button onClick={advance} style={{
-              background:C.purple,color:"#fff",border:"none",borderRadius:16,
+              background:C.purple,color:"#0A0A0A",border:"none",borderRadius:16,
               padding:"18px 48px",fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:font,
               boxShadow:"0 4px 20px "+C.purple+"55",marginTop:8,
             }}>
@@ -1794,7 +1794,7 @@ function DatabaseTab({db,onChange}) {
           position:"fixed",top:0,left:0,right:0,zIndex:200,pointerEvents:"none",
           display:"flex",justifyContent:"center",paddingTop:60,
         }}>
-          <div style={{background:C.purple,color:"#fff",borderRadius:20,padding:"6px 14px",fontSize:13,fontWeight:600,boxShadow:C.shadowLg,opacity:0.9}}>
+          <div style={{background:C.purple,color:"#0A0A0A",borderRadius:20,padding:"6px 14px",fontSize:13,fontWeight:600,boxShadow:C.shadowLg,opacity:0.9}}>
             ✥ Versleep naar lichaamsdeel
           </div>
         </div>
@@ -1954,7 +1954,7 @@ export class ErrorBoundary extends Component {
           </div>
           <button onClick={()=>window.location.reload()} style={{
             fontFamily:font,fontSize:13,fontWeight:600,cursor:"pointer",width:"100%",
-            padding:"11px 16px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+            padding:"11px 16px",borderRadius:8,border:"none",background:C.purple,color:"#0A0A0A",
           }}>Opnieuw laden</button>
           <button onClick={()=>{
             navigator.clipboard?.writeText(String(this.state.err?.stack||this.state.err));
@@ -1985,7 +1985,7 @@ export class ErrorBoundary extends Component {
                   window.location.reload();
                 }} style={{
                   fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
-                  padding:"8px 12px",borderRadius:8,border:"none",background:C.red,color:"#fff",
+                  padding:"8px 12px",borderRadius:8,border:"none",background:C.red,color:"#0A0A0A",
                 }}>Ja, wissen en herladen</button>
                 <button onClick={()=>this.setState({confirm:false})} style={{
                   fontFamily:font,fontSize:12,cursor:"pointer",padding:"8px 12px",borderRadius:8,
@@ -2299,7 +2299,7 @@ export default function App() {
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                         <button onClick={()=>copyPrevWeek(safeIdx)} style={{
                           fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
-                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#0A0A0A",
                         }}>Ja, overschrijven</button>
                         <Btn onClick={()=>setConfirmCopy(false)} variant="ghost" size="sm">Annuleer</Btn>
                       </div>
@@ -2401,7 +2401,7 @@ export default function App() {
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                         <button onClick={()=>{ persist(bu.weeks); setActiveIdx(bu.weeks.length-1); setConfirmRestore(false); setTab("plan"); }} style={{
                           fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
-                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#fff",
+                          padding:"7px 12px",borderRadius:8,border:"none",background:C.purple,color:"#0A0A0A",
                         }}>Deze terugzetten</button>
                         <Btn onClick={()=>setConfirmRestore(false)} variant="ghost" size="sm">Annuleer</Btn>
                       </div>
@@ -2427,7 +2427,7 @@ export default function App() {
                   <button onClick={restartPlan} style={{
                     fontFamily:font,fontSize:12,fontWeight:600,cursor:"pointer",
                     padding:"7px 12px",borderRadius:8,border:"none",
-                    background:C.red,color:"#fff",
+                    background:C.red,color:"#0A0A0A",
                   }}>
                     Ja, {weeks.length} {weeks.length===1?"week":"weken"} wissen
                   </button>

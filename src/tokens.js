@@ -1,17 +1,22 @@
 // Design tokens — single source of truth, gedeeld door App.jsx en RepsTab.jsx.
-// Verplaatst uit App.jsx (regels 582-596), ongewijzigd.
+//
+// Donker palet, afgestemd op de Reps- en Mobiliteit-app zodat de drie schermen
+// bij elkaar horen. Alle kleuren van het Plan-tabblad, Routines, Geschiedenis
+// en Database komen hier vandaan, dus dit bestand kantelt ze in één keer mee.
+// De accentkleuren zijn opgehelderd: op een donkere achtergrond hebben de
+// oorspronkelijke tinten te weinig contrast om leesbaar te zijn.
 
 export const C = {
-  bg:"#F7F6F3", surface:"#FFFFFF", surfaceAlt:"#F0EEE9", surfaceHover:"#ECEAE4",
-  border:"#E4E0D8", borderMid:"#D0CCBF",
-  text:"#1A1814", textSub:"#6B6456", textMuted:"#A09585",
-  purple:"#7C3AED", purpleLight:"#EDE9FD", purpleMid:"#DDD6FE",
-  green:"#059669",  greenLight:"#D1FAE5",
-  red:"#DC2626",    redLight:"#FEE2E2",
-  amber:"#D97706",  amberLight:"#FEF3C7",
-  cyan:"#0891B2",   cyanLight:"#CFFAFE",
-  shadow:"0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04)",
-  shadowLg:"0 8px 24px rgba(0,0,0,0.12),0 2px 6px rgba(0,0,0,0.06)",
+  bg:"#0A0A0A", surface:"#171717", surfaceAlt:"#1F1F1F", surfaceHover:"#262626",
+  border:"#282828", borderMid:"#3D3D3D",
+  text:"#FAFAFA", textSub:"#D4D4D4", textMuted:"#8A8A8A",
+  purple:"#A78BFA", purpleLight:"#1E1B2E", purpleMid:"#312A4A",
+  green:"#4ADE80",  greenLight:"#13241A",
+  red:"#F87171",    redLight:"#2A1515",
+  amber:"#FBBF24",  amberLight:"#2A2112",
+  cyan:"#5AA9E6",   cyanLight:"#0C1824",
+  shadow:"0 1px 3px rgba(0,0,0,0.4),0 1px 2px rgba(0,0,0,0.3)",
+  shadowLg:"0 8px 24px rgba(0,0,0,0.6),0 2px 6px rgba(0,0,0,0.4)",
 };
 
 export const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
