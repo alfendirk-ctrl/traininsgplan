@@ -19,14 +19,17 @@ This is a **single-file React + Vite app** — virtually all logic lives in `src
 
 ### Data model
 
-Two independent stores, both serialized to `localStorage`:
+Independent stores, all serialized to `localStorage` and mirrored into one Supabase row keyed by `training_sync_key`:
 
 | Key | Purpose | Root shape |
 |---|---|---|
 | `training_v5` | Weekly plan (weeks array) | `Week[]` |
 | `training_db_v1` | Exercise database | `{ mobiliteit: Part[], gym: Part[] }` |
+| `training_routines_v1` | Saved routines and videos | `Routine[]` |
+| `dailyreps:v1` | Reps tab state (its own 8-week program) | see `RepsTab.jsx` |
+| `dailymobility:v1` | Mobility tab state (its own 8-week program) | see `MobilityTab.jsx` |
 
-A `Week` contains a `days` map keyed by `DAYS` (`ma`…`zo`), each day holding morning/evening exercise lists, routine links, and a note. Weeks are created lazily (up to 8) via `closeWeek`.
+A `Week` contains a `days` map keyed by `DAYS` (`ma`…`zo`), each day holding morning/evening exercise lists, routine links, and a note. Weeks are created lazily, one at a time and without an upper bound, via `closeWeek`.
 
 ### Design tokens
 
@@ -40,14 +43,15 @@ App                   – loads data, owns weeks[] and db state
 │   ├── ExerciseBlock – action buttons + list of ExRow items
 │   │   └── ExRow     – single exercise name+sets input with optional save-to-db
 │   └── DbModal       – bottom-sheet picker that reads from db
-├── WeekEval          – per-skill rating + note, triggers week close
+├── WeekEval          – week note + mood summary, triggers week close
 └── DatabaseTab       – editable exercise DB with drag-and-drop reordering
 ```
 
-### Skill progression
-
-`SKILL_WEEKS` (weeks 1–8) is a static data table mapping week number → `{ handstand, pullup, pistol }`. `DAY_SKILL` maps each weekday to which skill block to show. Week 4 is a deload and week 8 is a test week.
+`RepsTab` and `MobilityTab` are self-contained apps in their own files. Each takes
+over the whole screen (`#reps-root` / `#mob-root` in `index.css`), is styled with
+Tailwind instead of the inline `C` tokens, and persists through its own storage key
+plus an `onPersist` callback that writes to Supabase.
 
 ### Deployment
 
-`vite.config.js` sets `base: '/trainingsplan/'`, so all asset paths are prefixed accordingly. The app is Dutch-language (`lang="nl"`).
+`vite.config.js` sets `base: '/traininsgplan/'`, so all asset paths are prefixed accordingly. The app is Dutch-language (`lang="nl"`).
