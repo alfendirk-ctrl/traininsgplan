@@ -29,7 +29,16 @@ Independent stores, all serialized to `localStorage` and mirrored into one Supab
 | `dailyreps:v1` | Reps tab state (its own 8-week program) | see `RepsTab.jsx` |
 | `dailymobility:v1` | Mobility tab state (its own 8-week program) | see `MobilityTab.jsx` |
 
-A `Week` contains a `days` map keyed by `DAYS` (`ma`…`zo`), each day holding morning/evening exercise lists, routine links, and a note. Weeks are created lazily, one at a time and without an upper bound, via `closeWeek`.
+A `Week` contains a `days` map keyed by `DAYS` (`ma`…`zo`). Each day holds one
+morning choice (`reps` | `mobility` | `ssmobility`), one evening choice
+(`kracht` | `conditioning` | `rope` | `hardlopen` | `zwemmen`), a done flag for
+each and a note. Weeks are created lazily, one at a time and without an upper
+bound, via `closeWeek`. Days saved by older versions still carry exercise lists,
+routine links and a mood; those fields are kept in storage but never read.
+
+A day whose morning is `reps` or `mobility` ticks itself off when that app
+reports `lastCompletedDate === today` — only for today's weekday and only in the
+week that is still open.
 
 ### Design tokens
 
@@ -39,11 +48,11 @@ All colors, shadows, and the shared `inp()` helper for inputs are defined in the
 
 ```
 App                   – loads data, owns weeks[] and db state
-├── DayCard           – collapsible day row; owns morning/evening sections
-│   ├── ExerciseBlock – action buttons + list of ExRow items
-│   │   └── ExRow     – single exercise name+sets input with optional save-to-db
-│   └── DbModal       – bottom-sheet picker that reads from db
-├── WeekEval          – week note + mood summary, triggers week close
+├── DayCard           – collapsible day row; one morning and one evening choice
+│   └── OptionPicker  – the row of choice buttons
+├── WeekEval          – week note + tally of ticked-off items, triggers week close
+├── RoutinesTab       – routines and videos; starts the guided WorkoutMode
+│   └── RoutineCard   – ExRow list, DbModal picker, ▶ Start
 └── DatabaseTab       – editable exercise DB with drag-and-drop reordering
 ```
 
@@ -55,3 +64,10 @@ plus an `onPersist` callback that writes to Supabase.
 ### Deployment
 
 `vite.config.js` sets `base: '/traininsgplan/'`, so all asset paths are prefixed accordingly. The app is Dutch-language (`lang="nl"`).
+
+### Styling
+
+The whole app is dark. The palette lives in `C` in `src/tokens.js`; changing it
+there recolours Plan, Routines, History and Database at once. Buttons that sit on
+an accent colour use dark text (`#0A0A0A`), not white — the accents are light.
+`src/index.css` carries the document background and the placeholder colour.
