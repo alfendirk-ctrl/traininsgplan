@@ -10,25 +10,6 @@ const DAYS       = ["ma","di","wo","do","vr","za","zo"];
 const DAY_LABELS = { ma:"Maandag", di:"Dinsdag", wo:"Woensdag", do:"Donderdag", vr:"Vrijdag", za:"Zaterdag", zo:"Zondag" };
 const DAY_SHORT  = { ma:"Ma", di:"Di", wo:"Wo", do:"Do", vr:"Vr", za:"Za", zo:"Zo" };
 
-
-const FB_TEMPLATES = {
-  ma:[["Squat","3×5"],["Bench Press","3×5"],["Barbell Row","3×8"],["Romanian Deadlift","3×8"]],
-  di:[["Deadlift","3×5"],["Overhead Press","3×5"],["Band Pull-up","3×6"],["Dips","3×8"]],
-  wo:[["Front Squat","3×5"],["Incline Bench","3×8"],["Cable Row","3×10"],["Face Pull","3×15"]],
-  do:[["Squat","3×5"],["Bench Press","3×5"],["Pendlay Row","3×5"],["Hip Thrust","3×10"]],
-  vr:[["Deadlift","3×5"],["Overhead Press","3×5"],["Chin-up","3×6"],["Leg Curl","3×10"]],
-  za:[["Goblet Squat","3×10"],["Push-up","3×15"],["Inverted Row","3×10"],["Lunge","3×8 e/s"]],
-  zo:[],
-};
-
-const MOBILITY_TEMPLATES = [
-  {name:"Voet onder bal rollen",sets:"60s e/s"},{name:"Heup oefening",sets:"10 e/s"},
-  {name:"Sit on knees + Reverse Nordic",sets:"2×8"},{name:"Push-ups",sets:"2×10"},
-  {name:"Yoga block pass-through",sets:"10 reps"},{name:"Horse stance + Cossack Squat",sets:"5 e/s"},
-  {name:"Downward Dog",sets:"5 adem"},{name:"Crab",sets:"30s"},
-  {name:"Deep Lunge",sets:"60s e/s"},{name:"Deep Squat",sets:"60s"},{name:"The Hang",sets:"30-60s"},
-];
-
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const STORAGE_KEY    = "training_v5";
 const DB_KEY         = "training_db_v1";
@@ -123,12 +104,9 @@ async function loadRemoteKey(newKey){
 }
 
 const mkDay = () => ({
-  morningType:null, morningExercises:[], morningRoutineName:"", morningRoutineUrl:"",
-  morningRoutineId:null, morningRoutineSync:false, showMorningDbModal:false, showMorningRoutineModal:false,
-  type:null, exercises:[], routineName:"", routineUrl:"",
-  routineId:null, routineSync:false, note:"", mood:null,
-  morningDone:false, eveningDone:false,
-  showDbModal:false, showRoutineModal:false,
+  morning:null, morningDone:false,   // "reps" | "mobility" | "ssmobility"
+  evening:null, eveningDone:false,   // "kracht" | "conditioning" | "rope" | "hardlopen" | "zwemmen"
+  note:"",
 });
 const mkWeek = (n) => ({
   weekNum:n, days:Object.fromEntries(DAYS.map(d=>[d,mkDay()])),
@@ -175,22 +153,17 @@ function migrateWeeks(data){
     // dag of een ontbrekend veld liet het renderen eerder klappen.
     days:Object.fromEntries(DAYS.map(k=>{
       const src = (week.days&&typeof week.days==="object"&&week.days[k]) || {};
+      // Oudere dagen hadden oefenlijsten, routines en een stemming. Die
+      // velden blijven staan in de opslag maar worden nergens meer gelezen;
+      // alleen de nieuwe keuzevelden worden afgedwongen.
       return [k,{
         ...mkDay(),
         ...src,
-        showMorningDbModal:false, showDbModal:false,
-        showMorningRoutineModal:false, showRoutineModal:false,
-        morningType: src.morningType||null,
-        type: src.type||null,
-        morningExercises: Array.isArray(src.morningExercises)?src.morningExercises:[],
-        exercises:        Array.isArray(src.exercises)?src.exercises:[],
-        morningRoutineId: src.morningRoutineId||null,
-        morningRoutineSync: src.morningRoutineSync||false,
-        routineId: src.routineId||null,
-        routineSync: src.routineSync||false,
-        mood: src.mood||null,
-        morningDone: src.morningDone||false,
-        eveningDone: src.eveningDone||false,
+        morning:     typeof src.morning==="string" ? src.morning : null,
+        evening:     typeof src.evening==="string" ? src.evening : null,
+        morningDone: !!src.morningDone,
+        eveningDone: !!src.eveningDone,
+        note:        typeof src.note==="string" ? src.note : "",
       }];
     }))
   }));
@@ -220,6 +193,22 @@ async function saveDb(d){ try{ localStorage.setItem(DB_KEY,JSON.stringify(d)); }
 async function loadRoutines(){ try{ const r=localStorage.getItem(ROUTINES_KEY); return r?JSON.parse(r):[]; }catch{ return []; } }
 async function saveRoutines(d){ try{ localStorage.setItem(ROUTINES_KEY,JSON.stringify(d)); }catch{} pushToSupabase({routines:d}); }
 function mkId(){ return Math.random().toString(36).slice(2,8); }
+
+// Welke dag van de week is het nu; JS telt zondag als 0.
+const TODAY_KEY = DAYS[(new Date().getDay() + 6) % 7];
+const ISO_TODAY = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+// Heb je de sessie van vandaag in die app al afgerond? Beide apps slaan de
+// datum van hun laatste afgeronde dag op.
+function readAppDone(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return false;
+    return JSON.parse(raw).lastCompletedDate === ISO_TODAY();
+  }catch{ return false; }
+}
 
 
 // Video-ID uit een YouTube-URL (watch, youtu.be, embed of shorts) voor de thumbnail.
@@ -407,76 +396,7 @@ function VideoLink({url,title}) {
   );
 }
 
-function RoutineInfo({routine}) {
-  const notes = (routine.notes||"").trim();
-  const links = (routine.links||[]).filter(l=>l.url&&l.url.trim());
-  const video = routine.kind==="video" ? (routine.videoUrl||"").trim() : "";
-  if(!notes&&links.length===0&&!video) return null;
-  return (
-    <div style={{background:C.surfaceAlt,borderRadius:10,padding:"10px 12px",
-      display:"flex",flexDirection:"column",gap:8}}>
-      {video&&<VideoLink url={video} title={routine.name} />}
-      {notes&&(
-        <div style={{fontSize:13,color:C.textSub,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{notes}</div>
-      )}
-      {links.length>0&&(
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          {links.map((l,i)=>(
-            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{
-              fontSize:12,color:C.green,background:C.greenLight,textDecoration:"none",
-              padding:"4px 10px",borderRadius:20,fontWeight:500,
-            }}>↗ {l.label||"Link"}</a>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
-function RoutinePickerModal({routines,onSelect,onClose,context}) {
-  // sort: matching type first, then "beide", then other
-  const sorted = [...routines].sort((a,b)=>{
-    const aMatch = !a.type||(a.type===context);
-    const bMatch = !b.type||(b.type===context);
-    return bMatch-aMatch;
-  });
-  return (
-    <Sheet title="Kies routine" onClose={onClose} zIndex={Z_PICKER}>
-      <>
-          {sorted.length===0 ? (
-            <div style={{textAlign:"center",padding:"32px 0",color:C.textMuted,fontSize:14}}>
-              Nog geen routines aangemaakt.<br/>
-              <span style={{fontSize:12}}>Ga naar het Routines-tabblad om er een te maken.</span>
-            </div>
-          ) : sorted.map(r=>{
-            const typeLabel = r.type==="ochtend"?"☀️ Ochtend":r.type==="avond"?"🌙 Avond":null;
-            const typeColor = r.type==="ochtend"?C.amber:r.type==="avond"?C.purple:null;
-            const typeBg    = r.type==="ochtend"?C.amberLight:r.type==="avond"?C.purpleLight:null;
-            const mismatch  = context&&r.type&&r.type!==context;
-            return (
-              <button key={r.id} onClick={()=>onSelect(r)} style={{
-                display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",
-                background:"none",border:`1px solid ${C.border}`,borderRadius:10,marginBottom:6,
-                cursor:"pointer",fontFamily:font,textAlign:"left",
-                opacity:mismatch?0.55:1,
-              }}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                    <span style={{fontSize:14,fontWeight:600,color:C.text}}>{r.name||"Naamloze routine"}</span>
-                    {typeLabel&&<span style={{fontSize:10,fontWeight:600,color:typeColor,background:typeBg,padding:"1px 6px",borderRadius:4,flexShrink:0}}>{typeLabel}</span>}
-                  </div>
-                  <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>
-                    {r.kind==="video"?"▶️ Video":`${(r.exercises||[]).length} oefeningen`}
-                  </div>
-                </div>
-                <span style={{color:C.green,fontSize:13,fontWeight:500,flexShrink:0}}>Laden →</span>
-              </button>
-            );
-          })}
-      </>
-    </Sheet>
-  );
-}
 
 // ─── SYNC MODAL ───────────────────────────────────────────────────────────────
 function SyncModal({syncKey,onSwitch,onClose}) {
@@ -1076,426 +996,147 @@ function WorkoutMode({exercises, onClose, initialRest}) {
   );
 }
 
-// ─── SECTION BLOCK (reusable for morning + evening exercises) ─────────────────
-function ExerciseBlock({exercises,onChange,db,onSaveToDb,accentColor,accentBg,genLabel,onGenerate,setsPlaceholder,onOpenDbModal,onStartWorkout,setsEditor=false}) {
-  const updEx = (i,v) => { const e=[...exercises]; e[i]=v; onChange(e); };
-  const delEx = i => onChange(exercises.filter((_,j)=>j!==i));
-  const addEx = () => onChange([...exercises,{name:"",sets:""}]);
-  const validCount = exercises.filter(e=>e.name&&e.name.trim()).length;
 
+
+// ─── DAGKAART ─────────────────────────────────────────────────────────────────
+// Per dag kies je één ochtend- en één avondonderdeel uit een vaste lijst.
+// Reps en Mobiliteit zijn eigen apps; de dagkaart verwijst ernaar en vinkt
+// vanzelf af zodra je die dag daar hebt afgerond.
+
+const MORNING_OPTS = [
+  { id:"reps",       label:"Reps",                  icon:"🔁", tab:"reps", desc:"De sessie van vandaag in de Reps-app" },
+  { id:"mobility",   label:"Mobiliteit",            icon:"🧘", tab:"mob",  desc:"De sessie van vandaag in de Mobiliteit-app" },
+  { id:"ssmobility", label:"Strength Side mobility",icon:"▶️", tab:null,   desc:"Je eigen follow-along mobiliteitsroutine" },
+];
+const EVENING_OPTS = [
+  { id:"kracht",       label:"Kracht",       icon:"🏋️" },
+  { id:"conditioning", label:"Conditioning", icon:"🔥" },
+  { id:"rope",         label:"Rope",         icon:"🪢" },
+  { id:"hardlopen",    label:"Hardlopen",    icon:"🏃" },
+  { id:"zwemmen",      label:"Zwemmen",      icon:"🏊" },
+];
+const optById = (opts,id) => opts.find(o=>o.id===id) || null;
+
+// Eén rij keuzeknoppen; nog een keer tikken op wat al aan staat zet hem uit.
+function OptionPicker({opts,value,onPick,color,bg}) {
   return (
-    <div>
-      <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
-        {onGenerate&&<Btn onClick={onGenerate} variant="subtle" size="sm">✦ {genLabel}</Btn>}
-        {onOpenDbModal&&<Btn onClick={onOpenDbModal} variant="subtle" size="sm">⊕ Uit database</Btn>}
-        <Btn onClick={addEx} variant={accentBg===C.amberLight?"amber":"purple"} size="sm">+ Nieuw</Btn>
-        {onStartWorkout&&validCount>0&&(
-          <Btn onClick={()=>onStartWorkout(exercises)} variant="primary" size="sm">▶ Start</Btn>
-        )}
-      </div>
-      {exercises.length===0?(
-        <div style={{fontSize:13,color:C.textMuted,fontStyle:"italic",padding:"6px 0"}}>Nog geen oefeningen toegevoegd</div>
-      ):(
-        exercises.map((ex,i)=>(
-          <ExRow key={i} ex={ex} onUpdate={v=>updEx(i,v)} onDelete={()=>delEx(i)}
-            db={db} onSaveToDb={onSaveToDb} setsPlaceholder={setsPlaceholder||"3×5"}
-            setsEditor={setsEditor} />
-        ))
-      )}
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+      {opts.map(o=>{
+        const on = value===o.id;
+        return (
+          <button key={o.id} onClick={()=>onPick(on?null:o.id)} style={{
+            display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontFamily:font,
+            fontSize:13,fontWeight:on?600:400,padding:"9px 12px",borderRadius:9,
+            background:on?bg:C.surfaceAlt,
+            border:`1px solid ${on?color:C.border}`,
+            color:on?color:C.textSub,
+          }}>
+            <span style={{fontSize:14}}>{o.icon}</span>{o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-
-// Compacte samenvatting van een dagblok; bewerken opent een sheet.
-function BlockSummary({icon,label,color,bg,detail,done,onToggleDone,onEdit,onStart}) {
-  return (
-    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px"}}>
-      <button onClick={onEdit} style={{
-        display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0,
-        background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:font,textAlign:"left",
-      }}>
-        <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
-        <span style={{flex:1,minWidth:0}}>
-          <span style={{display:"block",fontSize:11,fontWeight:700,color,textTransform:"uppercase",letterSpacing:0.5}}>{label}</span>
-          <span style={{display:"block",fontSize:13,color:detail?C.text:C.textMuted,marginTop:2,
-            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontStyle:detail?"normal":"italic"}}>
-            {detail||"Niets ingepland"}
-          </span>
-        </span>
-        <span style={{fontSize:15,color:C.textMuted,flexShrink:0}}>›</span>
-      </button>
-      {onStart&&(
-        <button onClick={onStart} title="Start workout" style={{
-          width:34,height:34,borderRadius:9,flexShrink:0,cursor:"pointer",
-          background:bg,border:`1px solid ${color}44`,color,fontSize:13,
-          display:"flex",alignItems:"center",justifyContent:"center",
-        }}>▶</button>
-      )}
-      <DoneToggle done={done} color={color} bg={bg} onClick={onToggleDone} />
-    </div>
-  );
-}
-
-// ─── DAY CARD ─────────────────────────────────────────────────────────────────
-function DayCard({dayKey,day,onChange,db,onSaveToDb,routines,onUpdateRoutine}) {
+function DayCard({dayKey,day,onChange,onOpenTab,autoDone}) {
   const [open,setOpen] = useState(false);
-  const [sheet,setSheet] = useState(null);           // "morning" | "evening"
-  const [pendingExs,setPendingExs] = useState(null); // wacht op rusttijd-instelling
-  const [workout,setWorkout] = useState(null);       // {exercises, rest}
-
   const upd = (patch) => onChange({...day,...patch});
 
-  // Sheet sluiten bij het starten, anders ligt hij over de rusttijd-modal heen.
-  const startWorkout = (exs) => { setSheet(null); setPendingExs(exs); };
+  const morning = optById(MORNING_OPTS, day.morning);
+  const evening = optById(EVENING_OPTS, day.evening);
+  // Afgerond in de Reps- of Mobiliteit-app telt als gedaan, zonder dat je het
+  // hier nog eens hoeft aan te vinken.
+  const morningAuto = !!(morning && morning.tab && autoDone && autoDone[morning.id]);
+  const morningDone = !!day.morningDone || morningAuto;
+  const eveningDone = !!day.eveningDone;
+  const hasNote = day.note && day.note.trim();
 
-  const updMEx = (exs) => {
-    if(day.morningRoutineSync && day.morningRoutineId) onUpdateRoutine(day.morningRoutineId, exs);
-    upd({morningExercises:exs});
-  };
-  const updEx = (exs) => {
-    if(day.routineSync && day.routineId) onUpdateRoutine(day.routineId, exs);
-    upd({exercises:exs});
-  };
+  const chip = (opt,done,color,bg) => opt && (
+    <span style={{fontSize:11,color,background:bg,padding:"2px 7px",borderRadius:5,fontWeight:done?700:400}}>
+      {done?"✓":opt.icon} {opt.label}
+    </span>
+  );
 
-  const genMobility = () => {
-    const dbExs = db?(db.mobiliteit||[]).flatMap(p=>p.exercises.map(e=>({name:e.name,sets:""}))):[];
-    updMEx(dbExs.length>0?dbExs:MOBILITY_TEMPLATES.map(t=>({name:t.name,sets:t.sets})));
-  };
-  const genGym = () => {
-    const t=FB_TEMPLATES[dayKey]||[];
-    if(t.length) updEx(t.map(([n,s])=>({name:n,sets:s})));
-  };
-
-  const loadRoutineIntoMorning = (routine) => {
-    upd({
-      morningRoutineId: routine.id,
-      morningExercises: [...(routine.exercises||[])],
-      morningRoutineSync: false,
-      showMorningRoutineModal: false,
-    });
-  };
-  const loadRoutineIntoEvening = (routine) => {
-    upd({
-      routineId: routine.id,
-      exercises: [...(routine.exercises||[])],
-      routineSync: false,
-      showRoutineModal: false,
-    });
-  };
-
-  const selectedMorningRoutine = (routines||[]).find(r=>r.id===day.morningRoutineId)||null;
-  const selectedEveningRoutine = (routines||[]).find(r=>r.id===day.routineId)||null;
-
-  // Collapsed header chips
-  const hasMorning = day.morningType!=null;
-  const hasEvening = day.type!=null;
-  const hasNote    = day.note&&day.note.trim();
-
-  const morningChipLabel = day.morningType==="exercises"
-    ? `${day.morningExercises.length} oef.`
-    : day.morningType==="routine"
-    ? (selectedMorningRoutine?.name||"Routine")
-    : (day.morningRoutineName||"Video");
-
-  const eveningChipLabel = day.type==="gym"
-    ? `${day.exercises.length} oef.`
-    : day.type==="routine"
-    ? (selectedEveningRoutine?.name||"Routine")
-    : (day.routineName||"Video");
-
-  // Samenvattingsregels voor de ingeklapte blokken
-  const mCount = (day.morningExercises||[]).filter(e=>e.name&&e.name.trim()).length;
-  const eCount = (day.exercises||[]).filter(e=>e.name&&e.name.trim()).length;
-  // Een video-routine heeft geen oefeningen; toon dan alleen de naam.
-  const routineDetail = (r,count) =>
-    !r ? "Geen routine" : r.kind==="video" ? `▶️ ${r.name}` : `${r.name} · ${count} oef.`;
-  const morningDetail =
-      day.morningType==="exercises" ? `${mCount} ${mCount===1?"oefening":"oefeningen"}`
-    : day.morningType==="routine"   ? routineDetail(selectedMorningRoutine,mCount)
-    : day.morningType==="video"     ? (day.morningRoutineName||"Video")
-    : null;
-  const eveningDetail =
-      day.type==="gym"      ? `Gym · ${eCount} ${eCount===1?"oefening":"oefeningen"}`
-    : day.type==="routine"  ? routineDetail(selectedEveningRoutine,eCount)
-    : day.type==="video"    ? (day.routineName||"Video")
-    : null;
-  const morningStartExs = (day.morningType==="exercises"||day.morningType==="routine")&&mCount>0 ? day.morningExercises : [];
-  const eveningStartExs = (day.type==="gym"||day.type==="routine")&&eCount>0 ? day.exercises : [];
+  const blok = (titel,kleur,bg,opts,value,doneVal,autoVal,onPick,onToggle) => (
+    <div style={{padding:"12px 14px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:9}}>
+        <div style={{fontSize:11,fontWeight:700,color:kleur,textTransform:"uppercase",letterSpacing:0.5}}>{titel}</div>
+        {value&&(
+          autoVal
+            ? <span style={{fontSize:11,color:C.green,fontWeight:600}}>✓ afgerond in de app</span>
+            : <DoneToggle done={doneVal} color={kleur} bg={bg} onClick={onToggle} />
+        )}
+      </div>
+      <OptionPicker opts={opts} value={value} onPick={onPick} color={kleur} bg={bg} />
+    </div>
+  );
 
   return (
-    <>
-    {pendingExs&&(
-      <WorkoutStartModal exercises={pendingExs}
-        onClose={()=>setPendingExs(null)}
-        onStart={rest=>{ setWorkout({exercises:pendingExs,rest}); setPendingExs(null); }} />
-    )}
-    {workout&&(
-      <WorkoutMode exercises={workout.exercises} initialRest={workout.rest}
-        onClose={()=>setWorkout(null)} />
-    )}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
-      {/* ── Collapsed header */}
       <button onClick={()=>setOpen(p=>!p)} style={{
         display:"flex",alignItems:"center",gap:12,padding:"13px 14px",
         width:"100%",background:"none",border:"none",cursor:"pointer",fontFamily:font,textAlign:"left",
-        borderLeft:`3px solid ${C.border}`,
       }}>
         <div style={{width:40,height:40,borderRadius:10,background:C.surfaceAlt,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:11,fontWeight:700,color:C.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>{DAY_SHORT[dayKey]}</span>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:15,fontWeight:600,color:C.text}}>{DAY_LABELS[dayKey]}</div>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,flexWrap:"wrap"}}>
-            {hasMorning&&<span style={{fontSize:11,color:C.amber,background:C.amberLight,padding:"1px 6px",borderRadius:4,fontWeight:day.morningDone?700:400}}>{day.morningDone?"✓":"☀️"} {morningChipLabel}</span>}
-            {hasEvening&&<span style={{fontSize:11,color:C.purple,background:C.purpleLight,padding:"1px 6px",borderRadius:4,fontWeight:day.eveningDone?700:400}}>{day.eveningDone?"✓":(day.type==="gym"?"🏋️":"📋")} {eveningChipLabel}</span>}
-            {day.mood==="goed"  &&<span style={{fontSize:13}}>💪</span>}
-            {day.mood==="oke"   &&<span style={{fontSize:13}}>😐</span>}
-            {day.mood==="slecht"&&<span style={{fontSize:13}}>😴</span>}
-            {!day.mood&&hasNote&&<span style={{fontSize:11,color:C.textMuted}}>📝</span>}
+          <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3,flexWrap:"wrap"}}>
+            {chip(morning,morningDone,C.amber,C.amberLight)}
+            {chip(evening,eveningDone,C.purple,C.purpleLight)}
+            {!morning&&!evening&&<span style={{fontSize:12,color:C.textMuted}}>Niets ingepland</span>}
+            {hasNote&&<span style={{fontSize:11,color:C.textMuted}}>📝</span>}
           </div>
         </div>
         <span style={{fontSize:16,color:C.textMuted,flexShrink:0,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>⌄</span>
       </button>
 
-      {/* ── Expanded content */}
       {open&&(
         <div style={{borderTop:`1px solid ${C.border}`}}>
+          {blok("☀️ Ochtend",C.amber,C.amberLight,MORNING_OPTS,day.morning,morningDone,morningAuto,
+            v=>upd({morning:v}), ()=>upd({morningDone:!day.morningDone}))}
 
-          {/* Blok-samenvattingen — bewerken gebeurt in een sheet */}
-          <div style={{background:"rgba(217,119,6,0.04)"}}>
-            <BlockSummary
-              icon="☀️" label="Ochtend · Mobiliteit" color={C.amber} bg={C.amberLight}
-              detail={morningDetail} done={!!day.morningDone}
-              onToggleDone={()=>upd({morningDone:!day.morningDone})}
-              onEdit={()=>setSheet("morning")}
-              onStart={morningStartExs.length>0?()=>setPendingExs(morningStartExs):null} />
-          </div>
+          {/* Doorklikken naar de app waar deze sessie in staat. */}
+          {morning&&morning.tab&&(
+            <div style={{padding:"0 14px 12px"}}>
+              <Btn onClick={()=>onOpenTab&&onOpenTab(morning.tab)} variant="subtle" size="sm">
+                {morning.label} openen ›
+              </Btn>
+            </div>
+          )}
 
           <div style={{height:1,background:C.border,margin:"0 14px"}} />
-          <BlockSummary
-            icon="🌙" label="Avond · Training" color={C.purple} bg={C.purpleLight}
-            detail={eveningDetail} done={!!day.eveningDone}
-            onToggleDone={()=>upd({eveningDone:!day.eveningDone})}
-            onEdit={()=>setSheet("evening")}
-            onStart={eveningStartExs.length>0?()=>setPendingExs(eveningStartExs):null} />
+          {blok("🌙 Avond",C.purple,C.purpleLight,EVENING_OPTS,day.evening,eveningDone,false,
+            v=>upd({evening:v}), ()=>upd({eveningDone:!day.eveningDone}))}
 
-          {/* NOTE + MOOD */}
-          <div style={{padding:"14px 14px 16px"}}>
-            <div style={{display:"flex",gap:6,marginBottom:10}}>
-              {[
-                {key:"goed",  label:"💪 Goed",   color:"#059669", bg:"#D1FAE5"},
-                {key:"oke",   label:"😐 Oké",    color:"#D97706", bg:"#FEF3C7"},
-                {key:"slecht",label:"😴 Slecht", color:"#DC2626", bg:"#FEE2E2"},
-              ].map(({key,label,color,bg})=>(
-                <button key={key} onClick={()=>upd({mood:day.mood===key?null:key})} style={{
-                  flex:1,padding:"7px 0",borderRadius:8,cursor:"pointer",
-                  fontFamily:font,fontSize:12,fontWeight:day.mood===key?700:400,
-                  border:`1.5px solid ${day.mood===key?color:C.border}`,
-                  background:day.mood===key?bg:C.surface,
-                  color:day.mood===key?color:C.textMuted,
-                  transition:"all .15s",
-                }}>{label}</button>
-              ))}
-            </div>
+          <div style={{padding:"0 14px 14px"}}>
             <textarea value={day.note||""} onChange={e=>upd({note:e.target.value})}
-              placeholder="📝 Optionele notitie…"
-              rows={3} style={inp({resize:"vertical",lineHeight:1.5,fontSize:13,color:C.textSub})} />
+              placeholder="📝 Optionele notitie…" rows={2}
+              style={inp({resize:"vertical",fontSize:13,lineHeight:1.5})} />
           </div>
         </div>
       )}
-
-      {/* Modals */}
-      {day.showMorningDbModal&&db&&(
-        <DbModal db={db} filterSection="mobiliteit"
-          onClose={()=>upd({showMorningDbModal:false})}
-          onSelect={ex=>upd({morningExercises:[...day.morningExercises,{name:ex.name,sets:""}],showMorningDbModal:false})} />
-      )}
-      {day.showMorningRoutineModal&&(
-        <RoutinePickerModal routines={routines||[]} context="ochtend"
-          onClose={()=>upd({showMorningRoutineModal:false})}
-          onSelect={loadRoutineIntoMorning} />
-      )}
-      {day.showDbModal&&db&&(
-        <DbModal db={db}
-          onClose={()=>upd({showDbModal:false})}
-          onSelect={ex=>upd({exercises:[...day.exercises,{name:ex.name,sets:""}],showDbModal:false})} />
-      )}
-      {day.showRoutineModal&&(
-        <RoutinePickerModal routines={routines||[]} context="avond"
-          onClose={()=>upd({showRoutineModal:false})}
-          onSelect={loadRoutineIntoEvening} />
-      )}
-      {sheet==="morning"&&(
-        <Sheet title="☀️ Ochtend · Mobiliteit" accent={C.amber} onClose={()=>setSheet(null)}>
-          {/* Segmented control: 4 options */}
-          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-            <Seg active={day.morningType==="exercises"} color={C.amber}  bg={C.amberLight} onClick={()=>upd({morningType:"exercises"})}>Oefeningen</Seg>
-            <Seg active={day.morningType==="routine"}   color={C.green}  bg={C.greenLight}  onClick={()=>upd({morningType:"routine"})}>Routine</Seg>
-            <Seg active={day.morningType==="video"}     color={C.textSub} bg={C.surfaceHover} onClick={()=>upd({morningType:"video"})}>Video</Seg>
-            <Seg active={day.morningType===null}                                              onClick={()=>upd({morningType:null})}>—</Seg>
-          </div>
-
-          {day.morningType==="exercises"&&(
-            <div style={{paddingBottom:14}}>
-              <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
-                db={db} onSaveToDb={onSaveToDb}
-                accentColor={C.amber} accentBg={C.amberLight}
-                genLabel="Stel voor" onGenerate={genMobility}
-                setsPlaceholder="60s"
-                onOpenDbModal={()=>upd({showMorningDbModal:true})}
-                onStartWorkout={startWorkout} setsEditor={true} />
-            </div>
-          )}
-
-          {day.morningType==="routine"&&(
-            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
-              {/* Picker */}
-              <button onClick={()=>upd({showMorningRoutineModal:true})} style={{
-                display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-                background:selectedMorningRoutine?C.greenLight:C.surfaceAlt,
-                border:`1px solid ${selectedMorningRoutine?C.green:C.border}`,
-                borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
-              }}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:selectedMorningRoutine?C.green:C.borderMid,flexShrink:0}} />
-                <span style={{fontSize:14,fontWeight:selectedMorningRoutine?600:400,color:selectedMorningRoutine?C.green:C.textMuted,flex:1}}>
-                  {selectedMorningRoutine?.name||"Kies routine…"}
-                </span>
-                <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
-              </button>
-
-              {selectedMorningRoutine&&(
-                <>
-                  <RoutineInfo routine={selectedMorningRoutine} />
-                  {selectedMorningRoutine.kind!=="video"&&(
-                    <>
-                      {/* Sync checkbox */}
-                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                        <input type="checkbox" checked={!!day.morningRoutineSync}
-                          onChange={e=>upd({morningRoutineSync:e.target.checked})}
-                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                      </label>
-                      {/* Exercise list */}
-                      <ExerciseBlock exercises={day.morningExercises} onChange={updMEx}
-                        accentColor={C.green} accentBg={C.greenLight}
-                        setsPlaceholder="60s"
-                        onStartWorkout={startWorkout} setsEditor={true} />
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {day.morningType==="video"&&(
-            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
-              <input value={day.morningRoutineName} onChange={e=>upd({morningRoutineName:e.target.value})}
-                placeholder="Naam (bijv. Strength Side follow-along)" style={inp({fontSize:14})} />
-              <input value={day.morningRoutineUrl} onChange={e=>upd({morningRoutineUrl:e.target.value})}
-                placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
-              {day.morningRoutineUrl&&(
-                <a href={day.morningRoutineUrl} target="_blank" rel="noopener noreferrer"
-                  style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
-              )}
-            </div>
-          )}
-        </Sheet>
-      )}
-      {sheet==="evening"&&(
-        <Sheet title="🌙 Avond · Training" accent={C.purple} onClose={()=>setSheet(null)}>
-          <div style={{display:"flex",gap:4,background:C.surfaceAlt,borderRadius:10,padding:3,marginBottom:12}}>
-            <Seg active={day.type==="gym"}     color={C.purple}  bg={C.purpleLight}    onClick={()=>upd({type:"gym"})}>Gym</Seg>
-            <Seg active={day.type==="routine"} color={C.green}   bg={C.greenLight}     onClick={()=>upd({type:"routine"})}>Routine</Seg>
-            <Seg active={day.type==="video"}   color={C.textSub} bg={C.surfaceHover}   onClick={()=>upd({type:"video"})}>Video</Seg>
-            <Seg active={day.type===null}                                               onClick={()=>upd({type:null})}>—</Seg>
-          </div>
-
-          {day.type==="gym"&&(
-            <div style={{paddingBottom:14}}>
-              <ExerciseBlock exercises={day.exercises} onChange={updEx}
-                db={db} onSaveToDb={onSaveToDb}
-                accentColor={C.purple} accentBg={C.purpleLight}
-                genLabel="Stel voor" onGenerate={genGym}
-                onOpenDbModal={()=>upd({showDbModal:true})}
-                onStartWorkout={startWorkout} setsEditor={true} />
-            </div>
-          )}
-
-          {day.type==="routine"&&(
-            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:10}}>
-              {/* Picker */}
-              <button onClick={()=>upd({showRoutineModal:true})} style={{
-                display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-                background:selectedEveningRoutine?C.greenLight:C.surfaceAlt,
-                border:`1px solid ${selectedEveningRoutine?C.green:C.border}`,
-                borderRadius:10,cursor:"pointer",fontFamily:font,textAlign:"left",width:"100%",
-              }}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:selectedEveningRoutine?C.green:C.borderMid,flexShrink:0}} />
-                <span style={{fontSize:14,fontWeight:selectedEveningRoutine?600:400,color:selectedEveningRoutine?C.green:C.textMuted,flex:1}}>
-                  {selectedEveningRoutine?.name||"Kies routine…"}
-                </span>
-                <span style={{fontSize:12,color:C.textMuted}}>wijzig</span>
-              </button>
-
-              {selectedEveningRoutine&&(
-                <>
-                  <RoutineInfo routine={selectedEveningRoutine} />
-                  {selectedEveningRoutine.kind!=="video"&&(
-                    <>
-                      {/* Sync checkbox */}
-                      <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-                        <input type="checkbox" checked={!!day.routineSync}
-                          onChange={e=>upd({routineSync:e.target.checked})}
-                          style={{width:16,height:16,cursor:"pointer",accentColor:C.green}} />
-                        <span style={{fontSize:13,color:C.textSub}}>Wijzigingen opslaan in routine</span>
-                      </label>
-                      {/* Exercise list */}
-                      <ExerciseBlock exercises={day.exercises} onChange={updEx}
-                        accentColor={C.green} accentBg={C.greenLight}
-                        onStartWorkout={startWorkout} setsEditor={true} />
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {day.type==="video"&&(
-            <div style={{paddingBottom:14,display:"flex",flexDirection:"column",gap:8}}>
-              <input value={day.routineName} onChange={e=>upd({routineName:e.target.value})}
-                placeholder="Naam (bijv. Strength Side Ground)" style={inp({fontSize:14})} />
-              <input value={day.routineUrl} onChange={e=>upd({routineUrl:e.target.value})}
-                placeholder="Link (YouTube / website)" style={inp({fontSize:14})} />
-              {day.routineUrl&&(
-                <a href={day.routineUrl} target="_blank" rel="noopener noreferrer"
-                  style={{fontSize:13,color:C.green,fontWeight:500,textDecoration:"none"}}>↗ Open video</a>
-              )}
-            </div>
-          )}
-        </Sheet>
-      )}
     </div>
-    </>
   );
 }
 
 // ─── WEEK EVAL ────────────────────────────────────────────────────────────────
-function WeekEval({week,onSave}) {
+function WeekEval({week,onSave,extraDone=0}) {
   const [note,setNote] = useState(week.note||"");
 
-  // Mood summary from days
-  const moodCounts = DAYS.reduce((acc,d)=>{
-    const m=week.days[d]?.mood; if(m) acc[m]=(acc[m]||0)+1; return acc;
-  },{});
-  const badDays  = moodCounts.slecht||0;
-  const goodDays = moodCounts.goed||0;
-  const totalMoods = (moodCounts.goed||0)+(moodCounts.oke||0)+badDays;
-
-  let moodSignal = null;
-  if(badDays>=3)       moodSignal={color:"#DC2626",bg:"#FEE2E2",icon:"⚠️",text:`${badDays} slechte dagen — houd het volgende week rustig.`};
-  else if(badDays>=2)  moodSignal={color:"#D97706",bg:"#FEF3C7",icon:"💡",text:`${badDays} zware dagen — let op herstel.`};
-  else if(goodDays>=5) moodSignal={color:"#059669",bg:"#D1FAE5",icon:"🚀",text:"Topweek. Zo doorgaan."};
+  // Wat er deze week daadwerkelijk is afgevinkt.
+  // extraDone is wat vandaag in de Reps- of Mobiliteit-app is afgerond en
+  // daarom vanzelf afgevinkt staat, zonder dat het in de dag is opgeslagen.
+  const gedaan = DAYS.reduce((n,d)=>{
+    const x = week.days[d]||{};
+    return n + (x.morningDone?1:0) + (x.eveningDone?1:0);
+  },0) + extraDone;
+  const gepland = DAYS.reduce((n,d)=>{
+    const x = week.days[d]||{};
+    return n + (x.morning?1:0) + (x.evening?1:0);
+  },0);
 
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",marginTop:16,boxShadow:C.shadowLg}}>
@@ -1504,21 +1145,12 @@ function WeekEval({week,onSave}) {
         <div style={{fontSize:13,color:C.purple+"99",marginTop:2}}>Leg vast hoe de week ging en maak week {week.weekNum+1} aan.</div>
       </div>
       <div style={{padding:"16px"}}>
-        {/* Mood summary */}
-        {totalMoods>0&&(
+        {gepland>0&&(
           <div style={{marginBottom:16,padding:"10px 12px",background:C.surfaceAlt,borderRadius:10}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.textSub,marginBottom:6}}>Hoe ging de week?</div>
-            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-              {(moodCounts.goed||0)>0&&<span style={{fontSize:13,color:"#059669",fontWeight:600}}>💪 {moodCounts.goed} {moodCounts.goed===1?"dag":"dagen"} goed</span>}
-              {(moodCounts.oke||0)>0&&<span style={{fontSize:13,color:"#D97706",fontWeight:600}}>😐 {moodCounts.oke} {moodCounts.oke===1?"dag":"dagen"} oké</span>}
-              {badDays>0&&<span style={{fontSize:13,color:"#DC2626",fontWeight:600}}>😴 {badDays} {badDays===1?"dag":"dagen"} slecht</span>}
+            <div style={{fontSize:13,color:C.textSub}}>
+              <span style={{fontWeight:700,color:gedaan===gepland?C.green:C.text}}>{gedaan}</span>
+              <span style={{color:C.textMuted}}> van {gepland} ingepland{gepland===1?" onderdeel":"e onderdelen"} afgevinkt</span>
             </div>
-            {moodSignal&&(
-              <div style={{marginTop:8,padding:"7px 10px",background:moodSignal.bg,borderRadius:7,
-                fontSize:12,fontWeight:600,color:moodSignal.color}}>
-                {moodSignal.icon} {moodSignal.text}
-              </div>
-            )}
           </div>
         )}
 
@@ -1540,6 +1172,8 @@ function WeekEval({week,onSave}) {
 function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChangeNotes,onChangeLinks,onPatch,onDelete,db}) {
   const [open,setOpen]           = useState(true);
   const [showDbModal,setShowDbModal] = useState(false);
+  const [pendingExs,setPendingExs] = useState(null);   // wacht op de rusttijden
+  const [workout,setWorkout]       = useState(null);   // {exercises, rest}
   const isVideo = routine.kind==="video";
 
   const addEx = () => onChangeExercises([...routine.exercises,{name:"",sets:""}]);
@@ -1554,6 +1188,16 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChan
   const typeIcon  = routine.type==="ochtend"?"☀️":routine.type==="avond"?"🌙":"·";
 
   return (
+    <>
+    {pendingExs&&(
+      <WorkoutStartModal exercises={pendingExs}
+        onClose={()=>setPendingExs(null)}
+        onStart={rest=>{ setWorkout({exercises:pendingExs,rest}); setPendingExs(null); }} />
+    )}
+    {workout&&(
+      <WorkoutMode exercises={workout.exercises} initialRest={workout.rest}
+        onClose={()=>setWorkout(null)} />
+    )}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:C.shadow}}>
       <div style={{
         display:"flex",alignItems:"center",gap:8,padding:"12px 14px",
@@ -1607,6 +1251,10 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChan
               <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
                 <Btn onClick={addEx} variant="green" size="sm">+ Nieuw</Btn>
                 {db&&<Btn onClick={()=>setShowDbModal(true)} variant="subtle" size="sm">⊕ Uit database</Btn>}
+                {routine.exercises.some(e=>e.name&&e.name.trim())&&(
+                  <Btn onClick={()=>setPendingExs(routine.exercises.filter(e=>e.name&&e.name.trim()))}
+                    variant="primary" size="sm">▶ Start</Btn>
+                )}
               </div>
             </>
           )}
@@ -1662,6 +1310,7 @@ function RoutineCard({routine,onChangeName,onChangeExercises,onChangeType,onChan
           onSelect={ex=>{onChangeExercises([...routine.exercises,{name:ex.name,sets:""}]);setShowDbModal(false);}} />
       )}
     </div>
+    </>
   );
 }
 
@@ -2018,6 +1667,13 @@ export default function App() {
   const [syncKey,setSyncKey]     = useState("");
   const [showSync,setShowSync]   = useState(false);
   const [showMore,setShowMore]   = useState(false);
+  // Wat je vandaag in de Reps- en Mobiliteit-app hebt afgerond, zodat de
+  // dagkaart zichzelf kan afvinken. Opnieuw lezen bij het terugkeren naar
+  // de tab, want daar verandert het.
+  const [appsDone,setAppsDone]   = useState({reps:false,mobility:false});
+  const refreshAppsDone = useCallback(()=>{
+    setAppsDone({reps:readAppDone(REPS_STORAGE_KEY), mobility:readAppDone(MOBILITY_STORAGE_KEY)});
+  },[]);
 
   const loadAll = useCallback(async()=>{
     await initSync();
@@ -2027,7 +1683,8 @@ export default function App() {
     setDb(d);
     setRoutines(r);
     setSyncKey(getSyncKey());
-  },[]);
+    refreshAppsDone();
+  },[refreshAppsDone]);
 
   useEffect(()=>{ loadAll(); },[loadAll]);
 
@@ -2061,10 +1718,10 @@ export default function App() {
   },[]);
 
   useEffect(()=>{
-    const onVisible = ()=>{ if(document.visibilityState==='visible') pullSync(); };
+    const onVisible = ()=>{ if(document.visibilityState==='visible'){ pullSync(); refreshAppsDone(); } };
     document.addEventListener('visibilitychange', onVisible);
     return ()=> document.removeEventListener('visibilitychange', onVisible);
-  },[pullSync]);
+  },[pullSync,refreshAppsDone]);
 
   const persist         = useCallback((w)=>{setWeeks(w);saveData(w);},[]);
 
@@ -2080,7 +1737,7 @@ export default function App() {
   };
 
   // Plan van de vorige week overnemen: wat je van plan wás, niet wat je deed.
-  // Afvinken, notities en moods blijven dus leeg.
+  // Afvinken en notities blijven dus leeg.
   const [confirmCopy,setConfirmCopy] = useState(false);
   const copyPrevWeek = (wi) => {
     if(wi<1) return;
@@ -2090,21 +1747,7 @@ export default function App() {
       days: Object.fromEntries(DAYS.map(d=>{
         const src = from.days[d] || mkDay();
         const cur = wk.days[d]   || mkDay();
-        return [d, {
-          ...cur,
-          morningType:        src.morningType ?? null,
-          morningExercises:   (src.morningExercises||[]).map(e=>({...e})),
-          morningRoutineName: src.morningRoutineName || "",
-          morningRoutineUrl:  src.morningRoutineUrl  || "",
-          morningRoutineId:   src.morningRoutineId   ?? null,
-          morningRoutineSync: !!src.morningRoutineSync,
-          type:               src.type ?? null,
-          exercises:          (src.exercises||[]).map(e=>({...e})),
-          routineName:        src.routineName || "",
-          routineUrl:         src.routineUrl  || "",
-          routineId:          src.routineId   ?? null,
-          routineSync:        !!src.routineSync,
-        }];
+        return [d, { ...cur, morning: src.morning ?? null, evening: src.evening ?? null }];
       })),
     });
     persist(next);
@@ -2149,6 +1792,16 @@ export default function App() {
   // meer bestaat en het renderen klapte eruit — vandaar een leeg scherm.
   const safeIdx = Math.max(0, Math.min(activeIdx, weeks.length-1));
   const aw      = weeks[safeIdx];
+  // Automatisch afvinken geldt alleen voor de week waar je nu in zit.
+  const isCurrentWeek = safeIdx === weeks.length-1 && !!aw && !aw.done;
+  // Telt ook mee in de weeksamenvatting, anders zegt die nul terwijl de dag
+  // een vinkje toont.
+  const autoExtraDone = (()=>{
+    if(!isCurrentWeek) return 0;
+    const d = (aw.days&&aw.days[TODAY_KEY]) || {};
+    if(!d.morning || d.morningDone) return 0;
+    return appsDone[d.morning] ? 1 : 0;
+  })();
 
   // Laatste vangnet: liever een knop om door te gaan dan een vastgelopen scherm.
   if(!aw) return (
@@ -2170,13 +1823,13 @@ export default function App() {
   // neemt het hele scherm over. De "Plan"-knop in zijn navigatie brengt je terug.
   if(tab==="reps") return (
     <div id="reps-root">
-      <RepsTab onExit={()=>setTab("plan")} onPersist={persistReps} />
+      <RepsTab onExit={()=>{ refreshAppsDone(); setTab("plan"); }} onPersist={persistReps} />
     </div>
   );
 
   if(tab==="mob") return (
     <div id="mob-root">
-      <MobilityTab onExit={()=>setTab("plan")} onPersist={persistMobility} />
+      <MobilityTab onExit={()=>{ refreshAppsDone(); setTab("plan"); }} onPersist={persistMobility} />
     </div>
   );
 
@@ -2274,7 +1927,7 @@ export default function App() {
               const prev = weeks[safeIdx-1];
               const gevuld = DAYS.some(d=>{
                 const x = aw.days[d]||{};
-                return x.morningType!=null || x.type!=null;
+                return x.morning!=null || x.evening!=null;
               });
               return (
                 <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,
@@ -2284,7 +1937,7 @@ export default function App() {
                       <div style={{flex:1,minWidth:170}}>
                         <div style={{fontSize:13,fontWeight:600,color:C.text}}>Week {prev.weekNum} overnemen</div>
                         <div style={{fontSize:12,color:C.textMuted,marginTop:2,lineHeight:1.45}}>
-                          Kopieert per dag de ochtend- en avondinvulling. Afvinken, notities en moods blijven leeg.
+                          Kopieert per dag je ochtend- en avondkeuze. Afvinken en notities blijven leeg.
                         </div>
                       </div>
                       <Btn onClick={()=>gevuld?setConfirmCopy(true):copyPrevWeek(safeIdx)}
@@ -2311,15 +1964,12 @@ export default function App() {
 
             {DAYS.map(d=>(
               <DayCard key={d} dayKey={d} day={aw.days[d]}
-                onChange={v=>updateDay(safeIdx,d,v)} db={db}
-                routines={routines} onUpdateRoutine={updateRoutineExercises}
-                onSaveToDb={(section,partId,name)=>{
-                  const newEx={id:mkId(),name,uitleg:"",video:""};
-                  persistDb({...db,[section]:db[section].map(p=>p.id===partId?{...p,exercises:[...p.exercises,newEx]}:p)});
-                }} />
+                onChange={v=>updateDay(safeIdx,d,v)}
+                onOpenTab={setTab}
+                autoDone={isCurrentWeek&&d===TODAY_KEY ? appsDone : null} />
             ))}
 
-            {!aw.done&&<WeekEval week={aw} onSave={n=>closeWeek(safeIdx,n)} />}
+            {!aw.done&&<WeekEval week={aw} extraDone={autoExtraDone} onSave={n=>closeWeek(safeIdx,n)} />}
 
             {aw.done&&(
               <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginTop:14}}>
