@@ -46,6 +46,15 @@ each and a note. Weeks are created lazily, one at a time and without an upper
 bound, via `closeWeek`. Days saved by older versions still carry exercise lists,
 routine links and a mood; those fields are kept in storage but never read.
 
+When the sync pulls a newer `dailyreps:v1` / `dailymobility:v1` while that app
+is open, `writeAppState` in `App.jsx` fires the `APP_STATE_EVENT` window event
+(exported from `RepsTab.jsx`); the open app re-reads its storage so its next
+save does not write the old state back.
+
+Both apps run 56 days (day 1 baseline, day 56 retest). After the retest
+`currentDay` stays at 56 and `isFinished` shows an end screen instead of the
+test form.
+
 A day whose morning is `reps` or `mobility` ticks itself off when that app
 reports `lastCompletedDate === today` — only for today's weekday and only in the
 week that is still open.
