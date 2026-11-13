@@ -1836,7 +1836,7 @@ export default function App() {
   // Dagelijks in de balk; wat je af en toe nodig hebt achter "Meer".
   const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"]];
   const MORE = [
-    ["routines", "Routines",     "Oefenlijsten en video's om in je dagen te laden"],
+    ["routines", "Routines",     "Oefenlijsten en video's, met begeleide workout"],
     ["history",  "Geschiedenis", "Afgesloten weken, back-up en opnieuw beginnen"],
     ["database", "Database",     "Je eigen oefeningen, per lichaamsdeel"],
   ];
