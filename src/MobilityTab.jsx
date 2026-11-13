@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { APP_STATE_EVENT } from "./RepsTab.jsx";
 
 /* ============================================================
    DAGELIJKSE MOBILITEIT — 8 weken, één korte sessie per dag
@@ -194,6 +195,23 @@ const EX = {
     ],
     cues: ["Nooit vasthouden aan het eind — dit is een pomp, geen stretch.", "Tintelingen betekenen: kleiner bereik."],
     avoid: ["Doorzetten bij uitstralende pijn in je been."],
+  },
+  legswing: {
+    name: "Beenzwaaien", region: "hamstring", role: "prep", unit: "reps", perSide: true, base: 20,
+    secPerRep: 2, q: "leg swings front to back hamstring warm up",
+    levels: {
+      easier:   { name: "Kleine zwaai, hand aan de muur", f: 1.2 },
+      standard: { name: "Volle zwaai, hand aan de muur", f: 1 },
+      harder:   { name: "Volle zwaai zonder steun", f: 0.85 },
+    },
+    setup: "Sta zijwaarts naast een muur, één hand ertegen. Sta op het been aan de muurkant.",
+    how: [
+      "Zwaai je buitenste been ontspannen naar voren en naar achteren.",
+      "Laat de zwaai vanzelf groter worden; trek hem niet omhoog.",
+      "Na de helft van de herhalingen: omdraaien en het andere been.",
+    ],
+    cues: ["Romp rechtop, de beweging komt uit de heup.", "Losjes zwaaien, niet schoppen."],
+    avoid: ["Je onderrug laten meebuigen om hoger te komen."],
   },
   pancake: {
     name: "Horse Stance + Pancake", region: "hamstring", role: "open", unit: "sec", perSide: false, base: 60,
@@ -551,6 +569,23 @@ const EX = {
     cues: ["Voor de handstand is dit je warming-up — altijd vóór het steunen.", "Groot bereik boven snelheid."],
     avoid: ["Met je hele onderarm meedraaien."],
   },
+  palmlift: {
+    name: "Handpalm-liften", region: "wrist", role: "prep", unit: "reps", perSide: false, base: 16,
+    secPerRep: 3, q: "palm lifts wrist warm up quadruped",
+    levels: {
+      easier:   { name: "Op de tafel, weinig gewicht", f: 1.2 },
+      standard: { name: "Op handen en knieën", f: 1 },
+      harder:   { name: "In de opdrukstand", f: 0.8 },
+    },
+    setup: "Op handen en knieën, handen plat onder je schouders, vingers naar voren.",
+    how: [
+      "Til je handpalmen van de grond; je vingers en vingertoppen blijven liggen.",
+      "Zet ze rustig weer neer.",
+      "Doe de tweede helft met je vingers naar buiten gedraaid.",
+    ],
+    cues: ["Gewicht blijft op je handen — de vingers doen het werk.", "Langzaam neerzetten, niet laten vallen."],
+    avoid: ["Je ellebogen laten knikken om de beweging makkelijker te maken."],
+  },
   wristrock: {
     name: "Polsrockers", region: "wrist", role: "open", unit: "sec", perSide: false, base: 60,
     q: "wrist rocks push up position",
@@ -567,6 +602,23 @@ const EX = {
     ],
     cues: ["Handpalmen blijven plat, ook als het trekt.", "Twee richtingen: strekkers én buigers."],
     avoid: ["Scherpe pijn in het polsgewricht. Dan minder gewicht erop."],
+  },
+  prayer: {
+    name: "Gebedsrek, twee kanten", region: "wrist", role: "open", unit: "sec", perSide: false, base: 60,
+    q: "prayer stretch reverse prayer wrist forearm",
+    levels: {
+      easier:   { name: "Handen voor je borst, ellebogen hoog", f: 1.15 },
+      standard: { name: "Handen zakken tot je navel", f: 1 },
+      harder:   { name: "Omgekeerd: handruggen tegen elkaar", f: 0.85 },
+    },
+    setup: "Rechtop, handpalmen tegen elkaar voor je borst, vingers omhoog.",
+    how: [
+      "Duw je handpalmen tegen elkaar en laat je handen langzaam zakken tot je de rek in je onderarmen voelt.",
+      "Hou dat vast en adem door.",
+      "Doe de tweede helft met de handruggen tegen elkaar, vingers naar beneden.",
+    ],
+    cues: ["Ellebogen blijven op één lijn, wijzend naar buiten.", "De rek zit in de onderarm, niet in het gewricht."],
+    avoid: ["Je schouders laten optrekken."],
   },
   wristload: {
     name: "Polsbelasting, handen omgedraaid", region: "wrist", role: "load", unit: "sec", perSide: false, base: 45,
@@ -1011,6 +1063,9 @@ const iso = (d = new Date()) => {
   const x = new Date(d);
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 };
+/* Klaar met het programma: de hermeting op de laatste dag is opgeslagen. */
+const isFinished = (state) => state.currentDay === TOTAL_DAYS && state.history.some((h) => h.day === TOTAL_DAYS);
+
 const dayDiff = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
 
 const unitShort = (u) => (u === "sec" ? "s" : "herh.");
@@ -1079,6 +1134,20 @@ export default function MobilityTab({ onExit, onPersist }) {
     return () => { cancelled = true; };
   }, []);
 
+  /* Haalt de sync een nieuwere versie binnen terwijl dit scherm open is, lees
+     die dan in. Anders zou de volgende tik de oude stand terugschrijven. */
+  useEffect(() => {
+    const onRemote = async (e) => {
+      if (e.detail?.key !== KEY) return;
+      try {
+        const r = await storage.get(KEY);
+        if (r && r.value) setState({ ...DEFAULT_STATE, ...JSON.parse(r.value) });
+      } catch (err) { /* onleesbaar: houd wat er staat */ }
+    };
+    window.addEventListener(APP_STATE_EVENT, onRemote);
+    return () => window.removeEventListener(APP_STATE_EVENT, onRemote);
+  }, []);
+
   const save = useCallback((next) => {
     setState(next);
     (async () => {
@@ -1115,7 +1184,10 @@ export default function MobilityTab({ onExit, onPersist }) {
   const anyLoggedToday = Object.values(logged).some((v) => v > 0);
 
   const missed = state.lastCompletedDate ? Math.max(0, dayDiff(state.lastCompletedDate, today) - 1) : 0;
-  const showGap = missed > 0 && state.gapHandledOn !== today && state.history.length > 0;
+  /* Na de hermeting staat currentDay nog op dag 56; zonder deze check kwam
+     het testformulier steeds opnieuw terug en kon je de hermeting overschrijven. */
+  const finished = isFinished(state);
+  const showGap = !finished && missed > 0 && state.gapHandledOn !== today && state.history.length > 0;
 
   const setLevel = (id, level) =>
     save({ ...state, levels: { ...state.levels, [id]: level }, seen: { ...state.seen, [id]: true } });
@@ -1226,6 +1298,7 @@ export default function MobilityTab({ onExit, onPersist }) {
         {tab === "today" && (
           <Today
             state={state} workout={workout} logged={logged} doneToday={doneToday}
+            programDone={finished} onProgress={() => setTab("progress")}
             onOpen={(id) => setSheet({ id, mode: "log" })}
             onFocus={() => setFocusSheet(true)}
             onComplete={completeDay} onSaveTest={saveTest}
@@ -1343,7 +1416,8 @@ function Bar({ goal, logged, color }) {
 
 /* ---------- Vandaag ---------- */
 
-function Today({ state, workout, logged, doneToday, onOpen, onFocus, onComplete, onSaveTest }) {
+function Today({ state, workout, logged, doneToday, programDone, onProgress, onOpen, onFocus, onComplete, onSaveTest }) {
+  if (programDone) return <Finished state={state} onProgress={onProgress} />;
   if (workout.kind === "test") {
     return <TestScreen kind={workout.test} baseline={state.baseline} onSave={onSaveTest} />;
   }
@@ -1492,6 +1566,41 @@ function RestOfDay({ day, state, onFocus }) {
       </button>
       <p className="mt-4 text-xs leading-relaxed text-neutral-600">
         Bij Voortgang zie je je laatste sessies en hoeveel je per lichaamsdeel hebt gedaan. Bij Oefeningen staat de uitleg van alles.
+      </p>
+    </main>
+  );
+}
+
+function Finished({ state, onProgress }) {
+  const days = state.history.filter((h) => h.kind !== "test").length;
+  return (
+    <main className="px-5">
+      <Eyebrow>Dag {TOTAL_DAYS} · Hermeting gedaan</Eyebrow>
+      <h1 className="mt-2 text-[32px] font-bold leading-[1.05] tracking-tight">Acht weken,<br />klaar.</h1>
+      <p className="mt-5 text-[13px] leading-relaxed text-neutral-400">
+        {days} sessies gedaan. Er komt geen volgende sessie meer — hier houdt het programma op.
+      </p>
+      {state.baseline && state.retest && (
+        <div className="mt-6 space-y-3">
+          {TEST_FIELDS.map((f) => (
+            <div key={f.id} className="flex items-baseline justify-between border-b border-neutral-800 pb-2">
+              <span className="text-[13px] text-neutral-300">{f.label}</span>
+              <span className="tabular-nums">
+                <span className="text-sm text-neutral-500">{state.baseline[f.id]}</span>
+                <span className="mx-2 text-xs text-neutral-700">→</span>
+                <span className="text-lg font-bold" style={{ color: ACCENT }}>{state.retest[f.id]}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={onProgress}
+        className={`mt-8 w-full rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] ${RING}`}
+        style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
+        Bekijk je voortgang
+      </button>
+      <p className="mt-3 text-xs leading-relaxed text-neutral-600">
+        Nog een ronde? Onderaan Voortgang kun je de acht weken opnieuw beginnen. Je niveaus en je focus blijven staan.
       </p>
     </main>
   );

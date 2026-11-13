@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { supabase } from './supabase.js';
-import RepsTab, { REPS_STORAGE_KEY } from './RepsTab.jsx';
+import RepsTab, { REPS_STORAGE_KEY, APP_STATE_EVENT } from './RepsTab.jsx';
 import MobilityTab, { MOBILITY_STORAGE_KEY } from './MobilityTab.jsx';
 import { C, font, mono, inp } from './tokens.js';
 
@@ -54,6 +54,16 @@ function getSyncKey(){
 }
 
 let lastLocalSaveMs = 0;
+
+// Opslag van de Reps- of Mobiliteit-app vervangen door de cloudversie, en een
+// open app laten weten dat hij opnieuw moet inlezen. Alleen als er echt iets
+// anders binnenkomt, zodat een open oefening niet zomaar ververst.
+function writeAppState(key, value){
+  const next = JSON.stringify(value);
+  if(localStorage.getItem(key) === next) return;
+  localStorage.setItem(key, next);
+  window.dispatchEvent(new CustomEvent(APP_STATE_EVENT, {detail:{key}}));
+}
 
 function pushToSupabase(patch){
   lastLocalSaveMs = Date.now();
@@ -1708,10 +1718,11 @@ export default function App() {
       }
       if(data.exercise_db) { localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
       if(data.routines)    { localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));    setRoutines(data.routines); }
-      // De Reps- en Mobiliteit-tab lezen hun eigen opslag bij het openen,
-      // dus bijwerken volstaat.
-      if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
-      if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
+      // De Reps- en Mobiliteit-tab houden hun stand in het geheugen. Staat er
+      // een open, dan moet die de nieuwe versie overnemen; anders schrijft de
+      // volgende tik de oude stand terug naar de cloud.
+      if(data.reps)        writeAppState(REPS_STORAGE_KEY, data.reps);
+      if(data.mobility)    writeAppState(MOBILITY_STORAGE_KEY, data.mobility);
     }catch(e){
       console.error("Sync overgeslagen:", e);
     }
