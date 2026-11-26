@@ -8,7 +8,7 @@
 html, body { background: #0A0A0A; }
 input::placeholder, textarea::placeholder { color: #6B6B6B; opacity: 1; }
 
-/* De Reps- en Mobiliteit-app vullen het scherm als een app-shell: een vast kader dat zelf niet
+/* De Reps-, Mobiliteit- en Skills-app vullen het scherm als een app-shell: een vast kader dat zelf niet
    scrollt, met de inhoud die er binnenin scrollt. Zonder dit scrollt het
    document zelf, schuift de adresbalk van de telefoon in en uit, en springt
    de vaste onderbalk mee — waardoor je hem niet meer kunt raken.
@@ -16,7 +16,8 @@ input::placeholder, textarea::placeholder { color: #6B6B6B; opacity: 1; }
    elementen van de app (onderbalk, oefening-sheets), zodat die precies
    binnen dit kader vallen in plaats van tegen het browservenster. */
 #reps-root,
-#mob-root {
+#mob-root,
+#skills-root {
   position: fixed;
   inset: 0;
   transform: translateZ(0);
@@ -30,12 +31,13 @@ input::placeholder, textarea::placeholder { color: #6B6B6B; opacity: 1; }
    de shell — padding daar tilt hem dus niet op. De ruimte voor de
    home-indicator moet op de balk zelf, anders staan de knoppen in de strook
    waar iOS de veeg-omhoog afvangt en reageren ze niet op een tik. */
-:where(#reps-root, #mob-root) nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+:where(#reps-root, #mob-root, #skills-root) nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* De app-root binnen de shell is de scroller. min-height:100vh zou hier juist
    weer overflow maken, dus die zetten we uit. */
 #reps-root > div,
-#mob-root > div {
+#mob-root > div,
+#skills-root > div {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -44,26 +46,40 @@ input::placeholder, textarea::placeholder { color: #6B6B6B; opacity: 1; }
 }
 
 /* Preflight staat uit (zie tailwind.config.js): de bestaande app is volledig
-   inline gestyled en mag niet van styling veranderen. De Reps- en de
-   Mobiliteit-app hebben wel een paar van die resets nodig, dus die gelden
+   inline gestyled en mag niet van styling veranderen. De Reps-, Mobiliteit-
+   en Skills-app hebben wel een paar van die resets nodig, dus die gelden
    alleen binnen hun eigen root.
    :where() houdt de specificiteit op nul, zodat Tailwind-utilities blijven winnen. */
 
-:where(#reps-root, #mob-root) button,
-:where(#reps-root, #mob-root) input,
-:where(#reps-root, #mob-root) select,
-:where(#reps-root, #mob-root) textarea { font: inherit; color: inherit; }
+/* Zonder preflight heeft geen element een border-style, dus tekende een class
+   als `border` niets: kaarten, omrande knoppen en vinkvakjes bleven randloos.
+   Dit is het stukje preflight dat randen laat werken, hier op een donkere
+   standaardkleur. */
+:where(#reps-root, #mob-root, #skills-root) *,
+:where(#reps-root, #mob-root, #skills-root) *::before,
+:where(#reps-root, #mob-root, #skills-root) *::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: #262626;
+}
 
-:where(#reps-root, #mob-root) button { background: none; border: 0; cursor: pointer; }
+:where(#reps-root, #mob-root, #skills-root) button,
+:where(#reps-root, #mob-root, #skills-root) input,
+:where(#reps-root, #mob-root, #skills-root) select,
+:where(#reps-root, #mob-root, #skills-root) textarea { font: inherit; color: inherit; }
 
-:where(#reps-root, #mob-root) ol,
-:where(#reps-root, #mob-root) ul { list-style: none; }
+/* Geen border-shorthand: die zou border-style weer op none zetten. De breedte
+   staat al op 0 via de regel hierboven. */
+:where(#reps-root, #mob-root, #skills-root) button { background: none; cursor: pointer; }
 
-:where(#reps-root, #mob-root) h1,
-:where(#reps-root, #mob-root) h2,
-:where(#reps-root, #mob-root) h3 { font-size: inherit; font-weight: inherit; }
+:where(#reps-root, #mob-root, #skills-root) ol,
+:where(#reps-root, #mob-root, #skills-root) ul { list-style: none; }
+
+:where(#reps-root, #mob-root, #skills-root) h1,
+:where(#reps-root, #mob-root, #skills-root) h2,
+:where(#reps-root, #mob-root, #skills-root) h3 { font-size: inherit; font-weight: inherit; }
 
 /* Nummervelden zonder spinners, zoals in het ontwerp. */
-:where(#reps-root, #mob-root) input[type="number"] { -moz-appearance: textfield; }
-:where(#reps-root, #mob-root) input[type="number"]::-webkit-outer-spin-button,
-:where(#reps-root, #mob-root) input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+:where(#reps-root, #mob-root, #skills-root) input[type="number"] { -moz-appearance: textfield; }
+:where(#reps-root, #mob-root, #skills-root) input[type="number"]::-webkit-outer-spin-button,
+:where(#reps-root, #mob-root, #skills-root) input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

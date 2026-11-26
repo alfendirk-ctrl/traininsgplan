@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { supabase } from './supabase.js';
-import RepsTab, { REPS_STORAGE_KEY } from './RepsTab.jsx';
+import RepsTab, { REPS_STORAGE_KEY, APP_STATE_EVENT } from './RepsTab.jsx';
 import MobilityTab, { MOBILITY_STORAGE_KEY } from './MobilityTab.jsx';
+import SkillsTab, { SKILLS_STORAGE_KEY } from './SkillsTab.jsx';
 import { C, font, mono, inp } from './tokens.js';
 
 // ─── WEEKPLAN ─────────────────────────────────────────────────────────────────
@@ -55,6 +56,16 @@ function getSyncKey(){
 
 let lastLocalSaveMs = 0;
 
+// Opslag van de Reps- of Mobiliteit-app vervangen door de cloudversie, en een
+// open app laten weten dat hij opnieuw moet inlezen. Alleen als er echt iets
+// anders binnenkomt, zodat een open oefening niet zomaar ververst.
+function writeAppState(key, value){
+  const next = JSON.stringify(value);
+  if(localStorage.getItem(key) === next) return;
+  localStorage.setItem(key, next);
+  window.dispatchEvent(new CustomEvent(APP_STATE_EVENT, {detail:{key}}));
+}
+
 function pushToSupabase(patch){
   lastLocalSaveMs = Date.now();
   if(!supabase) return;
@@ -76,6 +87,7 @@ async function initSync(){
     if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
     if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
     if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
+    if(data.skills)      localStorage.setItem(SKILLS_STORAGE_KEY, JSON.stringify(data.skills));
   } else {
     // No remote row yet → upload whatever is in localStorage
     const w=localStorage.getItem(STORAGE_KEY);
@@ -420,6 +432,7 @@ function SyncModal({syncKey,onSwitch,onClose}) {
       if(data.routines)    localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));
       if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
       if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
+      if(data.skills)      localStorage.setItem(SKILLS_STORAGE_KEY, JSON.stringify(data.skills));
       localStorage.setItem(SYNC_KEY_LOCAL, trimmed);
       onSwitch(); // reloads app state
     } else {
@@ -1014,6 +1027,7 @@ const EVENING_OPTS = [
   { id:"rope",         label:"Rope",         icon:"🪢" },
   { id:"hardlopen",    label:"Hardlopen",    icon:"🏃" },
   { id:"zwemmen",      label:"Zwemmen",      icon:"🏊" },
+  { id:"skills",       label:"Skills",       icon:"🤸", tab:"skills", desc:"De sessie van vandaag in Skill calisthenics" },
 ];
 const optById = (opts,id) => opts.find(o=>o.id===id) || null;
 
@@ -1049,7 +1063,8 @@ function DayCard({dayKey,day,onChange,onOpenTab,autoDone}) {
   // hier nog eens hoeft aan te vinken.
   const morningAuto = !!(morning && morning.tab && autoDone && autoDone[morning.id]);
   const morningDone = !!day.morningDone || morningAuto;
-  const eveningDone = !!day.eveningDone;
+  const eveningAuto = !!(evening && evening.tab && autoDone && autoDone[evening.id]);
+  const eveningDone = !!day.eveningDone || eveningAuto;
   const hasNote = day.note && day.note.trim();
 
   const chip = (opt,done,color,bg) => opt && (
@@ -1108,8 +1123,16 @@ function DayCard({dayKey,day,onChange,onOpenTab,autoDone}) {
           )}
 
           <div style={{height:1,background:C.border,margin:"0 14px"}} />
-          {blok("🌙 Avond",C.purple,C.purpleLight,EVENING_OPTS,day.evening,eveningDone,false,
+          {blok("🌙 Avond",C.purple,C.purpleLight,EVENING_OPTS,day.evening,eveningDone,eveningAuto,
             v=>upd({evening:v}), ()=>upd({eveningDone:!day.eveningDone}))}
+
+          {evening&&evening.tab&&(
+            <div style={{padding:"0 14px 12px"}}>
+              <Btn onClick={()=>onOpenTab&&onOpenTab(evening.tab)} variant="subtle" size="sm">
+                {evening.label} openen ›
+              </Btn>
+            </div>
+          )}
 
           <div style={{padding:"0 14px 14px"}}>
             <textarea value={day.note||""} onChange={e=>upd({note:e.target.value})}
@@ -1662,6 +1685,8 @@ export default function App() {
   // Reps en Mobiliteit staan niet alleen lokaal: elke wijziging gaat ook naar de cloud.
   const persistReps     = useCallback((reps)=>{ pushToSupabase({reps}); },[]);
   const persistMobility = useCallback((mobility)=>{ pushToSupabase({mobility}); },[]);
+  // Alleen de eigen kolom: ontbreekt die nog in Supabase, dan faalt alleen dit.
+  const persistSkills   = useCallback((skills)=>{ pushToSupabase({skills}); },[]);
   const [db,setDb]               = useState(null);
   const [routines,setRoutines]   = useState(null);
   const [syncKey,setSyncKey]     = useState("");
@@ -1670,9 +1695,9 @@ export default function App() {
   // Wat je vandaag in de Reps- en Mobiliteit-app hebt afgerond, zodat de
   // dagkaart zichzelf kan afvinken. Opnieuw lezen bij het terugkeren naar
   // de tab, want daar verandert het.
-  const [appsDone,setAppsDone]   = useState({reps:false,mobility:false});
+  const [appsDone,setAppsDone]   = useState({reps:false,mobility:false,skills:false});
   const refreshAppsDone = useCallback(()=>{
-    setAppsDone({reps:readAppDone(REPS_STORAGE_KEY), mobility:readAppDone(MOBILITY_STORAGE_KEY)});
+    setAppsDone({reps:readAppDone(REPS_STORAGE_KEY), mobility:readAppDone(MOBILITY_STORAGE_KEY), skills:readAppDone(SKILLS_STORAGE_KEY)});
   },[]);
 
   const loadAll = useCallback(async()=>{
@@ -1708,10 +1733,12 @@ export default function App() {
       }
       if(data.exercise_db) { localStorage.setItem(DB_KEY,       JSON.stringify(data.exercise_db)); setDb(data.exercise_db); }
       if(data.routines)    { localStorage.setItem(ROUTINES_KEY, JSON.stringify(data.routines));    setRoutines(data.routines); }
-      // De Reps- en Mobiliteit-tab lezen hun eigen opslag bij het openen,
-      // dus bijwerken volstaat.
-      if(data.reps)        localStorage.setItem(REPS_STORAGE_KEY, JSON.stringify(data.reps));
-      if(data.mobility)    localStorage.setItem(MOBILITY_STORAGE_KEY, JSON.stringify(data.mobility));
+      // De Reps- en Mobiliteit-tab houden hun stand in het geheugen. Staat er
+      // een open, dan moet die de nieuwe versie overnemen; anders schrijft de
+      // volgende tik de oude stand terug naar de cloud.
+      if(data.reps)        writeAppState(REPS_STORAGE_KEY, data.reps);
+      if(data.mobility)    writeAppState(MOBILITY_STORAGE_KEY, data.mobility);
+      if(data.skills)      writeAppState(SKILLS_STORAGE_KEY, data.skills);
     }catch(e){
       console.error("Sync overgeslagen:", e);
     }
@@ -1799,8 +1826,9 @@ export default function App() {
   const autoExtraDone = (()=>{
     if(!isCurrentWeek) return 0;
     const d = (aw.days&&aw.days[TODAY_KEY]) || {};
-    if(!d.morning || d.morningDone) return 0;
-    return appsDone[d.morning] ? 1 : 0;
+    const m = d.morning && !d.morningDone && appsDone[d.morning] ? 1 : 0;
+    const e = d.evening && !d.eveningDone && appsDone[d.evening] ? 1 : 0;
+    return m + e;
   })();
 
   // Laatste vangnet: liever een knop om door te gaan dan een vastgelopen scherm.
@@ -1833,8 +1861,14 @@ export default function App() {
     </div>
   );
 
+  if(tab==="skills") return (
+    <div id="skills-root">
+      <SkillsTab onExit={()=>{ refreshAppsDone(); setTab("plan"); }} onPersist={persistSkills} />
+    </div>
+  );
+
   // Dagelijks in de balk; wat je af en toe nodig hebt achter "Meer".
-  const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"]];
+  const TABS = [["plan","Plan"],["reps","Reps"],["mob","Mobiliteit"],["skills","Skills"]];
   const MORE = [
     ["routines", "Routines",     "Oefenlijsten en video's, met begeleide workout"],
     ["history",  "Geschiedenis", "Afgesloten weken, back-up en opnieuw beginnen"],
@@ -1851,7 +1885,7 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 0"}}>
             <div>
               <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.3px"}}>Grondvorm</h1>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Plan · Reps · Mobiliteit</div>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>Plan · Reps · Mobiliteit · Skills</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button onClick={()=>setShowSync(true)} title="Sync code" style={{
@@ -1865,7 +1899,7 @@ export default function App() {
               <Tag color={C.purple} bg={C.purpleLight}>Week {aw.weekNum}</Tag>
             </div>
           </div>
-          {/* Tab bar — drie dagelijkse tabbladen plus één knop voor de rest.
+          {/* Tab bar — vier dagelijkse tabbladen plus één knop voor de rest.
               De vierde toont de naam van het onderdeel waar je in zit, zodat
               je ook achter "Meer" ziet waar je bent. */}
           <div style={{display:"flex",marginTop:6}}>

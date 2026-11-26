@@ -7,6 +7,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 
 export const REPS_STORAGE_KEY = "dailyreps:v1";
 const KEY = REPS_STORAGE_KEY;
+/* Het plan stuurt dit event als de sync een nieuwere versie van deze opslag
+   heeft binnengehaald; detail.key zegt welke. */
+export const APP_STATE_EVENT = "training:app-state";
 const TOTAL_DAYS = 56;
 const ACCENT = "#FF5C00";
 
@@ -19,497 +22,510 @@ const storage =
   };
 
 /* ---------- Exercise library ---------- */
-/* base = rep goal at week 2, standard level. unit = what you count. */
+/* base = doel in week 2 op standaardniveau. unit = wat je telt; een eenheid
+   met "sec" erin (seconden) krijgt een stopwatch in plaats van tellers. */
 
 const EX = {
   pushup: {
-    name: "Push-Up", type: "strength", unit: "reps", base: 30, intro: 1,
+    name: "Push-up", type: "strength", unit: "herhalingen", base: 30, intro: 1,
     levels: {
-      easier: { name: "Incline push-up (hands on a table or bench)", f: 1.15 },
-      standard: { name: "Push-up on the floor", f: 1 },
-      harder: { name: "Feet-elevated push-up", f: 0.7 },
+      easier: { name: "Schuine push-up (handen op een tafel of bank)", f: 1.15 },
+      standard: { name: "Push-up op de grond", f: 1 },
+      harder: { name: "Push-up met je voeten hoger", f: 0.7 },
     },
-    setup: "Hands under your shoulders, slightly wider than your chest. Feet together or hip-width. Squeeze your glutes so your body is one straight line from head to heels.",
+    setup: "Handen onder je schouders, iets breder dan je borst. Voeten tegen elkaar of op heupbreedte. Span je billen aan zodat je lichaam één rechte lijn is van hoofd tot hielen.",
     how: [
-      "Point your elbows back at roughly 45°, not straight out to the sides.",
-      "Lower until your chest is a fist's height from the floor.",
-      "Push the floor away and return to the top without letting your hips sag.",
+      "Ellebogen ongeveer 45° naar achteren, niet recht opzij.",
+      "Zak tot je borst een vuist boven de grond is.",
+      "Duw de grond weg en kom terug omhoog zonder dat je heupen doorzakken.",
     ],
-    cues: ["Ribs down, glutes on — the body moves as one plank.", "Full lockout at the top, chest to the floor at the bottom."],
-    avoid: ["Hips dropping first, head reaching forward, half reps."],
+    cues: ["Ribben omlaag, billen aan — je lichaam beweegt als één plank.", "Bovenin helemaal gestrekt, onderin met je borst bij de grond."],
+    avoid: ["Heupen die als eerste zakken, je hoofd naar voren steken, halve herhalingen."],
   },
   pullup: {
-    name: "Pull-Up", type: "strength", unit: "reps", base: 12, intro: 1,
+    name: "Pull-up", type: "strength", unit: "herhalingen", base: 12, intro: 1,
     levels: {
-      easier: { name: "Band-assisted pull-up, or 4-second lowers from the top", f: 1.3 },
-      standard: { name: "Full pull-up, overhand grip", f: 1 },
-      harder: { name: "Slow pull-up: 1s up, 3s down", f: 0.6 },
+      easier: { name: "Pull-up met een elastiek, of vanaf boven in 4 tellen zakken", f: 1.3 },
+      standard: { name: "Volledige pull-up, bovenhandse greep", f: 1 },
+      harder: { name: "Langzame pull-up: 1 tel omhoog, 3 tellen omlaag", f: 0.6 },
     },
-    setup: "Overhand grip, hands just outside shoulder width. Start from a full hang with straight arms.",
+    setup: "Bovenhandse greep, handen net buiten schouderbreedte. Begin hangend met gestrekte armen.",
     how: [
-      "Pull your shoulder blades down first, then bend the arms.",
-      "Pull until your chin clears the bar.",
-      "Lower all the way back to straight arms before the next rep.",
+      "Trek eerst je schouderbladen omlaag, buig dan pas je armen.",
+      "Trek tot je kin boven de stang is.",
+      "Zak helemaal terug tot gestrekte armen voor de volgende herhaling.",
     ],
-    cues: ["Think of pulling the bar down to you, not you up to the bar.", "Keep the legs quiet — no kipping."],
-    avoid: ["Stopping short of a full hang. Half range is the fastest way to stall."],
+    cues: ["Denk aan de stang naar je toe trekken, niet jezelf omhoog.", "Benen stil — niet zwaaien."],
+    avoid: ["Stoppen voordat je weer helemaal hangt. Half bereik is de snelste weg naar stilstand."],
   },
   chinup: {
-    name: "Chin-Up", type: "strength", unit: "reps", base: 12, intro: 1,
+    name: "Chin-up", type: "strength", unit: "herhalingen", base: 12, intro: 1,
     levels: {
-      easier: { name: "Band-assisted chin-up, or 4-second lowers", f: 1.3 },
-      standard: { name: "Full chin-up, underhand grip", f: 1 },
-      harder: { name: "Slow chin-up: 1s up, 3s down", f: 0.6 },
+      easier: { name: "Chin-up met een elastiek, of in 4 tellen zakken", f: 1.3 },
+      standard: { name: "Volledige chin-up, onderhandse greep", f: 1 },
+      harder: { name: "Langzame chin-up: 1 tel omhoog, 3 tellen omlaag", f: 0.6 },
     },
-    setup: "Underhand grip, hands about shoulder width. Full hang to start.",
-    how: ["Pull your elbows down to your ribs.", "Chin over the bar.", "Lower under control to straight arms."],
-    cues: ["Chest up towards the bar, not chin poking forward."],
-    avoid: ["Swinging. If you have to swing, use the easier level."],
+    setup: "Onderhandse greep, handen ongeveer op schouderbreedte. Begin helemaal hangend.",
+    how: ["Trek je ellebogen omlaag naar je ribben.", "Kin boven de stang.", "Gecontroleerd zakken tot gestrekte armen."],
+    cues: ["Borst omhoog naar de stang, niet je kin naar voren steken."],
+    avoid: ["Zwaaien. Moet je zwaaien, neem dan het makkelijkere niveau."],
   },
   row: {
-    name: "Row", type: "strength", unit: "reps", base: 24, intro: 1,
+    name: "Roeien", type: "strength", unit: "herhalingen", base: 24, intro: 1,
     levels: {
-      easier: { name: "Table row with feet walked back (more upright = easier)", f: 1.15 },
-      standard: { name: "Ring or table row, body at roughly 45°", f: 1 },
-      harder: { name: "Feet-elevated row, body horizontal", f: 0.7 },
+      easier: { name: "Aan een tafel, voeten dichterbij (rechter = makkelijker)", f: 1.15 },
+      standard: { name: "Aan ringen of een tafel, lichaam ongeveer op 45°", f: 1 },
+      harder: { name: "Voeten hoger, lichaam horizontaal", f: 0.7 },
     },
-    setup: "Grip the rings or the edge of a sturdy table. Walk your feet forward until your body is at an angle. Straight line from head to heels.",
-    how: ["Pull your chest to your hands.", "Pause for a beat at the top.", "Lower until your arms are straight and your shoulder blades open."],
-    cues: ["Lead with the elbows, finish with the shoulder blades squeezing.", "The lower your body, the harder it gets — use that to dial the difficulty."],
-    avoid: ["Hips sagging behind the rest of the body."],
+    setup: "Pak de ringen of de rand van een stevige tafel. Loop met je voeten naar voren tot je schuin hangt. Rechte lijn van hoofd tot hielen.",
+    how: ["Trek je borst naar je handen.", "Houd bovenin even vast.", "Zak tot je armen gestrekt zijn en je schouderbladen open."],
+    cues: ["Ellebogen gaan voorop, je schouderbladen knijpen het af.", "Hoe lager je lichaam, hoe zwaarder — zo stel je de moeite in."],
+    avoid: ["Heupen die achterblijven en doorzakken."],
   },
   dip: {
-    name: "Dip", type: "strength", unit: "reps", base: 18, intro: 1,
+    name: "Dip", type: "strength", unit: "herhalingen", base: 18, intro: 1,
     levels: {
-      easier: { name: "Bench dip, feet on the floor", f: 1.3 },
-      standard: { name: "Parallel bar dip", f: 1 },
-      harder: { name: "Ring dip", f: 0.6 },
+      easier: { name: "Dip op een bank, voeten op de grond", f: 1.3 },
+      standard: { name: "Dip aan een dipstation of brug", f: 1 },
+      harder: { name: "Dip aan ringen", f: 0.6 },
     },
-    setup: "Support yourself with straight arms, shoulders down away from your ears, legs together.",
-    how: ["Lower until your upper arm is roughly parallel to the floor.", "Lean forward slightly as you descend.", "Press back to a full lockout."],
-    cues: ["Shoulders stay pulled down the whole time."],
-    avoid: ["Going deeper than your shoulders comfortably allow. Depth is earned."],
+    setup: "Steun op gestrekte armen, schouders omlaag weg van je oren, benen tegen elkaar.",
+    how: ["Zak tot je bovenarm ongeveer evenwijdig aan de grond is.", "Leun iets voorover terwijl je zakt.", "Duw terug tot je armen helemaal gestrekt zijn."],
+    cues: ["Schouders blijven de hele tijd omlaag."],
+    avoid: ["Dieper gaan dan je schouders prettig vinden. Diepte moet je verdienen."],
   },
   pikepushup: {
-    name: "Pike Push-Up", type: "strength", unit: "reps", base: 15, intro: 4,
+    name: "Pike push-up", type: "strength", unit: "herhalingen", base: 15, intro: 4,
     levels: {
-      easier: { name: "Pike push-up with feet on the floor", f: 1.15 },
-      standard: { name: "Pike push-up, hips high", f: 1 },
-      harder: { name: "Feet elevated on a chair or box", f: 0.7 },
+      easier: { name: "Pike push-up met je voeten op de grond", f: 1.15 },
+      standard: { name: "Pike push-up, heupen hoog", f: 1 },
+      harder: { name: "Voeten op een stoel of kist", f: 0.7 },
     },
-    setup: "Downward-dog shape: hips high, hands shoulder width, head between your arms.",
-    how: ["Bend your elbows and lower the crown of your head towards the floor.", "Press back up to straight arms."],
-    cues: ["Keep the hips stacked over the hands — that's what makes it a shoulder press."],
-    avoid: ["Letting it turn into a regular push-up as you fatigue."],
+    setup: "Hond-naar-beneden-houding: heupen hoog, handen op schouderbreedte, hoofd tussen je armen.",
+    how: ["Buig je ellebogen en breng je kruin naar de grond.", "Duw terug tot gestrekte armen."],
+    cues: ["Houd je heupen boven je handen — dat maakt er een schouderdruk van."],
+    avoid: ["Dat het een gewone push-up wordt naarmate je moe wordt."],
   },
   squat: {
-    name: "Bodyweight Squat", type: "strength", unit: "reps", base: 40, intro: 1,
+    name: "Squat", type: "strength", unit: "herhalingen", base: 40, intro: 1,
     levels: {
-      easier: { name: "Squat to a box or chair", f: 1.15 },
-      standard: { name: "Full-depth bodyweight squat", f: 1 },
-      harder: { name: "Tempo squat: 3s down, 1s pause at the bottom", f: 0.7 },
+      easier: { name: "Squat tot op een kist of stoel", f: 1.15 },
+      standard: { name: "Volle squat op lichaamsgewicht", f: 1 },
+      harder: { name: "Tempo-squat: 3 tellen omlaag, 1 tel stil onderin", f: 0.7 },
     },
-    setup: "Feet shoulder-width, toes turned out slightly. Weight through the whole foot.",
-    how: ["Sit down and back, knees tracking over your toes.", "Go as deep as you can keep a flat lower back.", "Stand tall and squeeze your glutes at the top."],
-    cues: ["Chest proud, heels planted."],
-    avoid: ["Knees caving in, heels lifting, bouncing out of the bottom."],
+    setup: "Voeten op schouderbreedte, tenen iets naar buiten. Gewicht over je hele voet.",
+    how: ["Zak naar beneden en naar achteren, knieën in de lijn van je tenen.", "Ga zo diep als je met een vlakke onderrug kunt.", "Kom helemaal rechtop en span bovenin je billen aan."],
+    cues: ["Borst trots, hielen aan de grond."],
+    avoid: ["Knieën die naar binnen knikken, hielen die loskomen, onderin terugveren."],
   },
   lunge: {
-    name: "Reverse Lunge", type: "strength", unit: "reps total, alternating", base: 24, intro: 1,
+    name: "Achterwaartse lunge", type: "strength", unit: "herhalingen totaal, afwisselend", base: 24, intro: 1,
     levels: {
-      easier: { name: "Static split squat, hand on a wall", f: 1.15 },
-      standard: { name: "Reverse lunge, alternating legs", f: 1 },
-      harder: { name: "Rear-foot-elevated split squat", f: 0.7 },
+      easier: { name: "Statische split squat, hand aan de muur", f: 1.15 },
+      standard: { name: "Achterwaartse lunge, benen afwisselend", f: 1 },
+      harder: { name: "Split squat met je achterste voet hoger", f: 0.7 },
     },
-    setup: "Stand tall, feet hip-width.",
-    how: ["Step one foot back and lower the back knee towards the floor.", "Front shin stays close to vertical.", "Drive through the front foot to stand, then alternate."],
-    cues: ["Torso upright. Control the descent — no knee slamming."],
-    avoid: ["Steps that are too short, which turns it into a knee-only movement."],
+    setup: "Sta rechtop, voeten op heupbreedte.",
+    how: ["Stap met één voet naar achteren en laat de achterste knie naar de grond zakken.", "Je voorste scheenbeen blijft bijna verticaal.", "Duw via je voorste voet omhoog en wissel."],
+    cues: ["Romp rechtop. Gecontroleerd zakken — de knie niet neerploffen."],
+    avoid: ["Te korte stappen; dan wordt het alleen kniewerk."],
   },
   sldl: {
-    name: "Single-Leg Deadlift", type: "strength", unit: "reps total, alternating", base: 20, intro: 1,
+    name: "Eenbenige deadlift", type: "strength", unit: "herhalingen totaal, afwisselend", base: 20, intro: 1,
     levels: {
-      easier: { name: "Fingertips on a wall for balance", f: 1.15 },
-      standard: { name: "Bodyweight single-leg deadlift", f: 1 },
-      harder: { name: "Holding a dumbbell or kettlebell", f: 0.75 },
+      easier: { name: "Vingertoppen aan de muur voor je balans", f: 1.15 },
+      standard: { name: "Eenbenige deadlift op lichaamsgewicht", f: 1 },
+      harder: { name: "Met een dumbbell of kettlebell", f: 0.75 },
     },
-    setup: "Stand on one leg, soft knee.",
-    how: ["Hinge at the hip and reach your chest forward as the back leg lifts behind you.", "Stop when you feel a strong hamstring stretch.", "Stand back up by driving the hip forward."],
-    cues: ["Hips stay square to the floor — don't let the lifted hip roll open."],
-    avoid: ["Rounding the lower back to reach further down."],
+    setup: "Sta op één been, knie licht gebogen.",
+    how: ["Scharnier vanuit je heup en breng je borst naar voren terwijl je achterste been omhoog komt.", "Stop als je je hamstring stevig voelt rekken.", "Kom omhoog door je heup naar voren te duwen."],
+    cues: ["Heupen blijven recht naar de grond — laat de opgetilde heup niet openkantelen."],
+    avoid: ["Je onderrug rond maken om verder te reiken."],
   },
   bridge: {
-    name: "Glute Bridge", type: "strength", unit: "reps", base: 30, intro: 1,
+    name: "Bilbrug", type: "strength", unit: "herhalingen", base: 30, intro: 1,
     levels: {
-      easier: { name: "Two-leg glute bridge", f: 1.15 },
-      standard: { name: "Glute bridge with a 2-second squeeze at the top", f: 1 },
-      harder: { name: "Single-leg glute bridge", f: 0.6 },
+      easier: { name: "Bilbrug op twee benen", f: 1.15 },
+      standard: { name: "Bilbrug met bovenin 2 tellen aanspannen", f: 1 },
+      harder: { name: "Bilbrug op één been", f: 0.6 },
     },
-    setup: "On your back, knees bent, heels close to your hips.",
-    how: ["Push through your heels and lift your hips until your body is a straight ramp.", "Squeeze at the top.", "Lower with control."],
-    cues: ["Glutes do the work, not the lower back. Ribs stay down."],
-    avoid: ["Over-arching at the top to fake more height."],
+    setup: "Op je rug, knieën gebogen, hielen dicht bij je billen.",
+    how: ["Duw via je hielen je heupen omhoog tot je lichaam een rechte helling is.", "Span bovenin aan.", "Gecontroleerd zakken."],
+    cues: ["Je billen doen het werk, niet je onderrug. Ribben blijven omlaag."],
+    avoid: ["Bovenin hol trekken om hoger te lijken."],
   },
   hkr: {
-    name: "Hanging Knee Raise", type: "strength", unit: "reps", base: 15, intro: 1,
+    name: "Hangend knieheffen", type: "strength", unit: "herhalingen", base: 15, intro: 1,
     levels: {
-      easier: { name: "Lying knee raise on the floor", f: 1.3 },
-      standard: { name: "Hanging knee raise to hip height", f: 1 },
-      harder: { name: "Hanging straight-leg raise", f: 0.6 },
+      easier: { name: "Liggend knieheffen op de grond", f: 1.3 },
+      standard: { name: "Hangend knieheffen tot heuphoogte", f: 1 },
+      harder: { name: "Hangend gestrekte benen heffen", f: 0.6 },
     },
-    setup: "Hang from the bar, shoulders active, legs still.",
-    how: ["Curl your pelvis under and lift your knees towards your chest.", "Lower slowly without swinging."],
-    cues: ["The first move is the pelvis tucking, not the hips folding."],
-    avoid: ["Using momentum. A dead-stop between reps is worth more than extra reps."],
+    setup: "Hang aan de stang, schouders actief, benen stil.",
+    how: ["Krul je bekken onder je en breng je knieën naar je borst.", "Langzaam zakken zonder te zwaaien."],
+    cues: ["De eerste beweging is je bekken dat kantelt, niet je heupen die buigen."],
+    avoid: ["Vaart gebruiken. Stilstaan tussen de herhalingen is meer waard dan extra herhalingen."],
   },
   hollow: {
-    name: "Hollow Rock", type: "strength", unit: "reps", base: 25, intro: 1,
+    name: "Hollow rock", type: "strength", unit: "herhalingen", base: 25, intro: 1,
     levels: {
-      easier: { name: "Hollow hold with knees bent, arms by your sides", f: 1.15 },
-      standard: { name: "Hollow rock, arms overhead", f: 1 },
-      harder: { name: "Hollow rock, fully extended and slow", f: 0.75 },
+      easier: { name: "Hollow hold met gebogen knieën, armen langs je lichaam", f: 1.15 },
+      standard: { name: "Hollow rock, armen boven je hoofd", f: 1 },
+      harder: { name: "Hollow rock, helemaal gestrekt en langzaam", f: 0.75 },
     },
-    setup: "On your back, lower back pressed flat into the floor. Lift the shoulders and legs.",
-    how: ["Rock back and forth from that shape without losing the flat lower back."],
-    cues: ["If your lower back lifts off the floor, bend the knees more."],
-    avoid: ["Rocking from the neck or arms."],
+    setup: "Op je rug, onderrug plat tegen de grond gedrukt. Til je schouders en benen op.",
+    how: ["Wieg heen en weer in die vorm zonder dat je onderrug loskomt."],
+    cues: ["Komt je onderrug los van de grond, buig dan je knieën meer."],
+    avoid: ["Wiegen vanuit je nek of armen."],
   },
 
   couch: {
-    name: "Couch Stretch", type: "mobility", unit: "seconds total, both sides", base: 120, intro: 1,
+    name: "Couch stretch", type: "mobility", unit: "seconden totaal, beide kanten", base: 120, intro: 1,
     levels: {
-      easier: { name: "Half-kneeling hip flexor stretch, back foot on the floor", f: 1 },
-      standard: { name: "Back foot against a wall or couch", f: 1 },
-      harder: { name: "Torso upright, back knee close to the wall", f: 1 },
+      easier: { name: "Halfgeknielde heupbuigerstretch, achterste voet op de grond", f: 1 },
+      standard: { name: "Achterste voet tegen een muur of bank", f: 1 },
+      harder: { name: "Romp rechtop, achterste knie dicht bij de muur", f: 1 },
     },
-    setup: "Back knee on something soft, back foot up against a wall. Front foot planted.",
-    how: ["Tuck your pelvis under and squeeze the back glute.", "Slowly bring your torso upright.", "Breathe long and slow. Swap sides at halfway."],
-    cues: ["The glute squeeze is what makes it work — without it you're just arching your back."],
-    avoid: ["Letting the lower back take the stretch."],
+    setup: "Achterste knie op iets zachts, achterste voet omhoog tegen een muur. Voorste voet plat op de grond.",
+    how: ["Kantel je bekken onder je en span je achterste bil aan.", "Breng je romp langzaam rechtop.", "Adem lang en rustig. Halverwege van kant wisselen."],
+    cues: ["Het aanspannen van je bil maakt het werkzaam — zonder dat trek je alleen je rug hol."],
+    avoid: ["Je onderrug de rek laten opvangen."],
   },
   deepsquat: {
-    name: "Deep Squat Hold", type: "mobility", unit: "seconds", base: 90, intro: 1,
+    name: "Diepe squat houden", type: "mobility", unit: "seconden", base: 90, intro: 1,
     levels: {
-      easier: { name: "Heels on a book, holding a doorframe", f: 1 },
-      standard: { name: "Flat-footed deep squat hold", f: 1 },
-      harder: { name: "Deep squat, hands off the floor, chest tall", f: 1 },
+      easier: { name: "Hielen op een boek, deurpost vasthouden", f: 1 },
+      standard: { name: "Diepe squat met platte voeten", f: 1 },
+      harder: { name: "Diepe squat, handen los, borst hoog", f: 1 },
     },
-    setup: "Sink to the bottom of a squat, feet flat.",
-    how: ["Sit there and breathe.", "Gently push your knees out with your elbows.", "Rock side to side and forward and back to explore the position."],
-    cues: ["Break the time into chunks if you need to — total time is what counts."],
-    avoid: ["Collapsing forward onto your toes."],
+    setup: "Zak naar de bodem van een squat, voeten plat.",
+    how: ["Blijf daar zitten en adem.", "Duw je knieën zachtjes naar buiten met je ellebogen.", "Wieg van links naar rechts en van voor naar achter om de houding te verkennen."],
+    cues: ["Knip de tijd op in stukken als dat nodig is — de totale tijd telt."],
+    avoid: ["Voorover op je tenen inzakken."],
   },
   ninety: {
-    name: "90/90 Hip Switch", type: "mobility", unit: "reps total", base: 20, intro: 1,
+    name: "90/90-heupwissel", type: "mobility", unit: "herhalingen totaal", base: 20, intro: 1,
     levels: {
-      easier: { name: "Hands on the floor behind you for support", f: 1 },
-      standard: { name: "Hands light, switching side to side", f: 1 },
-      harder: { name: "Hands off the floor, chest tall throughout", f: 0.8 },
+      easier: { name: "Handen achter je op de grond als steun", f: 1 },
+      standard: { name: "Handen licht, van kant naar kant wisselen", f: 1 },
+      harder: { name: "Handen los, borst de hele tijd hoog", f: 0.8 },
     },
-    setup: "Sit with front leg at 90° and back leg at 90°, both on the floor.",
-    how: ["Lift both knees and rotate them to the other side.", "Lower both knees to the floor before switching back."],
-    cues: ["Slow and deliberate. Every rep ends with both knees down."],
-    avoid: ["Speeding through and only half-landing each side."],
+    setup: "Zit met je voorste been op 90° en je achterste been op 90°, allebei op de grond.",
+    how: ["Til beide knieën op en draai ze naar de andere kant.", "Leg beide knieën op de grond voordat je terugwisselt."],
+    cues: ["Langzaam en bewust. Elke herhaling eindigt met beide knieën neer."],
+    avoid: ["Erdoorheen jagen en elke kant maar half neerkomen."],
   },
   openbook: {
-    name: "Thoracic Open Book", type: "mobility", unit: "reps total", base: 16, intro: 1,
+    name: "Open boek", type: "mobility", unit: "herhalingen totaal", base: 16, intro: 1,
     levels: {
-      easier: { name: "Knees stacked on a cushion", f: 1 },
-      standard: { name: "Side-lying open book", f: 1 },
-      harder: { name: "Open book with a 5-second hold at the end range", f: 0.8 },
+      easier: { name: "Knieën op een kussen", f: 1 },
+      standard: { name: "Open boek in zijlig", f: 1 },
+      harder: { name: "Open boek met 5 tellen vasthouden aan het eind", f: 0.8 },
     },
-    setup: "Lie on your side, knees bent 90° and stacked, arms straight out in front.",
-    how: ["Keep the knees pinned together.", "Open the top arm across your body and follow it with your eyes.", "Return slowly. Swap sides at halfway."],
-    cues: ["The rotation comes from the ribcage, not the knees."],
-    avoid: ["Letting the top knee lift off the bottom one."],
+    setup: "Lig op je zij, knieën 90° gebogen en op elkaar, armen gestrekt voor je uit.",
+    how: ["Houd je knieën op elkaar.", "Draai je bovenste arm open over je lichaam en volg hem met je ogen.", "Langzaam terug. Halverwege van kant wisselen."],
+    cues: ["De draai komt uit je borstkas, niet uit je knieën."],
+    avoid: ["Je bovenste knie van de onderste laten loskomen."],
   },
   passthrough: {
-    name: "Shoulder Pass-Through", type: "mobility", unit: "reps", base: 20, intro: 1,
+    name: "Schouderdoorhaal", type: "mobility", unit: "herhalingen", base: 20, intro: 1,
     levels: {
-      easier: { name: "Wide grip on a broomstick or towel", f: 1 },
-      standard: { name: "Moderate grip on a stick or band", f: 1 },
-      harder: { name: "Narrow grip, slow and controlled", f: 0.8 },
+      easier: { name: "Brede greep aan een bezemsteel of handdoek", f: 1 },
+      standard: { name: "Gemiddelde greep aan een stok of elastiek", f: 1 },
+      harder: { name: "Smalle greep, langzaam en gecontroleerd", f: 0.8 },
     },
-    setup: "Hold a broomstick, towel or band in front of you, arms straight.",
-    how: ["Lift it overhead and take it behind you, keeping the elbows locked.", "Bring it back the same way."],
-    cues: ["Go only as narrow as you can keep the arms straight."],
-    avoid: ["Bending the elbows to sneak through a grip that's too narrow."],
+    setup: "Houd een bezemsteel, handdoek of elastiek voor je, armen gestrekt.",
+    how: ["Breng hem over je hoofd naar achter je, ellebogen gestrekt.", "Breng hem langs dezelfde weg terug."],
+    cues: ["Ga maar zo smal als je met gestrekte armen kunt."],
+    avoid: ["Je ellebogen buigen om een te smalle greep toch door te komen."],
   },
   deadhang: {
-    name: "Dead Hang", type: "mobility", unit: "seconds", base: 60, intro: 1,
+    name: "Dead hang", type: "mobility", unit: "seconden", base: 60, intro: 1,
     levels: {
-      easier: { name: "Feet lightly on the floor to take some weight", f: 1 },
-      standard: { name: "Full passive hang", f: 1 },
-      harder: { name: "Active hang: shoulder blades pulled down", f: 0.8 },
+      easier: { name: "Voeten licht op de grond om wat gewicht weg te nemen", f: 1 },
+      standard: { name: "Helemaal passief hangen", f: 1 },
+      harder: { name: "Actief hangen: schouderbladen omlaag getrokken", f: 0.8 },
     },
-    setup: "Overhand grip, hands shoulder width.",
-    how: ["Hang and let your shoulders come up towards your ears.", "Breathe. Split the total across as many sets as you need."],
-    cues: ["Grip usually fails before the shoulders — that's normal and it improves fast."],
-    avoid: ["Dropping off the bar in a heap. Step down."],
+    setup: "Bovenhandse greep, handen op schouderbreedte.",
+    how: ["Hang en laat je schouders naar je oren komen.", "Adem. Verdeel de totale tijd over zoveel sets als je nodig hebt."],
+    cues: ["Je grip geeft meestal eerder op dan je schouders — dat is normaal en gaat snel vooruit."],
+    avoid: ["Als een zak van de stang vallen. Stap eraf."],
   },
   cossack: {
-    name: "Cossack Squat", type: "mobility", unit: "reps total, alternating", base: 16, intro: 1,
+    name: "Kozakkensquat", type: "mobility", unit: "herhalingen totaal, afwisselend", base: 16, intro: 1,
     levels: {
-      easier: { name: "Holding a doorframe, shallow depth", f: 1 },
-      standard: { name: "Full cossack squat, heel down", f: 1 },
-      harder: { name: "Hands off, pause 2 seconds at the bottom", f: 0.8 },
+      easier: { name: "Deurpost vasthouden, niet te diep", f: 1 },
+      standard: { name: "Volle kozakkensquat, hiel aan de grond", f: 1 },
+      harder: { name: "Handen los, onderin 2 tellen stil", f: 0.8 },
     },
-    setup: "Wide stance, toes pointing slightly out.",
-    how: ["Shift your weight onto one leg and sink down, keeping the other leg straight.", "Keep both heels on the floor.", "Push back to centre and switch sides."],
-    cues: ["Chest tall. Depth follows over the weeks."],
-    avoid: ["Rolling onto the outside edge of the working foot."],
+    setup: "Brede stand, tenen iets naar buiten.",
+    how: ["Verplaats je gewicht naar één been en zak, het andere been gestrekt.", "Houd beide hielen aan de grond.", "Duw terug naar het midden en wissel."],
+    cues: ["Borst hoog. De diepte komt in de loop van de weken."],
+    avoid: ["Op de buitenkant van je werkende voet rollen."],
   },
   jefferson: {
-    name: "Jefferson Curl", type: "mobility", unit: "reps", base: 10, intro: 4,
+    name: "Jefferson curl", type: "mobility", unit: "herhalingen", base: 10, intro: 4,
     levels: {
-      easier: { name: "Bodyweight, standing on the floor", f: 1 },
-      standard: { name: "Standing on a step, light weight in your hands", f: 1 },
-      harder: { name: "On a step, heavier weight, slow", f: 0.8 },
+      easier: { name: "Zonder gewicht, op de grond", f: 1 },
+      standard: { name: "Op een trede, licht gewicht in je handen", f: 1 },
+      harder: { name: "Op een trede, zwaarder gewicht, langzaam", f: 0.8 },
     },
-    setup: "Stand tall, legs straight but not locked hard.",
-    how: ["Roll down one vertebra at a time, starting with the chin.", "Let the weight hang and pull you down.", "Roll back up the same way, stacking the spine from the bottom."],
-    cues: ["This is deliberate spinal flexion under a light load. Light means light — start with no weight at all."],
-    avoid: ["Rushing, or loading up too soon. If your back is cranky, skip this and hold a pancake instead."],
+    setup: "Sta rechtop, benen gestrekt maar niet hard op slot.",
+    how: ["Rol wervel voor wervel naar beneden, te beginnen met je kin.", "Laat het gewicht hangen en je omlaag trekken.", "Rol op dezelfde manier terug omhoog, je wervelkolom van onderaf opstapelend."],
+    cues: ["Dit is bewust je rug buigen onder een lichte last. Licht is licht — begin zonder gewicht."],
+    avoid: ["Haasten, of te snel zwaarder gaan. Zeurt je rug, sla dit dan over en doe een pancake."],
   },
   pancake: {
-    name: "Pancake Reach", type: "mobility", unit: "seconds", base: 60, intro: 1,
+    name: "Pancake-reik", type: "mobility", unit: "seconden", base: 60, intro: 1,
     levels: {
-      easier: { name: "Sitting on a cushion, knees slightly bent", f: 1 },
-      standard: { name: "Seated straddle, reaching forward", f: 1 },
-      harder: { name: "Chest low, legs wide and straight", f: 1 },
+      easier: { name: "Op een kussen, knieën licht gebogen", f: 1 },
+      standard: { name: "Zittende spreidzit, naar voren reiken", f: 1 },
+      harder: { name: "Borst laag, benen wijd en gestrekt", f: 1 },
     },
-    setup: "Sit with legs wide, kneecaps pointing up.",
-    how: ["Hinge from the hips and walk your hands forward.", "Hold and breathe into the stretch."],
-    cues: ["Lead with the chest, not the head."],
-    avoid: ["Rounding hard through the lower back to get lower."],
+    setup: "Zit met je benen wijd, knieschijven naar boven.",
+    how: ["Scharnier vanuit je heupen en loop met je handen naar voren.", "Houd vast en adem in de rek."],
+    cues: ["Je borst gaat voorop, niet je hoofd."],
+    avoid: ["Je onderrug hard rond maken om lager te komen."],
   },
   bearcrawl: {
-    name: "Bear Crawl", type: "mobility", unit: "steps", base: 40, intro: 1,
+    name: "Berenloop", type: "mobility", unit: "stappen", base: 40, intro: 1,
     levels: {
-      easier: { name: "Bear crawl in place, knees hovering", f: 1.15 },
-      standard: { name: "Forward and backward bear crawl", f: 1 },
-      harder: { name: "Slow crawl, knees an inch off the floor throughout", f: 0.75 },
+      easier: { name: "Berenhouding op de plek, knieën net van de grond", f: 1.15 },
+      standard: { name: "Berenloop vooruit en achteruit", f: 1 },
+      harder: { name: "Langzaam, knieën de hele tijd een paar centimeter van de grond", f: 0.75 },
     },
-    setup: "Hands under shoulders, knees under hips and hovering just off the floor.",
-    how: ["Move opposite hand and opposite foot together.", "Keep the hips low and level — no wagging."],
-    cues: ["Small steps. Quiet hands and feet."],
-    avoid: ["Hips rising up into a downward dog."],
+    setup: "Handen onder je schouders, knieën onder je heupen en net boven de grond.",
+    how: ["Beweeg tegenovergestelde hand en voet tegelijk.", "Houd je heupen laag en recht — niet kwispelen."],
+    cues: ["Kleine stapjes. Stille handen en voeten."],
+    avoid: ["Heupen die omhoog gaan naar een hond-naar-beneden."],
   },
   crab: {
-    name: "Crab Reach", type: "mobility", unit: "reps total, alternating", base: 16, intro: 1,
+    name: "Krabreik", type: "mobility", unit: "herhalingen totaal, afwisselend", base: 16, intro: 1,
     levels: {
-      easier: { name: "Table-top hip lift, no reach", f: 1.15 },
-      standard: { name: "Crab reach, one arm overhead", f: 1 },
-      harder: { name: "Crab reach with a pause at the top", f: 0.8 },
+      easier: { name: "Heupen heffen tot tafelblad, zonder reik", f: 1.15 },
+      standard: { name: "Krabreik, één arm over je hoofd", f: 1 },
+      harder: { name: "Krabreik met bovenin even stil", f: 0.8 },
     },
-    setup: "Sit with feet flat and hands behind you, fingers pointing back.",
-    how: ["Lift your hips into a table-top.", "Reach one arm up and over, opening the chest to the ceiling.", "Lower and switch."],
-    cues: ["Push the hips high before the arm reaches."],
-    avoid: ["Cranking through the shoulder that's on the floor."],
+    setup: "Zit met je voeten plat en je handen achter je, vingers naar achteren.",
+    how: ["Til je heupen op tot een tafelblad.", "Reik met één arm omhoog en over je heen, borst open naar het plafond.", "Zak en wissel."],
+    cues: ["Duw je heupen hoog voordat je arm reikt."],
+    avoid: ["Doorhangen in de schouder die op de grond staat."],
   },
   sidekick: {
-    name: "Side Kick Through", type: "mobility", unit: "reps total, alternating", base: 20, intro: 4,
+    name: "Side kick-through", type: "mobility", unit: "herhalingen totaal, afwisselend", base: 20, intro: 4,
     levels: {
-      easier: { name: "Slow, knee stays bent", f: 1.15 },
-      standard: { name: "Side kick through from the bear position", f: 1 },
-      harder: { name: "Long extension, hips high, pause at the end", f: 0.8 },
+      easier: { name: "Langzaam, knie blijft gebogen", f: 1.15 },
+      standard: { name: "Side kick-through vanuit de berenhouding", f: 1 },
+      harder: { name: "Lang uitstrekken, heupen hoog, even stil aan het eind", f: 0.8 },
     },
-    setup: "Start in the bear position, knees hovering.",
-    how: ["Lift one hand and the opposite foot.", "Kick that leg through underneath your body while turning your hips to the ceiling.", "Return to bear and alternate."],
-    cues: ["Eyes follow the reaching hand. Move at a speed you can stop at."],
-    avoid: ["Throwing the leg through and landing on your hip."],
+    setup: "Begin in de berenhouding, knieën net van de grond.",
+    how: ["Til één hand en de tegenovergestelde voet op.", "Schop dat been onder je lichaam door terwijl je heupen naar het plafond draaien.", "Terug naar de berenhouding en wissel."],
+    cues: ["Je ogen volgen de reikende hand. Beweeg in een tempo waarin je kunt stoppen."],
+    avoid: ["Het been erdoor gooien en op je heup landen."],
   },
   wallslide: {
-    name: "Scap Wall Slide", type: "mobility", unit: "reps", base: 15, intro: 1,
+    name: "Muurglijders", type: "mobility", unit: "herhalingen", base: 15, intro: 1,
     levels: {
-      easier: { name: "Standing a step away from the wall", f: 1 },
-      standard: { name: "Back flat against the wall", f: 1 },
-      harder: { name: "Lower back pressed to the wall throughout, slow", f: 0.8 },
+      easier: { name: "Een stap van de muur af", f: 1 },
+      standard: { name: "Rug plat tegen de muur", f: 1 },
+      harder: { name: "Onderrug de hele tijd tegen de muur, langzaam", f: 0.8 },
     },
-    setup: "Back against a wall, elbows and wrists touching the wall in a goalpost shape.",
-    how: ["Slide the arms up as far as you can while keeping contact.", "Slide back down and squeeze the shoulder blades."],
-    cues: ["Ribs stay down. If the lower back arches, you've gone too far."],
-    avoid: ["Letting the wrists peel off the wall."],
+    setup: "Rug tegen een muur, ellebogen en polsen tegen de muur in een doelpaalvorm.",
+    how: ["Schuif je armen zo ver omhoog als je kunt terwijl ze de muur blijven raken.", "Schuif terug omlaag en knijp je schouderbladen samen."],
+    cues: ["Ribben blijven omlaag. Trekt je onderrug hol, dan ben je te ver."],
+    avoid: ["Je polsen van de muur laten loskomen."],
   },
 
-  /* --- Pelvic floor: a separate daily track, not part of the rotation --- */
+  /* --- Bekkenbodem: een apart dagelijks spoor, geen deel van de rotatie --- */
   pfQuick: {
-    name: "Quick Flicks", type: "pelvic", unit: "reps", base: 60, intro: 1,
+    name: "Snelle knijpers", type: "pelvic", unit: "herhalingen", base: 60, intro: 1,
     levels: {
-      easier: { name: "Lying on your back, knees bent", f: 1 },
-      standard: { name: "Sitting upright", f: 1 },
-      harder: { name: "Standing", f: 1 },
+      easier: { name: "Op je rug, knieën gebogen", f: 1 },
+      standard: { name: "Rechtop zittend", f: 1 },
+      harder: { name: "Staand", f: 1 },
     },
-    setup: "Find the muscle first. It's the one you'd use to hold back wind, or to make the base of the penis lift slightly. Put a hand on your belly — it should stay soft.",
+    setup: "Zoek eerst de spier. Het is de spier waarmee je een wind tegenhoudt, of waarmee de basis van je penis iets omhoog komt. Leg een hand op je buik — die moet zacht blijven.",
     how: [
-      "Squeeze for about a second, then let go completely.",
-      "The release matters as much as the squeeze. Let it drop all the way back before the next rep.",
-      "Keep breathing normally the whole time.",
+      "Knijp ongeveer een seconde en laat dan helemaal los.",
+      "Het loslaten is net zo belangrijk als het knijpen. Laat hem helemaal terugzakken voor de volgende.",
+      "Blijf de hele tijd gewoon ademen.",
     ],
     cues: [
-      "Glutes, belly and thighs stay out of it. If they're joining in, you're squeezing harder than you need to.",
-      "Spread these through the day. Nobody can tell you're doing them.",
+      "Billen, buik en bovenbenen doen niet mee. Doen ze dat wel, dan knijp je harder dan nodig.",
+      "Verdeel ze over de dag. Niemand ziet dat je ze doet.",
     ],
     avoid: [
-      "Holding your breath, or bearing down instead of lifting.",
-      "Practising while peeing. That's a one-time way to find the muscle, not a way to train it.",
+      "Je adem inhouden, of persen in plaats van optillen.",
+      "Oefenen tijdens het plassen. Dat is een eenmalige manier om de spier te vinden, geen manier om hem te trainen.",
     ],
   },
   pfHold: {
-    name: "Long Holds", type: "pelvic", unit: "reps", base: 25, intro: 1,
+    name: "Lang vasthouden", type: "pelvic", unit: "herhalingen", base: 25, intro: 1,
     levels: {
-      easier: { name: "3-second holds, lying down", f: 1 },
-      standard: { name: "5-second holds, sitting", f: 1 },
-      harder: { name: "10-second holds, standing", f: 1 },
+      easier: { name: "3 tellen vasthouden, liggend", f: 1 },
+      standard: { name: "5 tellen vasthouden, zittend", f: 1 },
+      harder: { name: "10 tellen vasthouden, staand", f: 1 },
     },
-    setup: "Same muscle as the quick flicks, held instead of flicked.",
+    setup: "Dezelfde spier als bij de snelle knijpers, nu vastgehouden in plaats van kort geknepen.",
     how: [
-      "Lift and hold without letting the squeeze fade halfway through.",
-      "Breathe through the hold — in and out, not held.",
-      "Rest at least as long as you held before the next rep.",
+      "Til op en houd vast zonder dat het knijpen halverwege wegzakt.",
+      "Adem door de hold heen — in en uit, niet inhouden.",
+      "Rust minstens zo lang als je vasthield voor de volgende.",
     ],
     cues: [
-      "A clean 3-second hold beats a sloppy 10. Move up a level only when the full hold stays steady.",
-      "If the squeeze keeps fading, you've found your real starting point. That's useful information, not failure.",
+      "Een zuivere hold van 3 tellen wint van een slordige van 10. Ga pas een niveau omhoog als de hele hold stabiel blijft.",
+      "Zakt het knijpen steeds weg, dan heb je je echte beginpunt gevonden. Dat is nuttige informatie, geen falen.",
     ],
-    avoid: ["Squeezing so hard the rest of you tenses up. Aim for about half of your maximum effort."],
+    avoid: ["Zo hard knijpen dat de rest van je lichaam meespant. Mik op ongeveer de helft van je maximale kracht."],
   },
   pfRelease: {
-    name: "Reverse Kegel", type: "pelvic", unit: "reps", base: 20, intro: 1,
+    name: "Omgekeerde kegel", type: "pelvic", unit: "herhalingen", base: 20, intro: 1,
     levels: {
-      easier: { name: "Lying down, long slow breaths", f: 1 },
-      standard: { name: "Sitting, breathing into the belly", f: 1 },
-      harder: { name: "In a deep squat", f: 1 },
+      easier: { name: "Liggend, lange rustige ademhalingen", f: 1 },
+      standard: { name: "Zittend, ademen naar je buik", f: 1 },
+      harder: { name: "In een diepe squat", f: 1 },
     },
-    setup: "This is the other half of the work. A pelvic floor that only ever squeezes ends up tight, not strong — and tight is its own problem.",
+    setup: "Dit is de andere helft van het werk. Een bekkenbodem die alleen maar knijpt wordt gespannen, niet sterk — en gespannen is een probleem op zich.",
     how: [
-      "Breathe in slowly and let the whole area widen and drop, like the moment just before you let go.",
-      "It's a release, not a push. No straining.",
-      "Breathe out and come back to neutral. That's one rep.",
+      "Adem langzaam in en laat het hele gebied breder worden en zakken, zoals vlak voordat je loslaat.",
+      "Het is loslaten, geen persen. Niet forceren.",
+      "Adem uit en kom terug naar neutraal. Dat is één herhaling.",
     ],
     cues: [
-      "If you can't feel anything happening, lie down and put a hand low on your belly. The movement is small.",
-      "Do these after the squeezing work, not before.",
+      "Voel je niets gebeuren, ga dan liggen en leg een hand laag op je buik. De beweging is klein.",
+      "Doe deze na het knijpwerk, niet ervoor.",
     ],
-    avoid: ["Bearing down hard. If you feel pressure pushing outwards, back off — you've gone past releasing."],
+    avoid: ["Hard persen. Voel je druk naar buiten, doe dan rustiger — dan ben je voorbij het loslaten."],
   },
 
   jumprope: {
-    name: "Jump Rope", type: "conditioning", unit: "skips", base: 300, intro: 1,
+    name: "Touwtjespringen", type: "conditioning", unit: "sprongen", base: 300, intro: 1,
     levels: {
-      easier: { name: "No rope — shadow skipping with wrist circles", f: 1.15 },
-      standard: { name: "Basic two-foot bounce", f: 1 },
-      harder: { name: "Alternating feet or higher tempo", f: 0.9 },
+      easier: { name: "Zonder touw — springen met polsrondjes", f: 1.15 },
+      standard: { name: "Gewoon op twee voeten", f: 1 },
+      harder: { name: "Wisselende voeten of hoger tempo", f: 0.9 },
     },
-    setup: "Rope handles at hip height when you stand on the middle of the rope.",
-    how: ["Small bounces, an inch off the floor.", "Turn the rope from the wrists, elbows close to the body.", "Break the total into sets of 50–100."],
-    cues: ["Land quietly through the balls of your feet."],
-    avoid: ["Big knee-tuck jumps. Low and fast beats high and slow."],
+    setup: "De handvatten komen tot je heupen als je op het midden van het touw staat.",
+    how: ["Kleine sprongetjes, een paar centimeter van de grond.", "Draai het touw vanuit je polsen, ellebogen dicht bij je lichaam.", "Verdeel het totaal in sets van 50–100."],
+    cues: ["Land zacht op de bal van je voet."],
+    avoid: ["Grote sprongen met je knieën omhoog. Laag en snel wint van hoog en traag."],
   },
   burpee: {
-    name: "Burpee", type: "conditioning", unit: "reps", base: 30, intro: 1,
+    name: "Burpee", type: "conditioning", unit: "herhalingen", base: 30, intro: 1,
     levels: {
-      easier: { name: "Step back, step in, no jump", f: 1.15 },
-      standard: { name: "Jump back, jump in, jump at the top", f: 1 },
-      harder: { name: "Full chest-to-floor burpee", f: 0.75 },
+      easier: { name: "Stap naar achteren, stap terug, niet springen", f: 1.15 },
+      standard: { name: "Spring naar achteren, spring terug, spring bovenin", f: 1 },
+      harder: { name: "Volle burpee met je borst op de grond", f: 0.75 },
     },
-    setup: "Stand tall with room in front of you.",
-    how: ["Hands down, feet back to a plank.", "Chest towards the floor if you're doing the full version.", "Feet back in and stand or jump."],
-    cues: ["Pick a pace you can hold for the whole set."],
-    avoid: ["Sagging hips in the plank position."],
+    setup: "Sta rechtop met ruimte voor je.",
+    how: ["Handen neer, voeten naar achteren tot een plank.", "Borst naar de grond als je de volle versie doet.", "Voeten terug en sta op of spring."],
+    cues: ["Kies een tempo dat je de hele set volhoudt."],
+    avoid: ["Doorzakkende heupen in de plank."],
   },
   mountainclimber: {
-    name: "Mountain Climber", type: "conditioning", unit: "reps total", base: 60, intro: 1,
+    name: "Mountain climber", type: "conditioning", unit: "herhalingen totaal", base: 60, intro: 1,
     levels: {
-      easier: { name: "Hands elevated on a bench, slow tempo", f: 1.15 },
-      standard: { name: "Standard tempo on the floor", f: 1 },
-      harder: { name: "Fast tempo, hips low", f: 0.9 },
+      easier: { name: "Handen op een bank, rustig tempo", f: 1.15 },
+      standard: { name: "Gewoon tempo op de grond", f: 1 },
+      harder: { name: "Hoog tempo, heupen laag", f: 0.9 },
     },
-    setup: "Push-up position, hands under shoulders.",
-    how: ["Drive one knee towards your chest and swap.", "Keep the hips at shoulder height."],
-    cues: ["Shoulders stay stacked over the hands."],
-    avoid: ["Hips bouncing up and down."],
+    setup: "Push-uphouding, handen onder je schouders.",
+    how: ["Breng één knie naar je borst en wissel.", "Houd je heupen op schouderhoogte."],
+    cues: ["Schouders blijven boven je handen."],
+    avoid: ["Heupen die op en neer stuiteren."],
   },
   stepup: {
-    name: "Step-Up", type: "conditioning", unit: "reps total, alternating", base: 40, intro: 4,
+    name: "Opstappen", type: "conditioning", unit: "herhalingen totaal, afwisselend", base: 40, intro: 4,
     levels: {
-      easier: { name: "Low step, hand on a wall", f: 1.15 },
-      standard: { name: "Knee-height step", f: 1 },
-      harder: { name: "Higher step, no push off the back foot", f: 0.8 },
+      easier: { name: "Lage trede, hand aan de muur", f: 1.15 },
+      standard: { name: "Trede op kniehoogte", f: 1 },
+      harder: { name: "Hogere trede, niet afzetten met je achterste voet", f: 0.8 },
     },
-    setup: "Find a stable box, step or bench.",
-    how: ["Plant the whole foot on the step.", "Drive through that leg to stand tall.", "Lower under control and switch."],
-    cues: ["Minimal push from the trailing foot."],
-    avoid: ["Bouncing off the bottom leg."],
+    setup: "Zoek een stevige kist, trede of bank.",
+    how: ["Zet je hele voet op de trede.", "Duw via dat been omhoog tot je rechtop staat.", "Gecontroleerd terug en wissel."],
+    cues: ["Zo min mogelijk afzetten met je achterste voet."],
+    avoid: ["Afveren van je onderste been."],
   },
 
-  /* ── No-bar stand-ins. Scheduled in place of the hanging movements when you
-     say you haven't got a pull-up bar. A door, a table and the floor is all
-     they need. ─────────────────────────────────────────────────────────── */
+  /* ── Vervangers zonder stang. Komen in plaats van de hangoefeningen als je
+     aangeeft dat je geen optrekstang hebt. Een deur, een tafel en de vloer is
+     alles wat ze nodig hebben. ──────────────────────────────────────────── */
   towelrow: {
-    name: "Towel Door Row", type: "strength", unit: "reps", base: 24, intro: 1,
+    name: "Handdoekroeien aan de deur", type: "strength", unit: "herhalingen", base: 24, intro: 1,
     levels: {
-      easier: { name: "Feet close to the door, body upright", f: 1.15 },
-      standard: { name: "Feet walked out, body at roughly 45°", f: 1 },
-      harder: { name: "Feet far out, body close to horizontal", f: 0.7 },
+      easier: { name: "Voeten dicht bij de deur, lichaam rechtop", f: 1.15 },
+      standard: { name: "Voeten verder weg, lichaam ongeveer op 45°", f: 1 },
+      harder: { name: "Voeten ver weg, lichaam bijna horizontaal", f: 0.7 },
     },
-    setup: "Loop a strong towel around both handles of a closed, latched door and stand on the side the door opens away from you, so your pull presses it into the frame. One end in each hand, arms straight, lean back.",
+    setup: "Haal een stevige handdoek om beide klinken van een dichte, vergrendelde deur en sta aan de kant waar de deur van je af opengaat, zodat je trek hem in de sponning drukt. Eén uiteinde in elke hand, armen gestrekt, leun achterover.",
     how: [
-      "Walk your feet towards the door until your weight hangs back through your arms.",
-      "Pull your chest towards your hands with your elbows close to your ribs.",
-      "Lower under control until your arms are straight again.",
+      "Loop met je voeten naar de deur tot je gewicht via je armen naar achteren hangt.",
+      "Trek je borst naar je handen, ellebogen dicht bij je ribben.",
+      "Gecontroleerd terug tot je armen weer gestrekt zijn.",
     ],
-    cues: ["Shoulder blades move first, arms second.", "Body stays one straight line — squeeze your glutes."],
-    avoid: ["A hollow door or a loose handle. Hang your full weight on it once before you start a set.", "Hips sinking back as the set gets hard."],
+    cues: ["Eerst bewegen je schouderbladen, dan je armen.", "Je lichaam blijft één rechte lijn — span je billen aan."],
+    avoid: ["Een holle deur of een losse klink. Hang er eerst één keer met je volle gewicht aan voor je een set begint.", "Heupen die naar achteren zakken als de set zwaar wordt."],
   },
   pronepull: {
-    name: "Prone Lat Pull", type: "strength", unit: "reps", base: 24, intro: 1,
+    name: "Lattrek in buiklig", type: "strength", unit: "herhalingen", base: 24, intro: 1,
     levels: {
-      easier: { name: "Arms wide, thumbs up, small lift", f: 1.2 },
-      standard: { name: "Arms overhead, elbows pulled to your ribs, 1-second squeeze", f: 1 },
-      harder: { name: "3-second squeeze at the bottom of every rep", f: 0.75 },
+      easier: { name: "Armen wijd, duimen omhoog, klein optillen", f: 1.2 },
+      standard: { name: "Armen boven je hoofd, ellebogen naar je ribben, 1 tel aanspannen", f: 1 },
+      harder: { name: "Onderin elke herhaling 3 tellen aanspannen", f: 0.75 },
     },
-    setup: "Lie face down, forehead on the floor or a folded towel, arms stretched out overhead.",
+    setup: "Lig op je buik, voorhoofd op de grond of een opgevouwen handdoek, armen gestrekt boven je hoofd.",
     how: [
-      "Lift your hands just clear of the floor.",
-      "Pull your elbows down and back towards your ribs and squeeze your shoulder blades together.",
-      "Reach back overhead without letting your hands land.",
+      "Til je handen net van de grond.",
+      "Trek je ellebogen omlaag en naar achteren naar je ribben en knijp je schouderbladen samen.",
+      "Reik terug boven je hoofd zonder je handen neer te leggen.",
     ],
-    cues: ["There's no weight, so the squeeze is the whole exercise. Slow beats many.", "Shoulders away from your ears throughout."],
-    avoid: ["Lifting your chest and chin to make it feel like more — the work belongs in your back, not your neck."],
+    cues: ["Er is geen gewicht, dus het aanspannen is de hele oefening. Langzaam wint van veel.", "Schouders de hele tijd weg van je oren."],
+    avoid: ["Je borst en kin optillen om het zwaarder te laten voelen — het werk hoort in je rug, niet in je nek."],
   },
   legraise: {
-    name: "Lying Leg Raise", type: "strength", unit: "reps", base: 15, intro: 1,
+    name: "Liggend benen heffen", type: "strength", unit: "herhalingen", base: 15, intro: 1,
     levels: {
-      easier: { name: "Knees bent, hands under your hips", f: 1.3 },
-      standard: { name: "Straight legs, lowered to just above the floor", f: 1 },
-      harder: { name: "Straight legs, three seconds down", f: 0.7 },
+      easier: { name: "Knieën gebogen, handen onder je heupen", f: 1.3 },
+      standard: { name: "Gestrekte benen, zakken tot net boven de grond", f: 1 },
+      harder: { name: "Gestrekte benen, drie tellen omlaag", f: 0.7 },
     },
-    setup: "Lie on your back, hands under your hips or flat at your sides. Press your lower back into the floor.",
+    setup: "Lig op je rug, handen onder je heupen of plat naast je. Druk je onderrug tegen de grond.",
     how: [
-      "Raise your legs until they point at the ceiling.",
-      "Lower them slowly while keeping your lower back flat.",
-      "Stop before your back lifts away from the floor — that point is your range.",
+      "Til je benen op tot ze naar het plafond wijzen.",
+      "Laat ze langzaam zakken terwijl je onderrug plat blijft.",
+      "Stop voordat je rug loskomt van de grond — dat punt is je bereik.",
     ],
-    cues: ["Lower back glued to the floor. That is what makes this work.", "Bend your knees the moment your back starts to arch."],
-    avoid: ["Arching and hauling the legs up with your hip flexors."],
+    cues: ["Onderrug vastgeplakt aan de grond. Daar draait deze oefening om.", "Buig je knieën zodra je rug hol begint te trekken."],
+    avoid: ["Hol trekken en je benen omhoog sjorren met je heupbuigers."],
   },
   doorlat: {
-    name: "Doorway Lat Stretch", type: "mobility", unit: "seconds", base: 60, intro: 1,
+    name: "Latstretch in de deuropening", type: "mobility", unit: "seconden", base: 60, intro: 1,
     levels: {
-      easier: { name: "Hands on a table, knees soft", f: 1 },
-      standard: { name: "Hands on a doorframe at chest height, hips sinking back", f: 1 },
-      harder: { name: "One arm at a time, ribs turning away", f: 0.9 },
+      easier: { name: "Handen op een tafel, knieën licht gebogen", f: 1 },
+      standard: { name: "Handen op een deurpost op borsthoogte, heupen naar achteren", f: 1 },
+      harder: { name: "Eén arm tegelijk, ribben wegdraaiend", f: 0.9 },
     },
-    setup: "Hands on a doorframe or the edge of a table at about chest height, feet under your hips.",
+    setup: "Handen op een deurpost of de rand van een tafel op ongeveer borsthoogte, voeten onder je heupen.",
     how: [
-      "Walk backwards and let your hips sink away from your hands.",
-      "Let your chest drop between your arms and your head hang.",
-      "Breathe low and let it settle rather than pushing into it.",
+      "Loop naar achteren en laat je heupen van je handen weg zakken.",
+      "Laat je borst tussen je armen zakken en je hoofd hangen.",
+      "Adem laag en laat het zakken in plaats van erin te duwen.",
     ],
-    cues: ["This gives you what the hang gives you: length down your lats and your side.", "Send your hips back, don't push with your arms."],
-    avoid: ["Letting your lower back collapse. Keep a light brace through your middle."],
+    cues: ["Dit geeft je wat het hangen je geeft: lengte langs je lats en je flank.", "Stuur je heupen naar achteren, duw niet met je armen."],
+    avoid: ["Je onderrug laten inzakken. Houd je middel licht aangespannen."],
   },
+};
+
+/* Engelse namen alleen voor de videozoekopdracht; op YouTube vind je met de
+   Engelse term veel meer uitleg. Ontbreekt een naam, dan zoekt hij op de
+   Nederlandse. */
+const EN_NAME = {
+  row: "inverted row", lunge: "reverse lunge", sldl: "single leg deadlift", bridge: "glute bridge",
+  hkr: "hanging knee raise", deepsquat: "deep squat hold", ninety: "90/90 hip switch", openbook: "thoracic open book",
+  passthrough: "shoulder pass through", cossack: "cossack squat", pancake: "pancake stretch", bearcrawl: "bear crawl",
+  crab: "crab reach", wallslide: "scapular wall slide", pfQuick: "pelvic floor quick flicks", pfHold: "pelvic floor long holds",
+  pfRelease: "reverse kegel", jumprope: "jump rope basic bounce", stepup: "step up", towelrow: "towel door row",
+  pronepull: "prone lat pull", legraise: "lying leg raise", doorlat: "doorway lat stretch",
 };
 
 /* Movements named on the original Strength Side page. Everything else is our own
@@ -576,9 +592,9 @@ const TEMPLATES = {
 };
 
 const PHASES = [
-  { weeks: [1, 2, 3], name: "Basics Mastery", note: "Build the foundation. Quality over quantity — every rep should look like the one before it." },
-  { weeks: [4, 5, 6], name: "Reps & Variation", note: "Rep goals climb and new variations appear. Pick the level that makes the last few reps hard but clean." },
-  { weeks: [7, 8], name: "Densification", note: "Same movements, bigger sets. Try to finish your reps in fewer, longer sets than last week." },
+  { weeks: [1, 2, 3], name: "De basis", note: "Leg het fundament. Kwaliteit boven kwantiteit — elke herhaling ziet eruit als de vorige." },
+  { weeks: [4, 5, 6], name: "Meer en anders", note: "De doelen lopen op en er komen nieuwe varianten bij. Kies het niveau waarop de laatste herhalingen zwaar maar zuiver zijn." },
+  { weeks: [7, 8], name: "Verdichten", note: "Dezelfde oefeningen, grotere sets. Probeer je herhalingen in minder, langere sets te doen dan vorige week." },
 ];
 
 const roundGoal = (n) => (n >= 100 ? Math.round(n / 10) * 10 : n >= 30 ? Math.round(n / 5) * 5 : Math.round(n));
@@ -630,22 +646,23 @@ function buildDay(day, levels, equipment = {}) {
 /* ---------- Baseline / retest ---------- */
 
 const TEST_FIELDS = [
-  { id: "pushups", label: "Max push-ups", hint: "One set. Stop when your hips start to sag.", unit: "reps" },
-  { id: "pullups", label: "Max pull-ups", hint: "Full hang to chin over the bar. Zero is a valid answer.", unit: "reps" },
-  { id: "squats", label: "Bodyweight squats in 60 seconds", hint: "Full depth, steady pace.", unit: "reps" },
-  { id: "hang", label: "Dead hang", hint: "One hang, as long as you can hold on.", unit: "sec" },
-  { id: "squathold", label: "Deep squat hold", hint: "Heels down, one unbroken hold.", unit: "sec" },
+  { id: "pushups", label: "Max push-ups", hint: "Eén set. Stop als je heupen gaan doorzakken.", unit: "herh." },
+  { id: "pullups", label: "Max pull-ups", hint: "Van helemaal hangen tot je kin boven de stang. Nul is ook een antwoord.", unit: "herh." },
+  { id: "squats", label: "Squats in 60 seconden", hint: "Volle diepte, rustig tempo.", unit: "herh." },
+  { id: "hang", label: "Dead hang", hint: "Eén keer hangen, zo lang als je het volhoudt.", unit: "sec" },
+  { id: "squathold", label: "Diepe squat houden", hint: "Hielen aan de grond, in één keer.", unit: "sec" },
 ];
 
-const GROUP_LABELS = { push: "Pushing", pull: "Pulling", legs: "Legs and core", mobility: "Mobility" };
+const GROUP_LABELS = { push: "Duwen", pull: "Trekken", legs: "Benen en romp", mobility: "Mobiliteit" };
 const GROUP_HINTS = {
   push: "Push-ups, dips, pike push-ups",
-  pull: "Pull-ups, chin-ups, rows, hangs",
-  legs: "Squats, lunges, bridges, burpees",
-  mobility: "Holds, stretches, crawls",
+  pull: "Pull-ups, chin-ups, roeien, hangen",
+  legs: "Squats, lunges, bilbruggen, burpees",
+  mobility: "Houdingen, stretches, kruipen",
 };
 
 const LEVEL_ORDER = ["easier", "standard", "harder"];
+const LEVEL_LABEL = { easier: "Makkelijker", standard: "Standaard", harder: "Zwaarder" };
 
 /* Your test numbers set your starting variations. */
 function calibrate(t) {
@@ -665,14 +682,17 @@ const iso = (d = new Date()) => {
   const x = new Date(d);
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 };
+/* Klaar met het programma: de hermeting op de laatste dag is opgeslagen. */
+const isFinished = (state) => state.currentDay === TOTAL_DAYS && state.history.some((h) => h.day === TOTAL_DAYS);
+
 const dayDiff = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
 
 const FOCUS = {
-  strength: { label: "Strength", color: "#FF5C00" },
-  mobility: { label: "Mobility", color: "#5AA9E6" },
+  strength: { label: "Kracht", color: "#FF5C00" },
+  mobility: { label: "Mobiliteit", color: "#5AA9E6" },
   conditioning: { label: "Conditioning", color: "#E4C05A" },
-  pelvic: { label: "Pelvic floor", color: "#9AA0A6" },
-  test: { label: "Test", color: "#FAFAFA" },
+  pelvic: { label: "Bekkenbodem", color: "#9AA0A6" },
+  test: { label: "Meting", color: "#FAFAFA" },
 };
 
 const GROUP_OF = { pushup: "push", dip: "push", pikepushup: "push", pullup: "pull", chinup: "pull", row: "pull", hkr: "pull", towelrow: "pull", pronepull: "pull" };
@@ -683,11 +703,11 @@ const groupOf = (id) => {
 };
 
 const EQUIPMENT = [
-  { id: "bar", label: "Pull-up bar", note: "A doorway bar or one at the park. Without it, the hanging movements are swapped for door, table and floor versions.", required: false },
-  { id: "rings", label: "Gymnastics rings", note: "For rows. A sturdy table works instead." },
-  { id: "rope", label: "Jump rope", note: "For conditioning days. We show a no-rope version too." },
-  { id: "band", label: "Resistance band", note: "For assisted pull-ups and chin-ups." },
-  { id: "weight", label: "Dumbbell, kettlebell or vest", note: "Optional. Used on a few harder levels." },
+  { id: "bar", label: "Optrekstang", note: "Een stang in de deuropening of eentje in het park. Zonder stang worden de hangoefeningen vervangen door versies met een deur, een tafel en de vloer.", required: false },
+  { id: "rings", label: "Turnringen", note: "Voor het roeien. Een stevige tafel kan ook." },
+  { id: "rope", label: "Springtouw", note: "Voor de conditiedagen. Er is ook een versie zonder touw." },
+  { id: "band", label: "Weerstandselastiek", note: "Voor pull-ups en chin-ups met hulp." },
+  { id: "weight", label: "Dumbbell, kettlebell of gewichtsvest", note: "Niet nodig. Komt terug bij een paar zwaardere niveaus." },
 ];
 
 const DEFAULT_STATE = {
@@ -737,6 +757,20 @@ export default function RepsTab({ onExit, onPersist }) {
     return () => { cancelled = true; };
   }, []);
 
+  /* Haalt de sync een nieuwere versie binnen terwijl dit scherm open is, lees
+     die dan in. Anders zou de volgende tik de oude stand terugschrijven. */
+  useEffect(() => {
+    const onRemote = async (e) => {
+      if (e.detail?.key !== KEY) return;
+      try {
+        const r = await storage.get(KEY);
+        if (r && r.value) setState({ ...DEFAULT_STATE, ...JSON.parse(r.value) });
+      } catch (err) { /* onleesbaar: houd wat er staat */ }
+    };
+    window.addEventListener(APP_STATE_EVENT, onRemote);
+    return () => window.removeEventListener(APP_STATE_EVENT, onRemote);
+  }, []);
+
   const save = useCallback((next) => {
     setState(next);
     (async () => {
@@ -775,7 +809,10 @@ export default function RepsTab({ onExit, onPersist }) {
   const entriesFor = (id) => entries[id] || (logged[id] > 0 ? [logged[id]] : []);
 
   const missed = state.lastCompletedDate ? Math.max(0, dayDiff(state.lastCompletedDate, today) - 1) : 0;
-  const showGap = missed > 0 && state.gapHandledOn !== today && state.history.length > 0;
+  /* Na de hermeting staat currentDay nog op dag 56; zonder deze check kwam
+     het testformulier steeds opnieuw terug en kon je de hermeting overschrijven. */
+  const finished = isFinished(state);
+  const showGap = !finished && missed > 0 && state.gapHandledOn !== today && state.history.length > 0;
 
   const setLevel = (id, level) =>
     save({ ...state, levels: { ...state.levels, [id]: level }, seen: { ...state.seen, [id]: true } });
@@ -884,6 +921,7 @@ export default function RepsTab({ onExit, onPersist }) {
         {tab === "today" && (
           <Today
             state={state} workout={workout} daily={daily} logged={logged} doneToday={doneToday}
+            programDone={finished} onProgress={() => setTab("progress")}
             onOpen={(id) => setSheet({ id, mode: "log" })}
             onComplete={completeDay} onSaveTest={saveTest}
           />
@@ -1019,7 +1057,7 @@ function Header({ state, onExit }) {
       </div>
       {streak > 1 && (
         <div className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
-          <span className="tabular-nums" style={{ color: ACCENT }}>{streak}</span> in a row
+          <span className="tabular-nums" style={{ color: ACCENT }}>{streak}</span> op rij
         </div>
       )}
     </header>
@@ -1091,7 +1129,7 @@ function ProgramBar({ history }) {
         })}
       </div>
       <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600">
-        {pct}% of the program done
+        {pct}% van het programma gedaan
       </div>
     </div>
   );
@@ -1127,7 +1165,8 @@ function WeekStrip({ currentDay, history }) {
 
 /* ---------- Today ---------- */
 
-function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, onSaveTest }) {
+function Today({ state, workout, daily, logged, doneToday, programDone, onProgress, onOpen, onComplete, onSaveTest }) {
+  if (programDone) return <Finished state={state} onProgress={onProgress} />;
   if (workout.kind === "baseline" || workout.kind === "retest") {
     return <TestScreen kind={workout.kind} baseline={state.baseline} onSave={onSaveTest} />;
   }
@@ -1148,7 +1187,7 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
         <WeekStrip currentDay={state.currentDay} history={state.history} />
       </div>
 
-      <Eyebrow className="mt-6">Day {state.currentDay} · Week {week}</Eyebrow>
+      <Eyebrow className="mt-6">Dag {state.currentDay} · Week {week}</Eyebrow>
       <h1 className="mt-2 flex items-center gap-2.5 text-[32px] font-bold leading-none tracking-tight">
         <span className="h-3 w-3" style={{ backgroundColor: f.color }} />
         {f.label}
@@ -1157,7 +1196,7 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
       <div className="mt-5">
         <DayBar exercises={workout.exercises} logged={logged} />
         <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-xs tabular-nums text-neutral-400">{finished} of {workout.exercises.length} finished</span>
+          <span className="text-xs tabular-nums text-neutral-400">{finished} van {workout.exercises.length} af</span>
           <span className="text-xs text-neutral-600">{phase.name}</span>
         </div>
       </div>
@@ -1174,8 +1213,8 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
 
       <section className="mt-8">
         <div className="mb-3 flex items-baseline justify-between">
-          <Eyebrow>Every day · Pelvic floor</Eyebrow>
-          <span className="text-[10px] uppercase tracking-[0.16em] text-neutral-700">Separate track</span>
+          <Eyebrow>Elke dag · Bekkenbodem</Eyebrow>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-neutral-700">Apart spoor</span>
         </div>
         <ul className="space-y-px overflow-hidden rounded-2xl border border-neutral-800">
           {daily.map((e) => (
@@ -1185,7 +1224,7 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
           ))}
         </ul>
         <p className="mt-3 text-xs leading-relaxed text-neutral-600">
-          One movement a day, rotating through the three. Invisible from the outside — do them at a desk, in the car, on the sofa. Give it eight weeks before you judge it.
+          Eén oefening per dag, rouleert langs de drie. Van buiten onzichtbaar — doe ze aan je bureau, in de auto, op de bank. Geef het acht weken voordat je oordeelt.
         </p>
       </section>
 
@@ -1195,11 +1234,11 @@ function Today({ state, workout, daily, logged, doneToday, onOpen, onComplete, o
         className={`mt-5 w-full rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] transition-colors disabled:cursor-not-allowed disabled:bg-transparent disabled:text-neutral-700 ${RING}`}
         style={anyLogged ? { backgroundColor: allDone ? ACCENT : "#1F1F1F", color: allDone ? "#0A0A0A" : "#FAFAFA" } : { border: "1px solid #1F1F1F" }}
       >
-        {allDone ? "Finish day" : anyLogged ? "Finish day early" : "Log a rep to finish the day"}
+        {allDone ? "Dag afronden" : anyLogged ? "Dag nu al afronden" : "Log iets om de dag af te ronden"}
       </button>
 
       <p className="mt-3 text-xs leading-relaxed text-neutral-600">
-        You don't have to do this in one go. Split the reps across the day — they count the same.
+        Je hoeft dit niet in één keer te doen. Verdeel de herhalingen over de dag — ze tellen hetzelfde.
       </p>
     </main>
   );
@@ -1216,11 +1255,11 @@ function ExerciseRow({ entry, logged, isNew, onOpen }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[15px] font-bold leading-tight">{ex.name}</span>
-            {isNew && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}>New</span>}
+            {isNew && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}>Nieuw</span>}
           </div>
           <div className="mt-1 truncate text-xs text-neutral-500">{ex.levels[entry.level].name}</div>
           {entry.sub && (
-            <div className="mt-1 truncate text-[11px] text-neutral-600">No bar — in place of {EX[entry.sub].name}</div>
+            <div className="mt-1 truncate text-[11px] text-neutral-600">Geen stang — in plaats van {EX[entry.sub].name}</div>
           )}
         </div>
         <div className="shrink-0 pt-0.5 text-right">
@@ -1240,13 +1279,49 @@ function ExerciseRow({ entry, logged, isNew, onOpen }) {
 function RestOfDay({ day }) {
   return (
     <main className="px-5">
-      <Eyebrow>Day {day} logged</Eyebrow>
-      <h1 className="mt-2 text-[32px] font-bold leading-[1.05] tracking-tight">That's today's<br />work in.</h1>
+      <Eyebrow>Dag {day} gelogd</Eyebrow>
+      <h1 className="mt-2 text-[32px] font-bold leading-[1.05] tracking-tight">Dat was het<br />voor vandaag.</h1>
       <p className="mt-5 text-[13px] leading-relaxed text-neutral-400">
-        Tomorrow's session unlocks in the morning. Nothing left to do today — that's the whole idea.
+        De sessie van morgen staat er morgenochtend. Verder hoef je vandaag niets meer — dat is precies de bedoeling.
       </p>
       <p className="mt-4 text-xs leading-relaxed text-neutral-600">
-        Progress has your last sessions and the full eight weeks. Movements has the instructions for everything.
+        Bij Voortgang zie je je laatste sessies en alle acht weken. Bij Oefeningen staat de uitleg van alles.
+      </p>
+    </main>
+  );
+}
+
+function Finished({ state, onProgress }) {
+  const days = state.history.filter((h) => h.focus !== "test").length;
+  const totalReps = state.history.reduce((s, h) => s + h.done, 0);
+  return (
+    <main className="px-5">
+      <Eyebrow>Dag {TOTAL_DAYS} · Hermeting gedaan</Eyebrow>
+      <h1 className="mt-2 text-[32px] font-bold leading-[1.05] tracking-tight">Acht weken,<br />klaar.</h1>
+      <p className="mt-5 text-[13px] leading-relaxed text-neutral-400">
+        {days} trainingsdagen en {totalReps.toLocaleString("nl-NL")} herhalingen gelogd. Er komt geen volgende sessie meer — hier houdt het programma op.
+      </p>
+      {state.baseline && state.retest && (
+        <div className="mt-6 space-y-3">
+          {TEST_FIELDS.map((f) => (
+            <div key={f.id} className="flex items-baseline justify-between border-b border-neutral-800 pb-2">
+              <span className="text-[13px] text-neutral-300">{f.label}</span>
+              <span className="tabular-nums">
+                <span className="text-sm text-neutral-500">{state.baseline[f.id]}</span>
+                <span className="mx-2 text-xs text-neutral-700">→</span>
+                <span className="text-lg font-bold" style={{ color: ACCENT }}>{state.retest[f.id]}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={onProgress}
+        className={`mt-8 w-full rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] ${RING}`}
+        style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
+        Bekijk je voortgang
+      </button>
+      <p className="mt-3 text-xs leading-relaxed text-neutral-600">
+        Nog een ronde? Onderaan Voortgang kun je de acht weken opnieuw beginnen. Je niveaus blijven staan.
       </p>
     </main>
   );
@@ -1282,7 +1357,7 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
 
   const levelPicker = (
     <section>
-      <Eyebrow>{showLevelFirst ? "First time with this one — pick your level" : "Your level"}</Eyebrow>
+      <Eyebrow>{showLevelFirst ? "Eerste keer — kies je niveau" : "Jouw niveau"}</Eyebrow>
       <div className="mt-3 space-y-px overflow-hidden rounded-xl border border-neutral-800">
         {LEVEL_ORDER.map((l) => {
           const on = entry.level === l;
@@ -1293,14 +1368,14 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
               <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full border"
                 style={{ borderColor: on ? ACCENT : "#4A4A4A", backgroundColor: on ? ACCENT : "transparent" }} />
               <span className="min-w-0">
-                <span className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: on ? ACCENT : "#737373" }}>{l}</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: on ? ACCENT : "#737373" }}>{LEVEL_LABEL[l]}</span>
                 <span className="mt-0.5 block text-[13px] leading-snug text-neutral-200">{ex.levels[l].name}</span>
               </span>
             </button>
           );
         })}
       </div>
-      {!browse && <p className="mt-2 text-[11px] leading-relaxed text-neutral-600">Changing this adjusts today's rep goal and is remembered from here on.</p>}
+      {!browse && <p className="mt-2 text-[11px] leading-relaxed text-neutral-600">Dit past het doel van vandaag aan en wordt vanaf nu onthouden.</p>}
     </section>
   );
 
@@ -1308,7 +1383,7 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
     <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950" style={{ fontFamily: FONT }}>
       <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
         <Eyebrow>{FOCUS[ex.type].label}</Eyebrow>
-        <button onClick={onClose} className={`-mr-2 px-2 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 ${RING}`}>Close</button>
+        <button onClick={onClose} className={`-mr-2 px-2 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 ${RING}`}>Sluiten</button>
       </div>
 
       {/* De oefeningen van vandaag, zodat je niet hoeft te sluiten om door te gaan. */}
@@ -1322,34 +1397,34 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
         <h2 className="mt-6 text-[30px] font-bold leading-none tracking-tight">{ex.name}</h2>
         {previous && (
           <div className="mt-2 text-[12px] tabular-nums text-neutral-500">
-            Last time: {previous.logged} of {previous.goal} {ex.unit} · day {previous.day}
+            Vorige keer: {previous.logged} van {previous.goal} {ex.unit} · dag {previous.day}
           </div>
         )}
         <div className="mt-2.5 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: FROM_SOURCE.has(entry.id) ? "#525252" : ACCENT }}>
-          {FROM_SOURCE.has(entry.id) ? "From the original program" : "Added movement"}
+          {FROM_SOURCE.has(entry.id) ? "Uit het oorspronkelijke programma" : "Toegevoegd"}
         </div>
 
         {entry.sub && (
           <p className="mt-4 border-l-2 pl-3 text-[13px] leading-relaxed text-neutral-300" style={{ borderColor: ACCENT }}>
-            Standing in for {EX[entry.sub].name} because you haven't got a pull-up bar. Tick the bar under
-            Progress on the day you get one and {EX[entry.sub].name} comes straight back.
+            Vervangt {EX[entry.sub].name} omdat je geen optrekstang hebt. Vink de stang aan bij Voortgang
+            zodra je er een hebt, dan komt {EX[entry.sub].name} meteen terug.
           </p>
         )}
         {entry.needsBar && (
           <p className="mt-4 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
-            Needs a pull-up bar, so it isn't being scheduled. {EX[NO_BAR[entry.id][0]].name} is taking its place.
+            Heeft een optrekstang nodig, dus wordt niet ingepland. {EX[NO_BAR[entry.id][0]].name} neemt zijn plek in.
           </p>
         )}
 
-        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + " exercise form")}`}
+        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((EN_NAME[entry.id] || ex.name) + " exercise form")}`}
           target="_blank" rel="noreferrer"
           className={`mt-4 inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-300 ${RING}`}>
-          ▶ Find a video
+          ▶ Zoek een video
         </a>
 
         {browse && (
           <p className="mt-5 border-l-2 border-neutral-800 pl-3 text-[13px] leading-relaxed text-neutral-500">
-            Reading only. Rep goals appear on the day this movement comes up.
+            Alleen lezen. Het doel verschijnt op de dag dat deze oefening aan de beurt is.
           </p>
         )}
 
@@ -1361,7 +1436,7 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
               <span className="text-[56px] font-bold leading-none tabular-nums tracking-tighter" style={{ color: remaining === 0 ? ACCENT : "#FAFAFA" }}>
                 {remaining}
               </span>
-              <span className="text-xs text-neutral-500">left of {entry.goal} {ex.unit}</span>
+              <span className="text-xs text-neutral-500">te gaan van {entry.goal} {ex.unit}</span>
             </div>
 
             <div className="mt-4">
@@ -1376,12 +1451,12 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
                     <button onClick={() => setRunning(!running)}
                       className={`rounded-lg border px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] ${RING}`}
                       style={{ borderColor: "#333", color: "#FAFAFA" }}>
-                      {running ? "Pause" : elapsed ? "Resume" : "Start"}
+                      {running ? "Pauze" : elapsed ? "Verder" : "Start"}
                     </button>
                     <button onClick={() => { onAdd(elapsed); setElapsed(0); setRunning(false); }} disabled={elapsed === 0}
                       className={`rounded-lg px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] disabled:opacity-30 ${RING}`}
                       style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
-                      Log
+                      Loggen
                     </button>
                   </div>
                 )}
@@ -1405,7 +1480,7 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
                 {custom === null && (
                   <button onClick={() => setCustom("")}
                     className={`mt-2 w-full rounded-xl border border-neutral-800 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 ${RING}`}>
-                    Custom amount
+                    Ander aantal
                   </button>
                 )}
 
@@ -1414,24 +1489,24 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
                     <input type="number" inputMode="numeric" min="1" autoFocus
                       value={custom} onChange={(e) => setCustom(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addCustom()}
-                      placeholder={timed ? "seconds" : "reps"}
+                      placeholder={timed ? "seconden" : "herhalingen"}
                       className={`min-w-0 flex-1 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-lg font-bold tabular-nums text-neutral-50 placeholder-neutral-700 ${RING}`} />
                     <button onClick={addCustom}
                       className={`rounded-xl px-5 text-[11px] font-bold uppercase tracking-[0.16em] ${RING}`}
-                      style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>Add</button>
+                      style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>Toevoegen</button>
                     <button onClick={() => setCustom(null)}
-                      className={`rounded-xl border border-neutral-700 px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 ${RING}`}>Cancel</button>
+                      className={`rounded-xl border border-neutral-700 px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 ${RING}`}>Annuleren</button>
                   </div>
                 )}
 
                 {/* Elke beurt los, zodat één mistik eruit kan. */}
                 {entries.length > 0 && (
                   <div className="mt-4 border-t border-neutral-800 pt-3">
-                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600">Logged today</div>
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600">Vandaag gelogd</div>
                     <div className="flex flex-wrap gap-1.5">
                       {entries.map((n, i) => (
                         <button key={i} onClick={() => onRemove(i)}
-                          aria-label={`Remove ${n}`}
+                          aria-label={`${n} weghalen`}
                           className={`flex items-center gap-1.5 rounded-full bg-neutral-800 py-1.5 pl-3 pr-2 text-[12px] font-bold tabular-nums text-neutral-200 ${RING}`}>
                           {n}
                           <span className="text-[13px] leading-none text-neutral-500">×</span>
@@ -1444,14 +1519,14 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
             )}
 
             {timed && !readOnly && (
-              <p className="mt-3 text-[11px] leading-relaxed text-neutral-600">Hold as long as you can, then log it. Several holds add up to the goal.</p>
+              <p className="mt-3 text-[11px] leading-relaxed text-neutral-600">Houd vast zo lang je kunt en log het dan. Meerdere keren tellen op tot het doel.</p>
             )}
           </section>
         )}
 
-        <Block title="Set up"><p className="text-[13px] leading-relaxed text-neutral-300">{ex.setup}</p></Block>
+        <Block title="Opstelling"><p className="text-[13px] leading-relaxed text-neutral-300">{ex.setup}</p></Block>
 
-        <Block title="How to do it">
+        <Block title="Zo doe je het">
           <ol className="space-y-3">
             {ex.how.map((h, i) => (
               <li key={i} className="flex gap-3">
@@ -1462,11 +1537,11 @@ function ExerciseSheet({ entry, logged, entries = [], previous, day, allLogged, 
           </ol>
         </Block>
 
-        <Block title="Cues">
+        <Block title="Let op">
           <ul className="space-y-2.5">{ex.cues.map((c, i) => <li key={i} className="text-[13px] leading-relaxed text-neutral-300">{c}</li>)}</ul>
         </Block>
 
-        <Block title="Watch out for">
+        <Block title="Vermijd">
           <ul className="space-y-2.5">{ex.avoid.map((c, i) => <li key={i} className="text-[13px] leading-relaxed text-neutral-400">{c}</li>)}</ul>
         </Block>
 
@@ -1498,10 +1573,10 @@ function TestScreen({ kind, baseline, onSave }) {
   if (phase === "calibrate") {
     return (
       <main className="px-5">
-        <Eyebrow>Calibrated</Eyebrow>
-        <h1 className="mt-2 text-[30px] font-bold leading-[1.08] tracking-tight">Here's where<br />you start.</h1>
+        <Eyebrow>Afgesteld</Eyebrow>
+        <h1 className="mt-2 text-[30px] font-bold leading-[1.08] tracking-tight">Hier begin<br />je.</h1>
         <p className="mt-4 text-[13px] leading-relaxed text-neutral-400">
-          Set from your test, not from a guess. Nudge anything that feels wrong — and every movement stays adjustable once you're in.
+          Afgesteld op je meting, niet op een gok. Pas aan wat niet klopt — en elke oefening blijft later ook nog aan te passen.
         </p>
 
         <div className="mt-6 space-y-3">
@@ -1520,7 +1595,7 @@ function TestScreen({ kind, baseline, onSave }) {
                         backgroundColor: on ? ACCENT : "transparent",
                         color: on ? "#0A0A0A" : "#737373",
                       }}>
-                      {l}
+                      {LEVEL_LABEL[l]}
                     </button>
                   );
                 })}
@@ -1532,10 +1607,10 @@ function TestScreen({ kind, baseline, onSave }) {
         <button onClick={() => onSave("baseline", numbers(), levels)}
           className={`mt-6 w-full rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] ${RING}`}
           style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
-          Start day 2
+          Begin aan dag 2
         </button>
         <p className="mt-3 text-xs leading-relaxed text-neutral-600">
-          Day 1 is the test. Your first session is tomorrow.
+          Dag 1 is de meting. Je eerste sessie is morgen.
         </p>
       </main>
     );
@@ -1543,14 +1618,14 @@ function TestScreen({ kind, baseline, onSave }) {
 
   return (
     <main className="px-5">
-      <Eyebrow>{kind === "baseline" ? "Day 1" : "Day 56"}</Eyebrow>
+      <Eyebrow>{kind === "baseline" ? "Dag 1" : `Dag ${TOTAL_DAYS}`}</Eyebrow>
       <h1 className="mt-2 text-[30px] font-bold leading-[1.08] tracking-tight">
-        {kind === "baseline" ? "Five numbers." : "The same five numbers."}
+        {kind === "baseline" ? "Vijf getallen." : "Dezelfde vijf getallen."}
       </h1>
       <p className="mt-4 text-[13px] leading-relaxed text-neutral-400">
         {kind === "baseline"
-          ? "Rest as long as you need between them. These set your starting variations, and they're what you'll beat in eight weeks."
-          : "Same tests, same conditions. This is where the eight weeks show up."}
+          ? "Rust ertussen zo lang als je nodig hebt. Ze bepalen je startniveaus, en over acht weken ga je ze verbeteren."
+          : "Dezelfde tests, dezelfde omstandigheden. Hier zie je wat de acht weken hebben gedaan."}
       </p>
 
       <div className="mt-6 space-y-px overflow-hidden rounded-2xl border border-neutral-800">
@@ -1560,7 +1635,7 @@ function TestScreen({ kind, baseline, onSave }) {
               <label htmlFor={f.id} className="block text-[14px] font-bold leading-snug">{f.label}</label>
               <div className="mt-1 text-xs leading-relaxed text-neutral-500">{f.hint}</div>
               {kind === "retest" && baseline && (
-                <div className="mt-1 text-xs tabular-nums text-neutral-600">Baseline: {baseline[f.id]}</div>
+                <div className="mt-1 text-xs tabular-nums text-neutral-600">Nulmeting: {baseline[f.id]}</div>
               )}
             </div>
             <div className="flex shrink-0 items-baseline gap-1.5">
@@ -1582,7 +1657,7 @@ function TestScreen({ kind, baseline, onSave }) {
         disabled={!ready}
         className={`mt-6 w-full rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] disabled:bg-transparent disabled:text-neutral-700 ${RING}`}
         style={ready ? { backgroundColor: ACCENT, color: "#0A0A0A" } : { border: "1px solid #1F1F1F" }}>
-        {ready ? (kind === "baseline" ? "See where I start" : "Save the retest") : "Fill in all five"}
+        {ready ? (kind === "baseline" ? "Laat zien waar ik begin" : "Hermeting opslaan") : "Vul alle vijf in"}
       </button>
     </main>
   );
@@ -1591,21 +1666,21 @@ function TestScreen({ kind, baseline, onSave }) {
 /* ---------- Movements ---------- */
 
 function Moves({ levels, onOpen }) {
-  const groups = [["strength", "Strength"], ["mobility", "Mobility"], ["conditioning", "Conditioning"], ["pelvic", "Pelvic floor"]];
+  const groups = ["strength", "mobility", "conditioning", "pelvic"].map((k) => [k, FOCUS[k].label]);
 
   return (
     <main className="px-5">
-      <h1 className="text-[26px] font-bold leading-tight tracking-tight">Movements</h1>
+      <h1 className="text-[26px] font-bold leading-tight tracking-tight">Oefeningen</h1>
       <p className="mt-2 text-[13px] leading-relaxed text-neutral-400">
-        All {Object.keys(EX).length} movements in the program. Read the instructions any time, not just on the day.
+        Alle {Object.keys(EX).length} oefeningen uit het programma. Lees de uitleg wanneer je wilt, niet alleen op de dag zelf.
       </p>
 
       <div className="mt-4 flex gap-5">
         <span className="flex items-center gap-2 text-[11px] text-neutral-500">
-          <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />From the original
+          <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />Uit het origineel
         </span>
         <span className="flex items-center gap-2 text-[11px] text-neutral-500">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ACCENT }} />Added by us
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ACCENT }} />Toegevoegd
         </span>
       </div>
 
@@ -1624,7 +1699,7 @@ function Moves({ levels, onOpen }) {
                     <span className="block truncate text-[14px] font-bold">{e.name}</span>
                     <span className="block truncate text-xs text-neutral-500">{e.levels[levels[id] || "standard"].name}</span>
                   </span>
-                  {NO_BAR[id] && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Bar</span>}
+                  {NO_BAR[id] && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Stang</span>}
                   {e.intro > 1 && <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-600">Week {e.intro}</span>}
                 </button>
               </li>
@@ -1647,23 +1722,23 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
 
   return (
     <main className="px-5">
-      <h1 className="text-[26px] font-bold leading-tight tracking-tight">Progress</h1>
+      <h1 className="text-[26px] font-bold leading-tight tracking-tight">Voortgang</h1>
 
       <div className="mt-5 flex gap-8 border-y border-neutral-800 py-5">
         <div>
           <div className="text-[34px] font-bold leading-none tabular-nums tracking-tight">{done}</div>
-          <Eyebrow className="mt-2">of {TOTAL_DAYS} days</Eyebrow>
+          <Eyebrow className="mt-2">van {TOTAL_DAYS} dagen</Eyebrow>
         </div>
         <div>
-          <div className="text-[34px] font-bold leading-none tabular-nums tracking-tight">{totalReps.toLocaleString()}</div>
-          <Eyebrow className="mt-2">reps logged</Eyebrow>
+          <div className="text-[34px] font-bold leading-none tabular-nums tracking-tight">{totalReps.toLocaleString("nl-NL")}</div>
+          <Eyebrow className="mt-2">herhalingen gelogd</Eyebrow>
         </div>
       </div>
 
       <section className="mt-7">
-        <Eyebrow>Last sessions</Eyebrow>
+        <Eyebrow>Laatste sessies</Eyebrow>
         {last.length === 0 ? (
-          <p className="mt-3 text-[13px] leading-relaxed text-neutral-500">Finish your first day and it turns up here.</p>
+          <p className="mt-3 text-[13px] leading-relaxed text-neutral-500">Rond je eerste dag af en hij verschijnt hier.</p>
         ) : (
           // items-stretch, niet items-end: anders krimpen de kolommen naar hun
           // label en vallen de procentuele balkhoogtes op nul terug.
@@ -1681,8 +1756,8 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
       </section>
 
       <section className="mt-8">
-        <Eyebrow>Eight weeks</Eyebrow>
-        <p className="mt-2 text-xs leading-relaxed text-neutral-600">Tap a finished day to look back at it. Days ahead stay locked.</p>
+        <Eyebrow>Acht weken</Eyebrow>
+        <p className="mt-2 text-xs leading-relaxed text-neutral-600">Tik op een afgeronde dag om terug te kijken. Komende dagen blijven op slot.</p>
         <div className="mt-4 space-y-3">
           {Array.from({ length: 8 }).map((_, wi) => (
             <div key={wi} className="flex items-center gap-3">
@@ -1695,7 +1770,7 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
                   const color = FOCUS[buildDay(day, state.levels, state.equipment).focus].color;
                   return (
                     <button key={day} onClick={() => entry && onPick(entry)} disabled={!entry}
-                      aria-label={`Day ${day}`}
+                      aria-label={`Dag ${day}`}
                       className={`h-7 text-[10px] font-bold tabular-nums ${RING}`}
                       style={{
                         backgroundColor: entry ? color : "#161616",
@@ -1721,7 +1796,7 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
 
       {state.baseline && (
         <section className="mt-8">
-          <Eyebrow>Baseline → retest</Eyebrow>
+          <Eyebrow>Nulmeting → hermeting</Eyebrow>
           <div className="mt-4 space-y-3">
             {TEST_FIELDS.map((f) => {
               const a = state.baseline[f.id];
@@ -1742,11 +1817,11 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
       )}
 
       <section className="mt-9">
-        <Eyebrow>What you've got</Eyebrow>
+        <Eyebrow>Wat je hebt</Eyebrow>
         <p className="mt-2 text-xs leading-relaxed text-neutral-600">
-          Change this whenever your kit changes. Without a pull-up bar, everything you'd have to hang from is
-          swapped for a version that works with a door, a table and the floor. Tick the bar the day you get one
-          and the hanging work comes straight back — today's session included.
+          Pas dit aan zodra je spullen veranderen. Zonder optrekstang wordt alles waaraan je moet hangen
+          vervangen door een versie met een deur, een tafel en de vloer. Vink de stang aan zodra je er een hebt
+          en het hangwerk komt meteen terug — ook in de sessie van vandaag.
         </p>
         <ul className="mt-4 space-y-px overflow-hidden rounded-2xl border border-neutral-800">
           {EQUIPMENT.map((eq) => {
@@ -1772,15 +1847,15 @@ function ProgressTab({ state, onPick, onEquipment, onReset }) {
         </ul>
         {!state.equipment.bar && (
           <div className="mt-3 border-l-2 pl-3 text-xs leading-relaxed text-neutral-400" style={{ borderColor: ACCENT }}>
-            Running without a bar. {NEEDS_BAR.map((id) => `${EX[id].name} → ${EX[NO_BAR[id][0]].name}`).join(", ")}.
+            Je traint zonder stang. {NEEDS_BAR.map((id) => `${EX[id].name} → ${EX[NO_BAR[id][0]].name}`).join(", ")}.
           </div>
         )}
       </section>
 
       <button onClick={onReset} className={`mt-10 w-full border border-neutral-800 py-3.5 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600 ${RING}`}>
-        Start the eight weeks over
+        Acht weken opnieuw beginnen
       </button>
-      <p className="mt-2.5 text-center text-[11px] text-neutral-700">Your levels are kept, so a repeat run picks up where you left off.</p>
+      <p className="mt-2.5 text-center text-[11px] text-neutral-700">Je niveaus blijven staan, dus een tweede ronde pakt op waar je gebleven was.</p>
     </main>
   );
 }
@@ -1789,8 +1864,8 @@ function Review({ entry, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950" style={{ fontFamily: FONT }}>
       <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
-        <Eyebrow>Day {entry.day} · {entry.date}</Eyebrow>
-        <button onClick={onClose} className={`-mr-2 px-2 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 ${RING}`}>Close</button>
+        <Eyebrow>Dag {entry.day} · {entry.date}</Eyebrow>
+        <button onClick={onClose} className={`-mr-2 px-2 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 ${RING}`}>Sluiten</button>
       </div>
       <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto px-5 py-6">
         <h2 className="flex items-center gap-2.5 text-[30px] font-bold leading-none tracking-tight">
@@ -1831,19 +1906,19 @@ function GapModal({ missed, onChoose }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end bg-black/80 p-4" style={{ fontFamily: FONT }}>
       <div className="mx-auto w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-        <Eyebrow>{missed} {missed === 1 ? "day" : "days"} missed</Eyebrow>
-        <h3 className="mt-2 text-xl font-bold tracking-tight">Where do you want to pick up?</h3>
+        <Eyebrow>{missed} {missed === 1 ? "dag" : "dagen"} gemist</Eyebrow>
+        <h3 className="mt-2 text-xl font-bold tracking-tight">Waar wil je verder?</h3>
         <div className="mt-5 space-y-2">
           <button onClick={() => onChoose("catch")} className={`w-full rounded-xl p-4 text-left ${RING}`} style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em]">Catch up</div>
-            <div className="mt-1 text-[13px] leading-relaxed">Carry on with the next session in order. Nothing gets skipped.</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em]">Inhalen</div>
+            <div className="mt-1 text-[13px] leading-relaxed">Ga door met de volgende sessie op volgorde. Er wordt niets overgeslagen.</div>
           </button>
           <button onClick={() => onChoose("skip")} disabled={tooFar} className={`w-full rounded-xl border border-neutral-700 p-4 text-left disabled:opacity-40 ${RING}`}>
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-200">Skip ahead</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-200">Doorschuiven</div>
             <div className="mt-1 text-[13px] leading-relaxed text-neutral-400">
               {tooFar
-                ? "Not available past seven missed days — you'd skip too much of the program."
-                : "Jump to the session scheduled for today and stay on the weekly structure."}
+                ? "Kan niet na meer dan zeven gemiste dagen — dan sla je te veel van het programma over."
+                : "Spring naar de sessie die voor vandaag gepland stond en blijf in het weekritme."}
             </div>
           </button>
         </div>
@@ -1853,7 +1928,7 @@ function GapModal({ missed, onChoose }) {
 }
 
 function Nav({ tab, setTab, onExit }) {
-  const items = [["today", "Today"], ["moves", "Movements"], ["progress", "Progress"]];
+  const items = [["today", "Vandaag"], ["moves", "Oefeningen"], ["progress", "Voortgang"]];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t border-neutral-800 bg-neutral-950">
       <div className="flex">
@@ -1903,20 +1978,20 @@ function Onboarding({ onDone, onExit }) {
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: ACCENT }}>Daily Reps</div>
               <h1 className="mt-5 text-[38px] font-bold leading-[1.02] tracking-tight">
-                Eight weeks.<br />One short session<br />a day.
+                Acht weken.<br />Eén korte sessie<br />per dag.
               </h1>
               <div className="mt-8 space-y-4 text-[14px] leading-relaxed text-neutral-400">
-                <p>Each day gives you three or four movements and a rep goal for each. Twenty to twenty-five minutes if you do it in one go.</p>
-                <p>You don't have to do it in one go. Split the reps across the day — morning coffee, lunch, after work. They count the same.</p>
-                <p>A new session unlocks each morning. You can't run ahead, and that's deliberate.</p>
+                <p>Elke dag krijg je drie of vier oefeningen met voor elk een doel. Twintig tot vijfentwintig minuten als je het in één keer doet.</p>
+                <p>Je hoeft het niet in één keer te doen. Verdeel de herhalingen over de dag — bij de koffie, in de lunch, na het werk. Ze tellen hetzelfde.</p>
+                <p>Elke ochtend gaat er een nieuwe sessie open. Vooruitwerken kan niet, en dat is expres.</p>
               </div>
             </div>
           )}
 
           {step === 1 && (
             <div>
-              <h1 className="text-[30px] font-bold leading-[1.08] tracking-tight">What have you got?</h1>
-              <p className="mt-4 text-[13px] leading-relaxed text-neutral-400">One question, then a short test that sets your starting variations.</p>
+              <h1 className="text-[30px] font-bold leading-[1.08] tracking-tight">Wat heb je?</h1>
+              <p className="mt-4 text-[13px] leading-relaxed text-neutral-400">Eén vraag, dan een korte meting die je startniveaus bepaalt.</p>
               <ul className="mt-6 space-y-px overflow-hidden rounded-2xl border border-neutral-800">
                 {EQUIPMENT.map((eq) => {
                   const on = equipment[eq.id];
@@ -1933,7 +2008,7 @@ function Onboarding({ onDone, onExit }) {
                         <span>
                           <span className="block text-[14px] font-bold">
                             {eq.label}
-                            {eq.required && <span className="ml-2 text-[9px] uppercase tracking-[0.16em]" style={{ color: ACCENT }}>Required</span>}
+                            {eq.required && <span className="ml-2 text-[9px] uppercase tracking-[0.16em]" style={{ color: ACCENT }}>Nodig</span>}
                           </span>
                           <span className="mt-0.5 block text-xs leading-relaxed text-neutral-500">{eq.note}</span>
                         </span>
@@ -1944,8 +2019,8 @@ function Onboarding({ onDone, onExit }) {
               </ul>
               {!equipment.bar && (
                 <p className="mt-3 border-l-2 pl-3 text-xs leading-relaxed text-neutral-400" style={{ borderColor: ACCENT }}>
-                  No bar, no problem: pull-ups, chin-ups, hanging knee raises and the dead hang are swapped for
-                  versions that work with a door, a table and the floor. Tick the bar whenever you get one.
+                  Geen stang, geen probleem: pull-ups, chin-ups, hangend knieheffen en de dead hang worden vervangen
+                  door versies met een deur, een tafel en de vloer. Vink de stang aan zodra je er een hebt.
                 </p>
               )}
             </div>
@@ -1954,12 +2029,12 @@ function Onboarding({ onDone, onExit }) {
 
         <div className="flex gap-2 pt-8">
           {step > 0 && (
-            <button onClick={() => setStep(0)} className={`px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-500 ${RING}`}>Back</button>
+            <button onClick={() => setStep(0)} className={`px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-500 ${RING}`}>Terug</button>
           )}
           <button onClick={() => (step === 1 ? onDone(equipment) : setStep(1))}
             className={`flex-1 rounded-xl py-4 text-xs font-bold uppercase tracking-[0.18em] ${RING}`}
             style={{ backgroundColor: ACCENT, color: "#0A0A0A" }}>
-            {step === 1 ? "Take the baseline test" : "Continue"}
+            {step === 1 ? "Naar de nulmeting" : "Verder"}
           </button>
         </div>
       </div>

@@ -15,18 +15,23 @@ There are no tests or linter configured.
 
 ## Architecture
 
-A **React + Vite app without routing or external state management**, in three
-screens: `src/App.jsx` (the plan, styled inline with the `C` tokens) and the two
-self-contained apps `src/RepsTab.jsx` and `src/MobilityTab.jsx` (styled with
-Tailwind). `src/index.css` holds only the Tailwind directives, the document
-background and the app-shell rules for those two.
+A **React + Vite app without routing or external state management**, in four
+screens: `src/App.jsx` (the plan, styled inline with the `C` tokens) and the three
+self-contained apps `src/RepsTab.jsx`, `src/MobilityTab.jsx` and `src/SkillsTab.jsx`
+(styled with Tailwind). `src/index.css` holds only the Tailwind directives, the
+document background and the app-shell rules for those three.
 
 ### Data model
 
-Independent stores, all in `localStorage`. The first five are mirrored into one
+Independent stores, all in `localStorage`. The first six are mirrored into one
 Supabase row (table `trainingsplan`, columns `weeks`, `exercise_db`, `routines`,
-`reps`, `mobility`) keyed by `training_sync_key`; the last three stay on the
-device.
+`reps`, `mobility`, `skills`) keyed by `training_sync_key`; the last three stay on
+the device. The `skills` column has to exist in Supabase (`jsonb`); Skills only
+ever pushes its own column, so without it only that push fails.
+
+`src/supabase.js` falls back to the real project URL and anon key, so every
+local build — dev, preview, Playwright — talks to the live table. Block
+`supabase.co` in browser tests, or each fresh browser creates a new row.
 
 | Key | Purpose | Root shape |
 |---|---|---|
@@ -35,20 +40,36 @@ device.
 | `training_routines_v1` | Saved routines and videos | `Routine[]` |
 | `dailyreps:v1` | Reps tab state (its own 8-week program) | see `RepsTab.jsx` |
 | `dailymobility:v1` | Mobility tab state (its own 8-week program) | see `MobilityTab.jsx` |
+| `dailyskills:v1` | Skills tab state (10-week skill calisthenics schema) | see `SkillsTab.jsx` |
 | `training_sync_key` | This device's Supabase row id | `string` (uuid) |
 | `training_rest_v1` | Rest-timer defaults for `WorkoutMode` | `{ ... }` |
 | `training_v5_backup` | Raw `training_v5` from before a sync or a repair | `{ at, reason, raw }` |
 
 A `Week` contains a `days` map keyed by `DAYS` (`ma`…`zo`). Each day holds one
 morning choice (`reps` | `mobility` | `ssmobility`), one evening choice
-(`kracht` | `conditioning` | `rope` | `hardlopen` | `zwemmen`), a done flag for
+(`kracht` | `conditioning` | `rope` | `hardlopen` | `zwemmen` | `skills`), a done flag for
 each and a note. Weeks are created lazily, one at a time and without an upper
 bound, via `closeWeek`. Days saved by older versions still carry exercise lists,
 routine links and a mood; those fields are kept in storage but never read.
 
-A day whose morning is `reps` or `mobility` ticks itself off when that app
-reports `lastCompletedDate === today` — only for today's weekday and only in the
-week that is still open.
+When the sync pulls a newer `dailyreps:v1` / `dailymobility:v1` / `dailyskills:v1` while that app
+is open, `writeAppState` in `App.jsx` fires the `APP_STATE_EVENT` window event
+(exported from `RepsTab.jsx`); the open app re-reads its storage so its next
+save does not write the old state back.
+
+Reps and Mobility run 56 days (day 1 baseline, day 56 retest). After the retest
+`currentDay` stays at 56 and `isFinished` shows an end screen instead of the
+test form.
+
+Skills runs 10 weeks on a fixed weekly rhythm (ma/vr heavy, wo light, di/do
+balance, weekend rest). You move to the next week yourself; weeks 4, 6 and 8
+show the sources' criteria first, weeks 6 and 10 need their test saved, and
+"week herhalen" clears that week's ticks. `lastCompletedDate` is the latest day
+anything was ticked.
+
+A morning (`reps`, `mobility`) or evening (`skills`) choice that links to one of
+those apps ticks itself off when that app reports `lastCompletedDate === today` —
+only for today's weekday and only in the week that is still open.
 
 ### Design tokens
 
@@ -59,7 +80,7 @@ import them.
 
 ### Key component hierarchy
 
-The tab bar is Plan · Reps · Mobiliteit · Meer; the `Meer` sheet opens Routines,
+The tab bar is Plan · Reps · Mobiliteit · Skills · Meer; the `Meer` sheet opens Routines,
 Geschiedenis and Database.
 
 ```
@@ -72,12 +93,12 @@ App                   – loads data, owns weeks[] and db state
 │   └── RoutineCard   – ExRow list, DbModal picker, ▶ Start
 │       └── WorkoutMode – guided run-through: speech, rest timers, left/right
 ├── DatabaseTab       – editable exercise DB with drag-and-drop reordering
-├── RepsTab / MobilityTab
+├── RepsTab / MobilityTab / SkillsTab
 └── Sheet             – the shared bottom sheet (Meer, DbModal, SyncModal, …)
 ```
 
-`RepsTab` and `MobilityTab` are self-contained apps in their own files. Each takes
-over the whole screen (`#reps-root` / `#mob-root` in `index.css`), is styled with
+`RepsTab`, `MobilityTab` and `SkillsTab` are self-contained apps in their own files. Each takes
+over the whole screen (`#reps-root` / `#mob-root` / `#skills-root` in `index.css`), is styled with
 Tailwind instead of the inline `C` tokens, and persists through its own storage key
 plus an `onPersist` callback that writes to Supabase.
 
@@ -94,6 +115,8 @@ The whole app is dark. The palette lives in `C` in `src/tokens.js`; changing it
 there recolours Plan, Routines, History and Database at once. Buttons that sit on
 an accent colour use dark text (`#0A0A0A`), not white — the accents are light.
 `src/index.css` carries the document background and the placeholder colour, plus
-the app-shell rules for `#reps-root` / `#mob-root`. Tailwind's preflight is off
+the app-shell rules for the three app roots. Tailwind's preflight is off
 (`tailwind.config.js`) because a global reset would silently restyle the inline
-App; the resets those two apps need are scoped to their own root with `:where()`.
+App; the resets those apps need are scoped to their own root with `:where()`.
+That includes `border-style: solid` on every element — without it a `border`
+class draws nothing — so never reset buttons with the `border` shorthand.
